@@ -17,7 +17,8 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "usesAppleSignIn": true
     },
     "android": {
       "adaptiveIcon": {
@@ -31,7 +32,8 @@
       "bundler": "metro"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-apple-authentication"
     ]
   }
 }
