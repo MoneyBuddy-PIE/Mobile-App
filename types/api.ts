@@ -21,3 +21,9 @@ export interface ApiError {
 	code?: string;
 	details?: any;
 }
+
+export interface SubAccountRegisterRequest {
+	name: string;
+	role: string;
+	pin: string;
+}

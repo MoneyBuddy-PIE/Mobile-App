@@ -1,15 +1,15 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from "react-native";
 import { router } from "expo-router";
-import { authService } from "../../services/authService";
-import { TokenStorage, UserStorage } from "../../utils/storage";
+import { authService } from "@/services/authService";
+import { TokenStorage } from "@/utils/storage";
 
 export default function Register() {
 	const [step, setStep] = useState(1);
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
-    const [name, setName] = useState("");
+	const [name, setName] = useState("");
 	const [pin, setPin] = useState("");
 	const [loading, setLoading] = useState(false);
 
@@ -46,7 +46,7 @@ export default function Register() {
 		setLoading(true);
 		try {
 			const response = await authService.register({ email, password, confirmPassword, pin, name });
-            await TokenStorage.setToken(response.token);
+			await TokenStorage.setToken(response.token);
 			Alert.alert("Success", "Registration successful!", [
 				{ text: "OK", onPress: () => router.replace("/(app)/accounts") },
 			]);
@@ -74,13 +74,13 @@ export default function Register() {
 				<Text style={styles.title}>Create Account</Text>
 				<Text style={styles.subtitle}>Step 1 of 2</Text>
 
-                <TextInput
-                    style={styles.input}
-                    placeholder="Name"
-                    value={name}
-                    onChangeText={setName}
-                    autoCapitalize="words"
-                />
+				<TextInput
+					style={styles.input}
+					placeholder="Name"
+					value={name}
+					onChangeText={setName}
+					autoCapitalize="words"
+				/>
 
 				<TextInput
 					style={styles.input}
