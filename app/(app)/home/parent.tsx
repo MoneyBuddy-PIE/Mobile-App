@@ -1,15 +1,12 @@
-// app/(app)/home.tsx
 import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
-import { router } from "expo-router";
+import { Link, router } from "expo-router";
 import { TokenStorage, UserStorage } from "@/utils/storage";
 import { authService } from "@/services/authService";
 import { userService } from "@/services/userService";
-import { useAuthContext } from "@/contexts/AuthContext";
 import { SubAccount } from "@/types/Account";
 
 export default function Home() {
-	const { logout } = useAuthContext();
 	const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
 	const [loading, setLoading] = useState(true);
 
@@ -45,14 +42,6 @@ export default function Home() {
 		}
 	};
 
-	const switchAccount = () => {
-		router.push("/(app)/accounts");
-	};
-
-	const handleLogout = async () => {
-		await logout();
-	};
-
 	if (loading) {
 		return (
 			<View style={[styles.container, styles.center]}>
@@ -68,7 +57,6 @@ export default function Home() {
 				{/* Header */}
 				<View style={styles.header}>
 					<View>
-						<Text style={styles.welcomeText}>Welcome back,</Text>
 						<Text style={styles.nameText}>{subAccount?.name || "User"}</Text>
 						<Text style={styles.roleText}>{subAccount?.role || "Member"} Account</Text>
 					</View>
@@ -78,10 +66,12 @@ export default function Home() {
 				<View style={styles.section}>
 					<Text style={styles.sectionTitle}>Quick Actions</Text>
 					<View style={styles.actionGrid}>
-						<TouchableOpacity style={styles.actionCard}>
-							<Text style={styles.actionIcon}>💰</Text>
-							<Text style={styles.actionText}>Add Income</Text>
-						</TouchableOpacity>
+						<Link href={"/tasks/parent"}>
+							<TouchableOpacity style={styles.actionCard}>
+								<Text style={styles.actionIcon}>💰</Text>
+								<Text style={styles.actionText}>Add Income</Text>
+							</TouchableOpacity>
+						</Link>
 						<TouchableOpacity style={styles.actionCard}>
 							<Text style={styles.actionIcon}>💸</Text>
 							<Text style={styles.actionText}>Add Expense</Text>
@@ -95,19 +85,6 @@ export default function Home() {
 							<Text style={styles.actionText}>Set Goals</Text>
 						</TouchableOpacity>
 					</View>
-				</View>
-
-				{/* Account Actions */}
-				<View style={styles.section}>
-					<Text style={styles.sectionTitle}>Account</Text>
-					<TouchableOpacity style={styles.menuItem} onPress={switchAccount}>
-						<Text style={styles.menuItemText}>Switch Account</Text>
-						<Text style={styles.menuItemIcon}>→</Text>
-					</TouchableOpacity>
-					<TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
-						<Text style={[styles.menuItemText, styles.logoutText]}>Logout</Text>
-						<Text style={[styles.menuItemIcon, styles.logoutText]}>→</Text>
-					</TouchableOpacity>
 				</View>
 			</ScrollView>
 		</View>
@@ -133,7 +110,7 @@ const styles = StyleSheet.create({
 		color: "#666",
 	},
 	header: {
-		paddingTop: 40,
+		paddingTop: 60,
 		paddingBottom: 30,
 	},
 	welcomeText: {

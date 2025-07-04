@@ -20,7 +20,10 @@ export default function Login() {
 			const result = await login(email, password);
 			if (!result.success) {
 				Alert.alert("Error", result.error || "Login failed");
+			} else {
+				router.push("/(app)/accounts");
 			}
+			
 		} catch (error: any) {
 			Alert.alert("Error", "An unexpected error occurred");
 		} finally {

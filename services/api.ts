@@ -77,7 +77,7 @@ class ApiService {
 
 					if (error.response?.status === 403) {
 						console.log("Token is forbidden (403). Logging out...");
-						await this.handleLogout();
+						// await this.handleLogout();
 						return Promise.reject(error);
 					}
 
@@ -101,11 +101,11 @@ class ApiService {
 
 					try {
 						this.processQueue(new Error("Session expired"), null);
-						await this.handleLogout();
+						// await this.handleLogout();
 						return Promise.reject(error);
 					} catch (refreshError) {
 						this.processQueue(refreshError as Error, null);
-						await this.handleLogout();
+						// await this.handleLogout();
 						return Promise.reject(refreshError);
 					} finally {
 						this.isRefreshing = false;

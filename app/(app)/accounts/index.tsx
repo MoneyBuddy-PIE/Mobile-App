@@ -1,27 +1,39 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, SafeAreaView } from "react-native";
+import {
+	View,
+	Text,
+	TouchableOpacity,
+	StyleSheet,
+	ActivityIndicator,
+	ScrollView,
+	SafeAreaView,
+	RefreshControl,
+} from "react-native";
 import { router } from "expo-router";
-import { UserStorage } from "@/utils/storage";
-import { Account } from "@/types/Account";
+import { TokenStorage, UserStorage } from "@/utils/storage";
+import { Account, SubAccount } from "@/types/Account";
 import { useAuthContext } from "@/contexts/AuthContext";
 import AccountCard from "@/components/AccountCard";
+import { authService } from "@/services/authService";
+import { userService } from "@/services/userService";
 
 export default function Accounts() {
 	const { logout, user: contextUser, refreshUserData } = useAuthContext();
 	const [user, setUser] = useState<Account | null>(contextUser);
-	const [loading, setLoading] = useState(false);
+	const [loading, setLoading] = useState(true);
+	const [refreshing, setRefreshing] = useState(false);
 
 	useEffect(() => {
-		if (contextUser) {
-			setUser(contextUser);
-		} else {
-			// Sinon on le charge
-			loadUserProfile();
-		}
+		// Always fetch fresh data on mount
+		loadUserProfile();
+	}, []);
+
+	useEffect(() => {
+		// Update local state when context user changes
+		setUser(contextUser);
 	}, [contextUser]);
 
 	const loadUserProfile = async () => {
-		setLoading(true);
 		try {
 			await refreshUserData();
 		} catch (error) {
@@ -31,13 +43,43 @@ export default function Accounts() {
 		}
 	};
 
+	const onRefresh = async () => {
+		setRefreshing(true);
+		try {
+			await refreshUserData();
+		} catch (error) {
+			console.error("Error refreshing profile:", error);
+		} finally {
+			setRefreshing(false);
+		}
+	};
+
 	const handleLogout = async () => {
 		await logout();
 	};
 
-	const navigateToAccount = async (accountId: string) => {
-		await UserStorage.setSubAccountId(accountId);
-		router.replace("/(app)/home");
+	const navigateToAccount = async (account: SubAccount) => {
+		if (account.role === "CHILD") {
+			try {
+				const response = await authService.subAccountLogin(account.id);
+				await TokenStorage.setSubAccountToken(response.token);
+				const accountDetails = await userService.getSubAccount();
+				await UserStorage.setSubAccount(accountDetails);
+				await UserStorage.setSubAccountId(account.id);
+
+				router.replace("/(app)/home/child");
+			} catch (error) {
+				console.error("Error navigating to sub-account:", error);
+			}
+		} else {
+			router.push({
+				pathname: "/(app)/accounts/pin-entry",
+				params: {
+					accountId: account.id,
+					accountName: account.name,
+				},
+			});
+		}
 	};
 
 	if (loading) {
@@ -51,18 +93,11 @@ export default function Accounts() {
 
 	return (
 		<SafeAreaView style={styles.container}>
-			<ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-				{/* Header avec bouton logout */}
-				<View style={styles.header}>
-					<View>
-						<Text style={styles.title}>Your Accounts</Text>
-						<Text style={styles.subtitle}>Welcome back, {user?.username || "User"}</Text>
-					</View>
-					<TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-						<Text style={styles.logoutText}>Logout</Text>
-					</TouchableOpacity>
-				</View>
-
+			<ScrollView
+				style={styles.content}
+				showsVerticalScrollIndicator={false}
+				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#007AFF" />}
+			>
 				{/* Sub Accounts Section */}
 				<View style={styles.section}>
 					<Text style={styles.sectionTitle}>Sub-Accounts ({user?.subAccounts?.length || 0})</Text>
@@ -76,7 +111,7 @@ export default function Accounts() {
 							<AccountCard
 								key={account.id}
 								account={account}
-								onPress={() => navigateToAccount(account.id)}
+								onPress={() => navigateToAccount(account)}
 							/>
 						))
 					) : (

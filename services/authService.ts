@@ -30,7 +30,7 @@ export const authService = {
 		}
 	},
 
-	async subAccountLogin(subAccountId: string, pin: string): Promise<any> {
+	async subAccountLogin(subAccountId: string, pin?: string): Promise<any> {
 		return apiService.post<any>("/auth/subAccount/login", { id: subAccountId, pin });
 	},
 

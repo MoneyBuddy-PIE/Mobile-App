@@ -66,6 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 			await TokenStorage.saveToken(response.token);
 
 			const userData = await userService.getAccount();
+			console.log("User data fetched:", userData);
 			await UserStorage.setUser(userData);
 
 			setUser(userData);
@@ -95,6 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 		try {
 			const userData = await userService.getAccount();
+			console.log("Refreshing user data:", userData);
 			await UserStorage.setUser(userData);
 			setUser(userData);
 		} catch (error) {

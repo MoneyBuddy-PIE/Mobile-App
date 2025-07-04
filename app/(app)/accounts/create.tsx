@@ -14,7 +14,7 @@ const roleOptions: RoleOption[] = [
 	{ value: "PARENT", label: "Parent" },
 ];
 
-export default function CreateSubAccount() {
+export default function Create() {
 	const [name, setName] = useState("");
 	const [selectedRole, setSelectedRole] = useState<string>("");
 	const [pin, setPin] = useState("");
@@ -53,12 +53,8 @@ export default function CreateSubAccount() {
 				role: selectedRole,
 				pin: pin,
 			});
-			console.log("Token:", t);
-			console.log("Creating sub-account:", {
-				name: name.trim(),
-				role: selectedRole,
-				pin: pin,
-			});
+			Alert.alert("Success", "Sub-account created successfully");
+			router.back();
 		} catch (error: any) {
 			console.error("Error creating sub-account:", error);
 			Alert.alert("Error", error.response?.data?.message || "Failed to create sub-account");
