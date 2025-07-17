@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { router } from "expo-router";
-import { View, Text, ActivityIndicator } from "react-native";
+import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
 import { TokenStorage, UserStorage } from "../utils/storage";
 
 export default function Index() {
@@ -34,3 +34,18 @@ export default function Index() {
 		</View>
 	);
 }
+
+const styles = StyleSheet.create({
+  Title: {
+    fontFamily: "DMSans-Bold",
+    fontSize: 20,
+  },
+  Subtitle: {
+    fontFamily: "DMSans-Medium",
+    fontSize: 20,
+  },
+  Body: {
+    fontFamily: "DMSans-Regular",
+    fontSize: 20,
+  },
+});

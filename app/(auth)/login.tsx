@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, Image } from "react-native";
+import { useFonts } from "expo-font";
+import { DMSans_700Bold, DMSans_400Regular } from "@expo-google-fonts/dm-sans";
 import { router } from "expo-router";
 import { authService } from "../../services/authService";
 import { TokenStorage } from "../../utils/storage";
@@ -8,6 +10,11 @@ export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
+
+    const [fontsLoaded] = useFonts({
+        DMSans_700Bold,
+        DMSans_400Regular
+    });
 
     const handleLogin = async () => {
         if (!email || !password) {
@@ -29,6 +36,10 @@ export default function Login() {
 
     return (
         <View style={styles.container}>
+            <Image
+                source={require("../../assets/moneybuddy_mascotte.png")}
+                style={styles.icon}
+            />
             <Text style={styles.title}>Login</Text>
 
             <TextInput
@@ -66,11 +77,18 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         backgroundColor: "#fff",
     },
+    icon: {
+        width: 250,
+        height: 300,
+        alignSelf: "center",
+        marginBottom: 20,
+    },
     title: {
         fontSize: 28,
         fontWeight: "bold",
         textAlign: "center",
         marginBottom: 30,
+        fontFamily: "DMSans_700Bold",
     },
     input: {
         borderWidth: 1,
