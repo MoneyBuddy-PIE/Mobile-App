@@ -1,8 +1,7 @@
-// app/index.tsx
 import { useEffect } from "react";
 import { View, Text, ActivityIndicator, TouchableOpacity, StyleSheet } from "react-native";
 import { router } from "expo-router";
-import { useAuthContext, StyleSheet } from "@/contexts/AuthContext";
+import { useAuthContext } from "@/contexts/AuthContext";
 
 export default function Index() {
 	const { isLoading, isAuthenticated } = useAuthContext();
