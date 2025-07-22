@@ -44,6 +44,12 @@ class ApiService {
 		// Request interceptor - add auth token
 		this.api.interceptors.request.use(
 			async (config) => {
+				const isPublicEndpoint = config.url?.includes("/auth/login") || config.url?.includes("/auth/register");
+
+				if (isPublicEndpoint) {
+					return config;
+				}
+
 				const tokenUrl = ["/auth/me", "/auth/subAccount/login"];
 				const token = tokenUrl.some((url) => config.url?.includes(url))
 					? await TokenStorage.getToken()
