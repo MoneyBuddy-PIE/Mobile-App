@@ -14,7 +14,9 @@ export default function AppLayout() {
 			<View style={styles.container}>
 				<Stack screenOptions={{ headerShown: false }}>
 					<Stack.Screen name="accounts" />
+					<Stack.Screen name="children" />
 					<Stack.Screen name="profile" />
+					<Stack.Screen name="home" />
 				</Stack>
 				{!hideBottomNav && <BottomNavigation />}
 			</View>

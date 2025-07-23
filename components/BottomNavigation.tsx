@@ -1,4 +1,3 @@
-// components/BottomNavigation.tsx
 import React from "react";
 import { View, Text, StyleSheet, Pressable, Platform } from "react-native";
 import { usePathname, Link } from "expo-router";
@@ -18,6 +17,12 @@ const navItems: NavItem[] = [
 		label: "Home",
 		iconName: "home-outline",
 		iconNameActive: "home",
+	},
+	{
+		route: "/(app)/children",
+		label: "Enfants",
+		iconName: "people-outline",
+		iconNameActive: "people",
 	},
 	{
 		route: "/(app)/profile",
@@ -46,7 +51,7 @@ export const BottomNavigation: React.FC = () => {
 						key={item.route}
 						href={item.route}
 						asChild
-						replace // Use replace instead of push to avoid stacking
+						replace
 						style={styles.navItem}
 					>
 						<Pressable>

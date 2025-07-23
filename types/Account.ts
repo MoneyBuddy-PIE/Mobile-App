@@ -11,6 +11,7 @@ export interface SubAccount {
 	name: string;
 	role: string;
 	updatedAt: string | null;
+	money: string;
 }
 
 export interface Account {

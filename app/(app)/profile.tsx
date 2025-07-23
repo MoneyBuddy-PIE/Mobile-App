@@ -86,7 +86,7 @@ export default function Profile() {
 							</TouchableOpacity>
 						</Link>
 					)}
-					<Link href={"/accounts"} asChild>
+					<Link href={"/accounts"} asChild replace>
 						<TouchableOpacity style={styles.menuItem}>
 							<Text style={styles.menuItemText}>Switch Account</Text>
 							<Text style={styles.menuItemIcon}>→</Text>
