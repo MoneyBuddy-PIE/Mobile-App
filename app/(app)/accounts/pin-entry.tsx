@@ -60,7 +60,6 @@ export default function PinEntry() {
 
 			// Get sub-account details
 			const accountDetails = await userService.getSubAccount();
-			console.log("Sub-account details:", accountDetails);
 			await UserStorage.setSubAccount(accountDetails);
 			await UserStorage.setSubAccountId(accountId);
 

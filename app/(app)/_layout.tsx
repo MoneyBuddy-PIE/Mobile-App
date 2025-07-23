@@ -8,17 +8,15 @@ export default function AppLayout() {
 	console.log("Current pathname:", pathname);
 
 	const hideBottomNav = pathname.startsWith("/accounts");
-	const showNavBar = !hideBottomNav;
 
 	return (
 		<AuthGuard>
 			<View style={styles.container}>
 				<Stack screenOptions={{ headerShown: false }}>
 					<Stack.Screen name="accounts" />
-					<Stack.Screen name="home" />
 					<Stack.Screen name="profile" />
 				</Stack>
-				{showNavBar && <BottomNavigation />}
+				{!hideBottomNav && <BottomNavigation />}
 			</View>
 		</AuthGuard>
 	);

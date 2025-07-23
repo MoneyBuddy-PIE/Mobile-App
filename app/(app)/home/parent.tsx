@@ -66,10 +66,10 @@ export default function Home() {
 				<View style={styles.section}>
 					<Text style={styles.sectionTitle}>Quick Actions</Text>
 					<View style={styles.actionGrid}>
-						<Link href={"/tasks/parent"}>
+						<Link href={"/tasks/parent"} asChild>
 							<TouchableOpacity style={styles.actionCard}>
 								<Text style={styles.actionIcon}>💰</Text>
-								<Text style={styles.actionText}>Add Income</Text>
+								<Text style={styles.actionText}>Add Tasks</Text>
 							</TouchableOpacity>
 						</Link>
 						<TouchableOpacity style={styles.actionCard}>
