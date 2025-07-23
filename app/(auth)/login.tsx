@@ -28,7 +28,7 @@ export default function Login() {
 			if (!result.success) {
 				Alert.alert("Error", result.error || "Login failed");
 			} else {
-				router.push("/(app)/accounts");
+				router.replace("/(app)/accounts");
 			}
 			
 		} catch (error: any) {
@@ -63,7 +63,7 @@ export default function Login() {
 				<Text style={styles.buttonText}>{loading ? "Logging in..." : "Login"}</Text>
 			</TouchableOpacity>
 
-			<TouchableOpacity onPress={() => router.push("/(auth)/register")}>
+			<TouchableOpacity onPress={() => router.replace("/(auth)/register")}>
 				<Text style={styles.link}>Don't have an account? Register</Text>
 			</TouchableOpacity>
 		</View>

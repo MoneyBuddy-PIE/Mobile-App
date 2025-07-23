@@ -123,11 +123,11 @@ export default function Index() {
 	}
 
 	const navigateToLogin = () => {
-		router.push("/(auth)/login");
+		router.replace("/(auth)/login");
 	};
 
 	const navigateToSignUp = () => {
-		router.push("/(auth)/register");
+		router.replace("/(auth)/register");
 	};
 
 	return (

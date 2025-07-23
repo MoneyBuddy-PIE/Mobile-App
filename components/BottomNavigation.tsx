@@ -1,4 +1,3 @@
-// components/BottomNavigation.tsx
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Pressable, Platform } from "react-native";
 import { usePathname, Link } from "expo-router";
@@ -75,7 +74,7 @@ export const BottomNavigation: React.FC = () => {
 						key={item.route}
 						href={item.route}
 						asChild
-						replace // Use replace instead of push to avoid stacking
+						replace
 						style={styles.navItem}
 					>
 						<Pressable>

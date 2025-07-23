@@ -1,4 +1,3 @@
-// app/(app)/children/index.tsx
 import React, { useEffect, useState } from "react";
 import {
 	View,
@@ -13,6 +12,9 @@ import {
 } from "react-native";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { SubAccount } from "@/types/Account";
+import { router } from "expo-router";
+import { tasksService } from "@/services/tasksService";
+import { Task } from "@/types/Task";
 
 export default function Children() {
 	const { user, refreshUserData } = useAuthContext();
@@ -20,9 +22,11 @@ export default function Children() {
 	const [refreshing, setRefreshing] = useState(false);
 	const [selectedChildId, setSelectedChildId] = useState<string>("");
 	const [showPicker, setShowPicker] = useState(false);
-	
-	const childAccounts = user?.subAccounts?.filter(account => account.role === "CHILD") || [];
-	const selectedChild = childAccounts.find(child => child.id === selectedChildId);
+	const [tasks, setTasks] = useState<Task[]>([]);
+	const [loadingTasks, setLoadingTasks] = useState(false);
+
+	const childAccounts = user?.subAccounts?.filter((account) => account.role === "CHILD") || [];
+	const selectedChild = childAccounts.find((child) => child.id === selectedChildId);
 
 	useEffect(() => {
 		loadData();
@@ -34,6 +38,12 @@ export default function Children() {
 		}
 	}, [childAccounts, selectedChildId]);
 
+	useEffect(() => {
+		if (selectedChildId) {
+			loadChildTasks();
+		}
+	}, [selectedChildId]);
+
 	const loadData = async () => {
 		try {
 			await refreshUserData();
@@ -41,6 +51,21 @@ export default function Children() {
 			console.error("Error loading children data:", error);
 		} finally {
 			setLoading(false);
+		}
+	};
+
+	const loadChildTasks = async () => {
+		if (!selectedChildId) return;
+
+		setLoadingTasks(true);
+		try {
+			const childTasks = await tasksService.getTasksByChild(selectedChildId);
+			console.log("Child tasks loaded:", childTasks);
+			setTasks(childTasks);
+		} catch (error) {
+			console.error("Error loading child tasks:", error);
+		} finally {
+			setLoadingTasks(false);
 		}
 	};
 
@@ -52,6 +77,24 @@ export default function Children() {
 			setRefreshing(false);
 		}
 	};
+
+	// Séparer les tâches par catégorie
+	const regularTasks = tasks.filter((task) => task.category === "REGULAR");
+	const punctualTasks = tasks.filter((task) => task.category === "PUNCTUAL");
+
+	const renderTask = (task: Task) => (
+		<View key={task.id} style={styles.taskItem}>
+			<View style={styles.taskInfo}>
+				<Text style={styles.taskDescription}>{task.description}</Text>
+				<Text style={styles.taskReward}>{task.reward}€</Text>
+			</View>
+			<View style={[styles.taskStatus, task.done && styles.taskStatusCompleted]}>
+				<Text style={[styles.taskStatusText, task.done && styles.taskStatusTextCompleted]}>
+					{task.done ? "✓" : "○"}
+				</Text>
+			</View>
+		</View>
+	);
 
 	if (loading) {
 		return (
@@ -68,9 +111,7 @@ export default function Children() {
 				<View style={styles.emptyContainer}>
 					<Text style={styles.emptyIcon}>👶</Text>
 					<Text style={styles.emptyTitle}>Aucun enfant trouvé</Text>
-					<Text style={styles.emptyText}>
-						Créez un compte enfant depuis la page profil pour commencer.
-					</Text>
+					<Text style={styles.emptyText}>Créez un compte enfant depuis la page profil pour commencer.</Text>
 				</View>
 			</SafeAreaView>
 		);
@@ -85,16 +126,11 @@ export default function Children() {
 			>
 				{/* Header avec sélecteur d'enfant */}
 				<View style={styles.header}>
-					<TouchableOpacity 
-						style={styles.childSelector}
-						onPress={() => setShowPicker(true)}
-					>
+					<TouchableOpacity style={styles.childSelector} onPress={() => setShowPicker(true)}>
 						<View style={styles.childIcon}>
 							<Text style={styles.childIconText}>👶</Text>
 						</View>
-						<Text style={styles.childName}>
-							{selectedChild?.name || "Sélectionner"}
-						</Text>
+						<Text style={styles.childName}>{selectedChild?.name || "Sélectionner"}</Text>
 						<Text style={styles.dropdownArrow}>▼</Text>
 					</TouchableOpacity>
 				</View>
@@ -104,9 +140,7 @@ export default function Children() {
 						{/* Solde */}
 						<View style={styles.balanceSection}>
 							<Text style={styles.balanceLabel}>Solde disponible</Text>
-							<Text style={styles.balanceAmount}>
-								{selectedChild.money || '0.00'}€
-							</Text>
+							<Text style={styles.balanceAmount}>{selectedChild.money || "0.00"}€</Text>
 						</View>
 
 						{/* Boutons actions */}
@@ -122,12 +156,13 @@ export default function Children() {
 						</View>
 
 						{/* Message argent de poche */}
-						{(!selectedChild.money || selectedChild.money === '0') && (
+						{(!selectedChild.money || selectedChild.money === "0") && (
 							<View style={styles.infoCard}>
 								<Text style={styles.infoIcon}>💰</Text>
 								<Text style={styles.infoTitle}>Pas encore d'argent de poche</Text>
 								<Text style={styles.infoText}>
-									Commencez à lui verser une petite somme pour l'aider à apprendre à gérer un vrai budget.
+									Commencez à lui verser une petite somme à poche pour l'aider à apprendre à gérer un
+									vrai budget.
 								</Text>
 							</View>
 						)}
@@ -135,41 +170,87 @@ export default function Children() {
 						{/* Section Tâches */}
 						<View style={styles.tasksSection}>
 							<Text style={styles.sectionTitle}>Ses tâches</Text>
-							
-							<View style={styles.taskCategory}>
-								<TouchableOpacity style={styles.taskCategoryHeader}>
-									<Text style={styles.taskIcon}>✅</Text>
-									<Text style={styles.taskCategoryTitle}>Tâches régulières</Text>
-									<TouchableOpacity style={styles.addButton}>
-										<Text style={styles.addButtonText}>+</Text>
-									</TouchableOpacity>
-								</TouchableOpacity>
-							</View>
 
-							<View style={styles.taskCategory}>
-								<TouchableOpacity style={styles.taskCategoryHeader}>
-									<Text style={styles.taskIcon}>🚀</Text>
-									<Text style={styles.taskCategoryTitle}>Défis ponctuels</Text>
-									<TouchableOpacity style={styles.addButton}>
-										<Text style={styles.addButtonText}>+</Text>
-									</TouchableOpacity>
-								</TouchableOpacity>
-							</View>
+							{loadingTasks ? (
+								<ActivityIndicator size="small" color="#007AFF" />
+							) : (
+								<>
+									{/* Tâches régulières */}
+									<View style={styles.taskCategory}>
+										<TouchableOpacity style={styles.taskCategoryHeader}>
+											<Text style={styles.taskIcon}>✅</Text>
+											<Text style={styles.taskCategoryTitle}>
+												Tâches régulières ({regularTasks.length})
+											</Text>
+											<TouchableOpacity
+												style={styles.addButton}
+												onPress={() =>
+													router.push({
+														pathname: "/(app)/children/create-task",
+														params: { childId: selectedChildId, type: "REGULAR" },
+													})
+												}
+											>
+												<Text style={styles.addButtonText}>+</Text>
+											</TouchableOpacity>
+										</TouchableOpacity>
+										{regularTasks.map(renderTask)}
+									</View>
 
-							{/* Message aucune tâche */}
-							<View style={styles.infoCard}>
-								<Text style={styles.infoIcon}>📝</Text>
-								<Text style={styles.infoTitle}>Aucune tâche pour l'instant</Text>
-								<Text style={styles.infoText}>
-									Ajoutez une tâche pour aider votre enfant à gagner en autonomie (et peut-être quelques pièces 💰).
-								</Text>
-							</View>
+									{/* Défis ponctuels */}
+									<View style={styles.taskCategory}>
+										<TouchableOpacity style={styles.taskCategoryHeader}>
+											<Text style={styles.taskIcon}>🚀</Text>
+											<Text style={styles.taskCategoryTitle}>
+												Défis ponctuels ({punctualTasks.length})
+											</Text>
+											<TouchableOpacity
+												style={styles.addButton}
+												onPress={() =>
+													router.push({
+														pathname: "/(app)/children/create-task",
+														params: { childId: selectedChildId, type: "PUNCTUAL" },
+													})
+												}
+											>
+												<Text style={styles.addButtonText}>+</Text>
+											</TouchableOpacity>
+										</TouchableOpacity>
+										{punctualTasks.map(renderTask)}
+									</View>
+
+									{/* Message aucune tâche */}
+									{tasks.length === 0 && (
+										<View style={styles.infoCard}>
+											<Text style={styles.infoIcon}>📝</Text>
+											<Text style={styles.infoTitle}>Aucune tâche pour l'instant</Text>
+											<Text style={styles.infoText}>
+												Ajoutez une tâche pour aider votre enfant à gagner en autonomie (et
+												peut-être quelques pièces 💰).
+											</Text>
+										</View>
+									)}
+								</>
+							)}
 						</View>
 					</>
 				)}
 
 				<View style={styles.bottomPadding} />
 			</ScrollView>
+
+			{/* Bouton flottant pour ajouter une tâche */}
+			<TouchableOpacity
+				style={styles.addTaskButton}
+				onPress={() => {
+					router.push({
+						pathname: "/(app)/children/create-task",
+						params: { childId: selectedChildId },
+					});
+				}}
+			>
+				<Text style={styles.addTaskButtonText}>+ Ajouter une tâche</Text>
+			</TouchableOpacity>
 
 			{/* Modal de sélection d'enfant */}
 			<Modal
@@ -178,34 +259,27 @@ export default function Children() {
 				animationType="fade"
 				onRequestClose={() => setShowPicker(false)}
 			>
-				<TouchableOpacity 
-					style={styles.modalOverlay}
-					activeOpacity={1}
-					onPress={() => setShowPicker(false)}
-				>
+				<TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowPicker(false)}>
 					<View style={styles.modalContent}>
 						<Text style={styles.modalTitle}>Sélectionner un enfant</Text>
 						{childAccounts.map((child) => (
 							<TouchableOpacity
 								key={child.id}
-								style={[
-									styles.modalOption,
-									selectedChildId === child.id && styles.modalOptionSelected
-								]}
+								style={[styles.modalOption, selectedChildId === child.id && styles.modalOptionSelected]}
 								onPress={() => {
 									setSelectedChildId(child.id);
 									setShowPicker(false);
 								}}
 							>
-								<Text style={[
-									styles.modalOptionText,
-									selectedChildId === child.id && styles.modalOptionTextSelected
-								]}>
+								<Text
+									style={[
+										styles.modalOptionText,
+										selectedChildId === child.id && styles.modalOptionTextSelected,
+									]}
+								>
 									{child.name}
 								</Text>
-								{selectedChildId === child.id && (
-									<Text style={styles.checkmark}>✓</Text>
-								)}
+								{selectedChildId === child.id && <Text style={styles.checkmark}>✓</Text>}
 							</TouchableOpacity>
 						))}
 					</View>
@@ -468,5 +542,70 @@ const styles = StyleSheet.create({
 	},
 	bottomPadding: {
 		height: 20,
+	},
+	addTaskButton: {
+		position: "absolute",
+		bottom: 30,
+		left: 20,
+		right: 20,
+		backgroundColor: "#6C5CE7",
+		padding: 16,
+		borderRadius: 12,
+		alignItems: "center",
+		shadowColor: "#000",
+		shadowOffset: { width: 0, height: 4 },
+		shadowOpacity: 0.25,
+		shadowRadius: 8,
+		elevation: 8,
+	},
+	addTaskButtonText: {
+		color: "#fff",
+		fontSize: 16,
+		fontWeight: "600",
+	},
+	taskItem: {
+		backgroundColor: "#f8f9fa",
+		padding: 12,
+		marginVertical: 4,
+		marginHorizontal: 16,
+		borderRadius: 8,
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
+	},
+	taskInfo: {
+		flex: 1,
+	},
+	taskDescription: {
+		fontSize: 14,
+		fontWeight: "500",
+		color: "#333",
+		marginBottom: 2,
+	},
+	taskReward: {
+		fontSize: 12,
+		color: "#6C5CE7",
+		fontWeight: "600",
+	},
+	taskStatus: {
+		width: 24,
+		height: 24,
+		borderRadius: 12,
+		borderWidth: 2,
+		borderColor: "#ddd",
+		justifyContent: "center",
+		alignItems: "center",
+	},
+	taskStatusCompleted: {
+		backgroundColor: "#4CAF50",
+		borderColor: "#4CAF50",
+	},
+	taskStatusText: {
+		fontSize: 12,
+		color: "#ddd",
+	},
+	taskStatusTextCompleted: {
+		color: "#fff",
+		fontWeight: "bold",
 	},
 });
