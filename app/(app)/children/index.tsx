@@ -99,7 +99,7 @@ export default function Children() {
 	if (loading) {
 		return (
 			<View style={[styles.container, styles.center]}>
-				<ActivityIndicator size="large" color="#007AFF" />
+				<ActivityIndicator size="large" color="#6C5CE7" />
 				<Text style={styles.loadingText}>Chargement...</Text>
 			</View>
 		);
@@ -145,7 +145,16 @@ export default function Children() {
 
 						{/* Boutons actions */}
 						<View style={styles.actionButtons}>
-							<TouchableOpacity style={styles.primaryButton}>
+							<TouchableOpacity 
+								style={styles.primaryButton}
+								onPress={() => router.push({
+									pathname: "/(app)/children/add-money",
+									params: { 
+										childId: selectedChildId, 
+										childName: selectedChild.name 
+									},
+								})}
+							>
 								<Text style={styles.primaryButtonIcon}>💳</Text>
 								<Text style={styles.primaryButtonText}>Verser de l'argent</Text>
 							</TouchableOpacity>
@@ -525,7 +534,7 @@ const styles = StyleSheet.create({
 		marginBottom: 4,
 	},
 	modalOptionSelected: {
-		backgroundColor: "#007AFF",
+		backgroundColor: "#6C5CE7",
 	},
 	modalOptionText: {
 		fontSize: 16,
