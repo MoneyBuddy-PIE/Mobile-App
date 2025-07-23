@@ -1,8 +1,11 @@
-import React from "react";
+// components/BottomNavigation.tsx
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Pressable, Platform } from "react-native";
 import { usePathname, Link } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { UserStorage } from "@/utils/storage";
+import { SubAccount } from "@/types/Account";
 
 interface NavItem {
 	route: string;
@@ -35,6 +38,27 @@ const navItems: NavItem[] = [
 export const BottomNavigation: React.FC = () => {
 	const pathname = usePathname();
 	const insets = useSafeAreaInsets();
+	const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
+
+	useEffect(() => {
+		loadSubAccount();
+	}, []);
+
+	const loadSubAccount = async () => {
+		try {
+			const accountData = await UserStorage.getSubAccount();
+			setSubAccount(accountData);
+		} catch (error) {
+			console.error("Error loading sub-account:", error);
+		}
+	};
+
+	const filteredNavItems = navItems.filter((item) => {
+		if (subAccount?.role === "CHILD" && item.route === "/(app)/children") {
+			return false;
+		}
+		return true;
+	});
 
 	const isActive = (route: string) => {
 		const cleanPath = route.replace("/(app)", "");
@@ -43,7 +67,7 @@ export const BottomNavigation: React.FC = () => {
 
 	return (
 		<View style={[styles.container, { paddingBottom: insets.bottom || 20 }]}>
-			{navItems.map((item) => {
+			{filteredNavItems.map((item) => {
 				const active = isActive(item.route);
 
 				return (
@@ -51,7 +75,7 @@ export const BottomNavigation: React.FC = () => {
 						key={item.route}
 						href={item.route}
 						asChild
-						replace
+						replace // Use replace instead of push to avoid stacking
 						style={styles.navItem}
 					>
 						<Pressable>
