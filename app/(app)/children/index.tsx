@@ -15,6 +15,7 @@ import { SubAccount } from "@/types/Account";
 import { router } from "expo-router";
 import { tasksService } from "@/services/tasksService";
 import { Task } from "@/types/Task";
+import { logger } from "@/utils/logger";
 
 export default function Children() {
 	const { user, refreshUserData } = useAuthContext();
@@ -59,8 +60,8 @@ export default function Children() {
 
 		setLoadingTasks(true);
 		try {
-			const childTasks = await tasksService.getTasksByChild(selectedChildId, selectedChild.role);
-			console.log("Child tasks loaded:", childTasks);
+			const childTasks = await tasksService.getTasksByChild(selectedChildId, "PARENT");
+			logger.log("Child tasks loaded:", childTasks);
 			setTasks(childTasks);
 		} catch (error) {
 			console.error("Error loading child tasks:", error);
