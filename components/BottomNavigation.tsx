@@ -27,6 +27,12 @@ const navItems: NavItem[] = [
 		iconNameActive: "people",
 	},
 	{
+		route: "/(app)/courses",
+		label: "Cours",
+		iconName: "book-outline",
+		iconNameActive: "book",
+	},
+	{
 		route: "/(app)/profile",
 		label: "Profile",
 		iconName: "person-outline",
@@ -70,20 +76,14 @@ export const BottomNavigation: React.FC = () => {
 				const active = isActive(item.route);
 
 				return (
-					<Link
-						key={item.route}
-						href={item.route}
-						asChild
-						replace
-						style={styles.navItem}
-					>
+					<Link key={item.route} href={item.route} asChild replace style={styles.navItem}>
 						<Pressable>
 							{({ pressed }) => (
 								<>
 									<Ionicons
 										name={active ? item.iconNameActive : item.iconName}
 										size={24}
-										color={active ? "#007AFF" : "#666"}
+										color={active ? "#6C5CE7" : "#666"}
 										style={[pressed && styles.pressedIcon]}
 									/>
 									<Text
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
 		marginTop: 4,
 	},
 	activeLabel: {
-		color: "#007AFF",
+		color: "#6C5CE7",
 		fontWeight: "700",
 	},
 	pressedLabel: {

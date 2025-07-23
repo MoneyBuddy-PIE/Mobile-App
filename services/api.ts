@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from "axios";
 import { TokenStorage } from "@/utils/storage";
 import { router } from "expo-router";
+import { logger } from "@/utils/logger";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
@@ -58,6 +59,14 @@ class ApiService {
 				if (token) {
 					config.headers.Authorization = `Bearer ${token}`;
 				}
+
+				logger.log("Request config:", {
+					url: config.url,
+					method: config.method,
+					headers: config.headers,
+					data: config.data,
+					params: config.params,
+				});
 
 				return config;
 			},

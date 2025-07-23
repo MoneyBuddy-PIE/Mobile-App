@@ -55,11 +55,11 @@ export default function Children() {
 	};
 
 	const loadChildTasks = async () => {
-		if (!selectedChildId) return;
+		if (!selectedChildId || !selectedChild) return;
 
 		setLoadingTasks(true);
 		try {
-			const childTasks = await tasksService.getTasksByChild(selectedChildId);
+			const childTasks = await tasksService.getTasksByChild(selectedChildId, selectedChild.role);
 			console.log("Child tasks loaded:", childTasks);
 			setTasks(childTasks);
 		} catch (error) {

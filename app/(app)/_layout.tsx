@@ -15,6 +15,7 @@ export default function AppLayout() {
 				<Stack screenOptions={{ headerShown: false }}>
 					<Stack.Screen name="accounts" />
 					<Stack.Screen name="children" />
+					<Stack.Screen name="courses" />
 					<Stack.Screen name="profile" />
 					<Stack.Screen name="home" />
 				</Stack>

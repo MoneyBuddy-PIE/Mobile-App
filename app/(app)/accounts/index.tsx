@@ -61,7 +61,7 @@ export default function Accounts() {
 	const navigateToAccount = async (account: SubAccount) => {
 		if (account.role === "CHILD") {
 			try {
-				const response = await authService.subAccountLogin(account.id);
+				const response = await authService.subAccountLogin(account.id, undefined);
 				await TokenStorage.setSubAccountToken(response.token);
 				const accountDetails = await userService.getSubAccount();
 				await UserStorage.setSubAccount(accountDetails);
