@@ -9,6 +9,9 @@ import {
 	ActivityIndicator,
 	SafeAreaView,
 } from "react-native";
+import { useFonts } from "expo-font";
+import { DMSans_700Bold, DMSans_400Regular, DMSans_600SemiBold } from "@expo-google-fonts/dm-sans";
+import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { authService } from "@/services/authService";
 import { userService } from "@/services/userService";
@@ -25,6 +28,16 @@ export default function PinEntry() {
 	const [error, setError] = useState("");
 	const inputRef = useRef<TextInput>(null);
 
+	const [fontsLoaded] = useFonts({
+		DMSans_700Bold,
+		DMSans_400Regular,
+		DMSans_600SemiBold,
+	});
+
+	const fontStylesTitle = fontsLoaded ? { fontFamily: "DMSans_700Bold" } : {};
+	const fontStylesRegular = fontsLoaded ? { fontFamily: "DMSans_400Regular" } : {};
+	const fontStylesSemiBold = fontsLoaded ? { fontFamily: "DMSans_600SemiBold" } : {};
+
 	useEffect(() => {
 		// Focus on input when page loads
 		setTimeout(() => {
@@ -40,14 +53,16 @@ export default function PinEntry() {
 
 			// Auto-submit when 4 digits are entered
 			if (value.length === 4) {
-				handleSubmit(value);
+				setTimeout(() => {
+					handleSubmit(value);
+				}, 200);
 			}
 		}
 	};
 
 	const handleSubmit = async (pinValue: string = pin) => {
 		if (pinValue.length !== 4) {
-			setError("Please enter a 4-digit PIN");
+			setError("Veuillez saisir un code à 4 chiffres");
 			return;
 		}
 
@@ -69,7 +84,7 @@ export default function PinEntry() {
 			router.replace("/(app)/home/parent");
 		} catch (error: any) {
 			logger.error("PIN verification failed:", error);
-			setError("Incorrect PIN");
+			setError("Oups, ce code ne semble pas fonctionner !");
 			setPin("");
 			// Refocus input after error
 			setTimeout(() => {
@@ -84,21 +99,36 @@ export default function PinEntry() {
 		router.back();
 	};
 
+	const getPinBoxStyle = (index: number) => {
+		const hasValue = pin.length > index;
+
+		if (error) {
+			return [styles.pinBox, styles.pinBoxError];
+		} else if (hasValue || pin.length === index) {
+			return [styles.pinBox, styles.pinBoxActive];
+		} else {
+			return [styles.pinBox];
+		}
+	};
+
 	return (
 		<SafeAreaView style={styles.container}>
+			{/* Header avec bouton fermer */}
 			<View style={styles.header}>
-				<TouchableOpacity onPress={handleCancel} style={styles.cancelButton}>
-					<Text style={styles.cancelText}>Cancel</Text>
+				<View style={styles.headerSpacer} />
+				<TouchableOpacity onPress={handleCancel} style={styles.closeButton}>
+					<Ionicons name="close" size={20} color="#fff" />
 				</TouchableOpacity>
 			</View>
 
 			<View style={styles.content}>
-				<View style={styles.iconContainer}>
-					<Text style={styles.icon}>🔒</Text>
+				{/* Titre et sous-titre */}
+				<View style={styles.titleContainer}>
+					<Text style={[styles.title, fontStylesTitle]}>Entrez votre code PIN</Text>
+					<Text style={[styles.subtitle, fontStylesRegular]}>
+						Saisissez votre code pour accéder à votre espace personnel.
+					</Text>
 				</View>
-
-				<Text style={styles.title}>Enter PIN</Text>
-				<Text style={styles.subtitle}>{accountName || "Account"} is protected by a PIN</Text>
 
 				{/* Hidden input */}
 				<TextInput
@@ -116,28 +146,51 @@ export default function PinEntry() {
 				<TouchableOpacity
 					style={styles.pinContainer}
 					onPress={() => inputRef.current?.focus()}
-					activeOpacity={0.8}
+					activeOpacity={1}
 				>
 					<View style={styles.pinDisplay}>
 						{[0, 1, 2, 3].map((index) => (
-							<View
-								key={index}
-								style={[
-									styles.pinBox,
-									pin.length === index && styles.pinBoxActive,
-									error && styles.pinBoxError,
-								]}
-							>
-								<View style={[styles.pinDot, pin.length > index && styles.pinDotFilled]} />
+							<View key={index} style={getPinBoxStyle(index)}>
+								{pin.length > index && <Text style={styles.pinStar}>*</Text>}
 							</View>
 						))}
 					</View>
 				</TouchableOpacity>
 
-				{error ? <Text style={styles.errorText}>{error}</Text> : <View style={styles.errorPlaceholder} />}
+				{/* Message d'erreur */}
+				{error && (
+					<View style={styles.errorContainer}>
+						<Ionicons name="information-circle" size={20} color="#FF6B6B" />
+						<Text style={[styles.errorText, fontStylesRegular]}>{error}</Text>
+					</View>
+				)}
 
-				{/* Loading indicator */}
-				{loading && <ActivityIndicator size="small" color="#007AFF" style={styles.loading} />}
+				{/* Espace flexible pour pousser le bouton en bas */}
+				<View style={styles.spacer} />
+
+				{/* Bouton d'accès */}
+				<TouchableOpacity
+					style={[
+						styles.accessButton,
+						pin.length === 4 && !loading ? styles.accessButtonActive : styles.accessButtonDisabled,
+					]}
+					onPress={() => handleSubmit()}
+					disabled={pin.length !== 4 || loading}
+				>
+					{loading ? (
+						<ActivityIndicator size="small" color="#fff" />
+					) : (
+						<Text
+							style={[
+								styles.accessButtonText,
+								fontStylesSemiBold,
+								pin.length === 4 ? styles.accessButtonTextActive : styles.accessButtonTextDisabled,
+							]}
+						>
+							Accéder à mon profil
+						</Text>
+					)}
+				</TouchableOpacity>
 			</View>
 		</SafeAreaView>
 	);
@@ -149,42 +202,45 @@ const styles = StyleSheet.create({
 		backgroundColor: "#f8f9fa",
 	},
 	header: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
 		paddingHorizontal: 20,
 		paddingTop: 10,
 		paddingBottom: 20,
 	},
-	cancelButton: {
-		alignSelf: "flex-start",
-		padding: 5,
+	headerSpacer: {
+		width: 44,
 	},
-	cancelText: {
-		fontSize: 16,
-		color: "#007AFF",
-		fontWeight: "600",
+	closeButton: {
+		width: 44,
+		height: 44,
+		backgroundColor: "#333",
+		borderRadius: 12,
+		justifyContent: "center",
+		alignItems: "center",
 	},
 	content: {
 		flex: 1,
 		paddingHorizontal: 40,
+		paddingTop: 40,
+	},
+	titleContainer: {
 		alignItems: "center",
-		paddingTop: 60,
-	},
-	iconContainer: {
-		marginBottom: 30,
-	},
-	icon: {
-		fontSize: 60,
+		marginBottom: 60,
 	},
 	title: {
 		fontSize: 28,
 		fontWeight: "bold",
 		color: "#333",
-		marginBottom: 8,
+		marginBottom: 16,
+		textAlign: "center",
 	},
 	subtitle: {
 		fontSize: 16,
 		color: "#666",
 		textAlign: "center",
-		marginBottom: 40,
+		lineHeight: 22,
 		paddingHorizontal: 20,
 	},
 	hiddenInput: {
@@ -193,47 +249,73 @@ const styles = StyleSheet.create({
 		opacity: 0,
 	},
 	pinContainer: {
-		marginBottom: 20,
+		alignItems: "center",
+		marginBottom: 30,
 	},
 	pinDisplay: {
 		flexDirection: "row",
-		gap: 12,
+		gap: 16,
 	},
 	pinBox: {
-		width: 50,
-		height: 60,
+		width: 64,
+		height: 64,
 		borderRadius: 12,
 		backgroundColor: "#fff",
 		borderWidth: 2,
-		borderColor: "#ddd",
+		borderColor: "#e0e0e0",
 		justifyContent: "center",
 		alignItems: "center",
 	},
 	pinBoxActive: {
-		borderColor: "#007AFF",
+		borderColor: "#6C5CE7",
 	},
 	pinBoxError: {
-		borderColor: "#f44336",
+		borderColor: "#FF6B6B",
 	},
-	pinDot: {
-		width: 8,
-		height: 8,
-		borderRadius: 8,
-		backgroundColor: "#ddd",
+	pinStar: {
+		fontSize: 24,
+		color: "#333",
+		fontWeight: "bold",
 	},
-	pinDotFilled: {
-		backgroundColor: "#007AFF",
+	errorContainer: {
+		flexDirection: "row",
+		alignItems: "center",
+		backgroundColor: "#FFE5E5",
+		paddingHorizontal: 16,
+		paddingVertical: 12,
+		borderRadius: 12,
+		gap: 8,
+		marginBottom: 20,
 	},
 	errorText: {
-		color: "#f44336",
+		color: "#FF6B6B",
 		fontSize: 14,
-		textAlign: "center",
-		height: 20,
+		flex: 1,
 	},
-	errorPlaceholder: {
-		height: 20,
+	spacer: {
+		flex: 1,
 	},
-	loading: {
-		marginTop: 20,
+	accessButton: {
+		borderRadius: 12,
+		paddingVertical: 16,
+		paddingHorizontal: 32,
+		alignItems: "center",
+		marginBottom: 40,
+	},
+	accessButtonDisabled: {
+		backgroundColor: "#e0e0e0",
+	},
+	accessButtonActive: {
+		backgroundColor: "#6C5CE7",
+	},
+	accessButtonText: {
+		fontSize: 16,
+		fontWeight: "600",
+	},
+	accessButtonTextDisabled: {
+		color: "#999",
+	},
+	accessButtonTextActive: {
+		color: "#fff",
 	},
 });

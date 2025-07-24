@@ -9,11 +9,12 @@ import {
 	SafeAreaView,
 	RefreshControl,
 } from "react-native";
+import { useFonts } from "expo-font";
+import { DMSans_700Bold, DMSans_400Regular, DMSans_600SemiBold } from "@expo-google-fonts/dm-sans";
 import { router } from "expo-router";
 import { TokenStorage, UserStorage } from "@/utils/storage";
 import { Account, SubAccount } from "@/types/Account";
 import { useAuthContext } from "@/contexts/AuthContext";
-import AccountCard from "@/components/AccountCard";
 import { authService } from "@/services/authService";
 import { userService } from "@/services/userService";
 import { logger } from "@/utils/logger";
@@ -24,13 +25,21 @@ export default function Accounts() {
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
 
+	const [fontsLoaded] = useFonts({
+		DMSans_700Bold,
+		DMSans_400Regular,
+		DMSans_600SemiBold,
+	});
+
+	const fontStylesTitle = fontsLoaded ? { fontFamily: "DMSans_700Bold" } : {};
+	const fontStylesRegular = fontsLoaded ? { fontFamily: "DMSans_400Regular" } : {};
+	const fontStylesSemiBold = fontsLoaded ? { fontFamily: "DMSans_600SemiBold" } : {};
+
 	useEffect(() => {
-		// Always fetch fresh data on mount
 		loadUserProfile();
 	}, []);
 
 	useEffect(() => {
-		// Update local state when context user changes
 		logger.log("Context user updated:", contextUser);
 		setUser(contextUser);
 	}, [contextUser]);
@@ -54,10 +63,6 @@ export default function Accounts() {
 		} finally {
 			setRefreshing(false);
 		}
-	};
-
-	const handleLogout = async () => {
-		await logout();
 	};
 
 	const navigateToAccount = async (account: SubAccount) => {
@@ -84,11 +89,54 @@ export default function Accounts() {
 		}
 	};
 
+	const getRoleIcon = (role: string) => {
+		switch (role.toUpperCase()) {
+			case "PARENT":
+			case "OWNER":
+				return "🍎";
+			case "CHILD":
+				return "🔸";
+			case "ADMIN":
+				return "👑";
+			default:
+				return "👤";
+		}
+	};
+
+	const getRoleDisplayName = (role: string) => {
+		switch (role.toUpperCase()) {
+			case "OWNER":
+				return "Parent";
+			case "PARENT":
+				return "Parent";
+			case "CHILD":
+				return "Enfant";
+			case "ADMIN":
+				return "Admin";
+			default:
+				return role;
+		}
+	};
+
+	const getRoleBadgeColor = (role: string) => {
+		switch (role.toUpperCase()) {
+			case "PARENT":
+			case "OWNER":
+				return "#4A90E2";
+			case "CHILD":
+				return "#00D4AA";
+			case "ADMIN":
+				return "#FF9800";
+			default:
+				return "#666";
+		}
+	};
+
 	if (loading) {
 		return (
 			<View style={[styles.container, styles.center]}>
-				<ActivityIndicator size="large" color="#007AFF" />
-				<Text style={styles.loadingText}>Loading accounts...</Text>
+				<ActivityIndicator size="large" color="#6C5CE7" />
+				<Text style={[styles.loadingText, fontStylesRegular]}>Chargement des comptes...</Text>
 			</View>
 		);
 	}
@@ -98,35 +146,49 @@ export default function Accounts() {
 			<ScrollView
 				style={styles.content}
 				showsVerticalScrollIndicator={false}
-				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#007AFF" />}
+				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6C5CE7" />}
 			>
-				{/* Sub Accounts Section */}
-				<View style={styles.section}>
-					<Text style={styles.sectionTitle}>Sub-Accounts ({user?.subAccounts?.length || 0})</Text>
-					<Text style={styles.sectionSubtitle}>Select an account to continue</Text>
+				{/* Header */}
+				<View style={styles.header}>
+					<Text style={[styles.title, fontStylesTitle]}>Qui se connecte ?</Text>
+					<Text style={[styles.subtitle, fontStylesRegular]}>
+						Chaque profil a son propre tableau de bord et ses propres missions !
+					</Text>
 				</View>
 
 				{/* Account Cards */}
 				<View style={styles.cardsContainer}>
 					{user?.subAccounts && user.subAccounts.length > 0 ? (
 						user.subAccounts.map((account) => (
-							<AccountCard
+							<TouchableOpacity
 								key={account.id}
-								account={account}
+								style={styles.accountCard}
 								onPress={() => navigateToAccount(account)}
-							/>
+								activeOpacity={0.7}
+							>
+								<View style={styles.iconContainer}>
+									<Text style={styles.accountIcon}>{getRoleIcon(account.role)}</Text>
+								</View>
+
+								<Text style={[styles.accountName, fontStylesSemiBold]}>{account.name}</Text>
+
+								<View style={[styles.roleBadge, { backgroundColor: getRoleBadgeColor(account.role) }]}>
+									<Text style={[styles.roleText, fontStylesSemiBold]}>
+										{getRoleDisplayName(account.role)}
+									</Text>
+								</View>
+							</TouchableOpacity>
 						))
 					) : (
 						<View style={styles.emptyState}>
-							<Text style={styles.emptyTitle}>No accounts found</Text>
-							<Text style={styles.emptyText}>
-								You don't have any sub-accounts yet. Create one to get started.
+							<Text style={[styles.emptyTitle, fontStylesTitle]}>Aucun compte trouvé</Text>
+							<Text style={[styles.emptyText, fontStylesRegular]}>
+								Vous n'avez pas encore de sous-comptes. Créez-en un pour commencer.
 							</Text>
 						</View>
 					)}
 				</View>
 
-				{/* Add some bottom padding */}
 				<View style={styles.bottomPadding} />
 			</ScrollView>
 		</SafeAreaView>
@@ -152,98 +214,98 @@ const styles = StyleSheet.create({
 		color: "#666",
 	},
 	header: {
-		flexDirection: "row",
-		justifyContent: "space-between",
-		alignItems: "flex-start",
-		paddingTop: 20,
-		paddingBottom: 24,
+		paddingTop: 60,
+		paddingBottom: 40,
+		alignItems: "center",
 	},
 	title: {
 		fontSize: 28,
 		fontWeight: "bold",
 		color: "#333",
-		marginBottom: 4,
+		marginBottom: 12,
+		textAlign: "center",
 	},
 	subtitle: {
 		fontSize: 16,
 		color: "#666",
-	},
-	logoutButton: {
-		paddingHorizontal: 16,
-		paddingVertical: 8,
-		backgroundColor: "#fff",
-		borderRadius: 8,
-		borderWidth: 1,
-		borderColor: "#ddd",
-	},
-	logoutText: {
-		fontSize: 14,
-		color: "#f44336",
-		fontWeight: "600",
-	},
-	section: {
-		marginBottom: 20,
-	},
-	sectionTitle: {
-		fontSize: 22,
-		fontWeight: "bold",
-		color: "#333",
-		marginBottom: 4,
-	},
-	sectionSubtitle: {
-		fontSize: 16,
-		color: "#666",
+		textAlign: "center",
+		lineHeight: 22,
+		paddingHorizontal: 20,
 	},
 	cardsContainer: {
+		flexDirection: "row",
+		flexWrap: "wrap",
+		justifyContent: "space-between",
 		gap: 16,
-		marginBottom: 20,
+	},
+	accountCard: {
+		backgroundColor: "#fff",
+		borderRadius: 16,
+		padding: 24,
+		alignItems: "center",
+		width: "47%",
+		minHeight: 160,
+		justifyContent: "space-between",
+		shadowColor: "#BFD0EA",
+		shadowOffset: {
+			width: 0,
+			height: 4,
+		},
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 4,
+	},
+	iconContainer: {
+		width: 60,
+		height: 60,
+		borderRadius: 16,
+		backgroundColor: "#f8f9fa",
+		justifyContent: "center",
+		alignItems: "center",
+		marginBottom: 16,
+	},
+	accountIcon: {
+		fontSize: 32,
+	},
+	accountName: {
+		fontSize: 18,
+		fontWeight: "600",
+		color: "#333",
+		textAlign: "center",
+		marginBottom: 12,
+	},
+	roleBadge: {
+		paddingHorizontal: 12,
+		paddingVertical: 6,
+		borderRadius: 12,
+		minWidth: 80,
+		alignItems: "center",
+	},
+	roleText: {
+		color: "#fff",
+		fontSize: 14,
+		fontWeight: "600",
 	},
 	emptyState: {
 		backgroundColor: "#fff",
 		borderRadius: 16,
 		padding: 40,
 		alignItems: "center",
-		marginBottom: 20,
+		width: "100%",
+		marginTop: 40,
 	},
 	emptyTitle: {
-		fontSize: 18,
+		fontSize: 20,
 		fontWeight: "bold",
 		color: "#333",
-		marginBottom: 8,
+		marginBottom: 12,
+		textAlign: "center",
 	},
 	emptyText: {
 		fontSize: 16,
 		color: "#666",
 		textAlign: "center",
 		lineHeight: 22,
-	},
-	addCard: {
-		backgroundColor: "#fff",
-		borderRadius: 16,
-		padding: 20,
-		alignItems: "center",
-		borderWidth: 2,
-		borderColor: "#007AFF",
-		borderStyle: "dashed",
-	},
-	addIconContainer: {
-		width: 48,
-		height: 48,
-		borderRadius: 24,
-		backgroundColor: "#007AFF",
-		justifyContent: "center",
-		alignItems: "center",
-		marginBottom: 12,
-	},
-	addIcon: {
-		fontSize: 24,
-		color: "#fff",
-		fontWeight: "bold",
-	},
-	addCardTitle: {
-		fontSize: 16,
-		fontWeight: "600",
-		color: "#007AFF",
 	},
 	bottomPadding: {
 		height: 40,
