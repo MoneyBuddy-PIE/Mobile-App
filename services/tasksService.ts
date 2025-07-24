@@ -37,8 +37,6 @@ export const tasksService = {
 
 	// Récupérer les tâches d'un enfant spécifique
 	async getTasksByChild(childId: string, role: string): Promise<Task[]> {
-		logger.log(`Fetching tasks for child ID: ${childId} with role: ${role}`);
-		if (role === "OWNER") role = "PARENT"
 		const allTasks = await this.getAllTasks(role);
 		logger.log("All tasks loaded:", allTasks);
 		return allTasks.filter((task) => task.subaccountIdChild === childId);

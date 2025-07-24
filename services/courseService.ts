@@ -19,7 +19,6 @@ export const courseService = {
 
 	// Récupérer les cours par rôle
 	async getCoursesByRole(role: string): Promise<Course[]> {
-		if(role === "OWNER") role = "PARENT"; 
 		const allCourses = await this.getAllCourses();
 		return allCourses.filter((course) => course.subAccountRole === role);
 	},

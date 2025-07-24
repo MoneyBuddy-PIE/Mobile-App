@@ -16,6 +16,7 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import AccountCard from "@/components/AccountCard";
 import { authService } from "@/services/authService";
 import { userService } from "@/services/userService";
+import { logger } from "@/utils/logger";
 
 export default function Accounts() {
 	const { logout, user: contextUser, refreshUserData } = useAuthContext();
@@ -30,6 +31,7 @@ export default function Accounts() {
 
 	useEffect(() => {
 		// Update local state when context user changes
+		logger.log("Context user updated:", contextUser);
 		setUser(contextUser);
 	}, [contextUser]);
 

@@ -13,33 +13,6 @@ interface NavItem {
 	iconNameActive: keyof typeof Ionicons.glyphMap;
 }
 
-const navItems: NavItem[] = [
-	{
-		route: "/(app)/home",
-		label: "Home",
-		iconName: "home-outline",
-		iconNameActive: "home",
-	},
-	{
-		route: "/(app)/children",
-		label: "Enfants",
-		iconName: "people-outline",
-		iconNameActive: "people",
-	},
-	{
-		route: "/(app)/courses",
-		label: "Cours",
-		iconName: "book-outline",
-		iconNameActive: "book",
-	},
-	{
-		route: "/(app)/profile",
-		label: "Profile",
-		iconName: "person-outline",
-		iconNameActive: "person",
-	},
-];
-
 export const BottomNavigation: React.FC = () => {
 	const pathname = usePathname();
 	const insets = useSafeAreaInsets();
@@ -58,12 +31,53 @@ export const BottomNavigation: React.FC = () => {
 		}
 	};
 
-	const filteredNavItems = navItems.filter((item) => {
-		if (subAccount?.role === "CHILD" && item.route === "/(app)/children") {
-			return false;
+	// Définir les routes en fonction du rôle du sous-compte
+	const getNavItems = (): NavItem[] => {
+		const homeRoute = subAccount?.role === "CHILD" ? "/(app)/home/child" : "/(app)/home/parent";
+
+		const baseNavItems: NavItem[] = [
+			{
+				route: homeRoute,
+				label: "Home",
+				iconName: "home-outline",
+				iconNameActive: "home",
+			},
+			{
+				route: "/(app)/courses",
+				label: "Cours",
+				iconName: "book-outline",
+				iconNameActive: "book",
+			},
+			{
+				route: "/(app)/profile",
+				label: "Profile",
+				iconName: "person-outline",
+				iconNameActive: "person",
+			},
+		];
+
+		if (subAccount?.role === "CHILD") {
+			// Pour les enfants : ajouter l'onglet Revenus
+			baseNavItems.splice(1, 0, {
+				route: "/(app)/revenus",
+				label: "Revenus",
+				iconName: "wallet-outline",
+				iconNameActive: "wallet",
+			});
+		} else {
+			// Pour les parents : ajouter l'onglet Enfants
+			baseNavItems.splice(1, 0, {
+				route: "/(app)/children",
+				label: "Enfants",
+				iconName: "people-outline",
+				iconNameActive: "people",
+			});
 		}
-		return true;
-	});
+
+		return baseNavItems;
+	};
+
+	const navItems = getNavItems();
 
 	const isActive = (route: string) => {
 		const cleanPath = route.replace("/(app)", "");
@@ -72,7 +86,7 @@ export const BottomNavigation: React.FC = () => {
 
 	return (
 		<View style={[styles.container, { paddingBottom: insets.bottom || 20 }]}>
-			{filteredNavItems.map((item) => {
+			{navItems.map((item) => {
 				const active = isActive(item.route);
 
 				return (

@@ -128,14 +128,14 @@ class ApiService {
 				}
 
 				if (!error.response) {
-					console.error("Network error:", error.message);
+					logger.error("Network error:", error.message);
 					return Promise.reject({
 						message: "Network error. Please check your connection.",
 						isNetworkError: true,
 					});
 				}
 
-				console.error("API Error:", {
+				logger.error("API Error:", {
 					status: error.response?.status,
 					data: error.response?.data,
 					url: error.config?.url,
@@ -174,8 +174,11 @@ class ApiService {
 	async post<T>(url: string, data?: any): Promise<T> {
 		try {
 			const response = await this.api.post(url, data);
+			logger.log("POST response:", response);
 			return response.data;
 		} catch (error) {
+			console.error("POST request error:", error);
+			logger.error("POST request error:", error);
 			this.handleApiError(error);
 			throw error;
 		}

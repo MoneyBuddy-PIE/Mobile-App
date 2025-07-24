@@ -13,6 +13,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { authService } from "@/services/authService";
 import { userService } from "@/services/userService";
 import { TokenStorage, UserStorage } from "@/utils/storage";
+import { logger } from "@/utils/logger";
 
 export default function PinEntry() {
 	const params = useLocalSearchParams();
@@ -56,6 +57,7 @@ export default function PinEntry() {
 		try {
 			// Login to sub-account with PIN
 			const response = await authService.subAccountLogin(accountId, pinValue);
+			logger.log("Sub-account login successful:", response);
 			await TokenStorage.setSubAccountToken(response.token);
 
 			// Get sub-account details
@@ -66,7 +68,7 @@ export default function PinEntry() {
 			// Navigate to home
 			router.replace("/(app)/home/parent");
 		} catch (error: any) {
-			console.error("PIN verification failed:", error);
+			logger.error("PIN verification failed:", error);
 			setError("Incorrect PIN");
 			setPin("");
 			// Refocus input after error
