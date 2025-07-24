@@ -1,5 +1,16 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, RefreshControl } from "react-native";
+import {
+	View,
+	Text,
+	TouchableOpacity,
+	StyleSheet,
+	ScrollView,
+	ActivityIndicator,
+	RefreshControl,
+	SafeAreaView,
+} from "react-native";
+import { useFonts } from "expo-font";
+import { DMSans_700Bold, DMSans_400Regular, DMSans_600SemiBold } from "@expo-google-fonts/dm-sans";
 import { Link, router } from "expo-router";
 import { UserStorage } from "@/utils/storage";
 import { SubAccount } from "@/types/Account";
@@ -13,15 +24,25 @@ interface ChildSummary {
 	loading: boolean;
 }
 
-export default function Home() {
+export default function ParentHome() {
 	const { user, refreshUserData } = useAuthContext();
 	const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
 	const [childrenSummary, setChildrenSummary] = useState<ChildSummary[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
 
-	const childAccounts = useMemo(() => 
-		user?.subAccounts?.filter((account) => account.role === "CHILD") || [], 
+	const [fontsLoaded] = useFonts({
+		DMSans_700Bold,
+		DMSans_400Regular,
+		DMSans_600SemiBold,
+	});
+
+	const fontStylesTitle = fontsLoaded ? { fontFamily: "DMSans_700Bold" } : {};
+	const fontStylesRegular = fontsLoaded ? { fontFamily: "DMSans_400Regular" } : {};
+	const fontStylesSemiBold = fontsLoaded ? { fontFamily: "DMSans_600SemiBold" } : {};
+
+	const childAccounts = useMemo(
+		() => user?.subAccounts?.filter((account) => account.role === "CHILD") || [],
 		[user?.subAccounts]
 	);
 
@@ -40,7 +61,7 @@ export default function Home() {
 		if (childAccounts.length === 0) return;
 
 		// Initialiser le state avec les enfants
-		const initialSummaries: ChildSummary[] = childAccounts.map(child => ({
+		const initialSummaries: ChildSummary[] = childAccounts.map((child) => ({
 			child,
 			tasksCount: 0,
 			completedTasksCount: 0,
@@ -53,23 +74,25 @@ export default function Home() {
 			const child = childAccounts[i];
 			try {
 				const tasks = await tasksService.getTasksByChild(child.id, "PARENT");
-				const completedTasks = tasks.filter(task => task.done);
-				
-				setChildrenSummary(prev => prev.map((summary, index) => 
-					index === i 
-						? { 
-							...summary, 
-							tasksCount: tasks.length, 
-							completedTasksCount: completedTasks.length,
-							loading: false 
-						}
-						: summary
-				));
+				const completedTasks = tasks.filter((task) => task.done);
+
+				setChildrenSummary((prev) =>
+					prev.map((summary, index) =>
+						index === i
+							? {
+									...summary,
+									tasksCount: tasks.length,
+									completedTasksCount: completedTasks.length,
+									loading: false,
+							  }
+							: summary
+					)
+				);
 			} catch (error) {
 				console.error(`Error loading tasks for child ${child.id}:`, error);
-				setChildrenSummary(prev => prev.map((summary, index) => 
-					index === i ? { ...summary, loading: false } : summary
-				));
+				setChildrenSummary((prev) =>
+					prev.map((summary, index) => (index === i ? { ...summary, loading: false } : summary))
+				);
 			}
 		}
 	}, [childAccounts]);
@@ -95,72 +118,70 @@ export default function Home() {
 		}
 	}, [refreshUserData]);
 
+	const getGreeting = () => {
+		const hour = new Date().getHours();
+		if (hour < 12) return "Bonjour";
+		if (hour < 18) return "Bon après-midi";
+		return "Bonsoir";
+	};
+
+	const getTotalMoney = () => {
+		return childAccounts.reduce((total, child) => {
+			return total + parseFloat(child.money || "0");
+		}, 0);
+	};
+
+	const getTotalTasks = () => {
+		return childrenSummary.reduce((total, summary) => {
+			return total + summary.tasksCount;
+		}, 0);
+	};
+
+	const getTotalCompletedTasks = () => {
+		return childrenSummary.reduce((total, summary) => {
+			return total + summary.completedTasksCount;
+		}, 0);
+	};
+
 	const renderChildCard = (summary: ChildSummary) => {
 		const { child, tasksCount, completedTasksCount, loading: childLoading } = summary;
 		const money = parseFloat(child.money || "0");
 		const completionRate = tasksCount > 0 ? Math.round((completedTasksCount / tasksCount) * 100) : 0;
 
 		return (
-			<TouchableOpacity
-				key={child.id}
-				style={styles.childCard}
-				onPress={() => router.push({
-					pathname: "/(app)/children",
-					params: { selectedChildId: child.id }
-				})}
-			>
+			<TouchableOpacity key={child.id} style={styles.childCard} onPress={() => router.push("/(app)/children")}>
 				<View style={styles.childHeader}>
 					<View style={styles.childIconContainer}>
 						<Text style={styles.childIcon}>👶</Text>
 					</View>
 					<View style={styles.childInfo}>
-						<Text style={styles.childName}>{child.name}</Text>
-						<Text style={styles.childRole}>Enfant</Text>
+						<Text style={[styles.childName, fontStylesSemiBold]}>{child.name}</Text>
+						<Text style={[styles.childMoney, fontStylesRegular]}>{money.toFixed(2)}€</Text>
 					</View>
-					<Text style={styles.arrowIcon}>→</Text>
 				</View>
 
 				<View style={styles.childStats}>
-					{/* Argent de poche */}
-					<View style={styles.stat}>
-						<Text style={styles.statIcon}>💰</Text>
-						<Text style={styles.statValue}>{money.toFixed(2)}€</Text>
-						<Text style={styles.statLabel}>Argent de poche</Text>
-					</View>
-
-					{/* Tâches */}
 					<View style={styles.stat}>
 						{childLoading ? (
 							<ActivityIndicator size="small" color="#6C5CE7" />
 						) : (
 							<>
-								<Text style={styles.statIcon}>📝</Text>
-								<Text style={styles.statValue}>{completedTasksCount}/{tasksCount}</Text>
-								<Text style={styles.statLabel}>Tâches réalisées</Text>
+								<Text style={[styles.statValue, fontStylesSemiBold]}>
+									{completedTasksCount}/{tasksCount}
+								</Text>
+								<Text style={[styles.statLabel, fontStylesRegular]}>Tâches</Text>
 							</>
 						)}
 					</View>
-
-					{/* Progression */}
 					{tasksCount > 0 && (
-						<View style={styles.stat}>
-							<Text style={styles.statIcon}>🎯</Text>
-							<Text style={styles.statValue}>{completionRate}%</Text>
-							<Text style={styles.statLabel}>Progression</Text>
+						<View style={styles.progressContainer}>
+							<View style={styles.progressBar}>
+								<View style={[styles.progressFill, { width: `${completionRate}%` }]} />
+							</View>
+							<Text style={[styles.progressText, fontStylesRegular]}>{completionRate}%</Text>
 						</View>
 					)}
 				</View>
-
-				{/* Barre de progression */}
-				{tasksCount > 0 && (
-					<View style={styles.progressContainer}>
-						<View style={styles.progressTrack}>
-							<View 
-								style={[styles.progressFill, { width: `${completionRate}%` }]} 
-							/>
-						</View>
-					</View>
-				)}
 			</TouchableOpacity>
 		);
 	};
@@ -168,79 +189,121 @@ export default function Home() {
 	if (loading) {
 		return (
 			<View style={[styles.container, styles.center]}>
-				<ActivityIndicator size="large" color="#007AFF" />
-				<Text style={styles.loadingText}>Chargement...</Text>
+				<ActivityIndicator size="large" color="#6C5CE7" />
+				<Text style={[styles.loadingText, fontStylesRegular]}>Chargement...</Text>
 			</View>
 		);
 	}
 
 	return (
-		<View style={styles.container}>
-			<ScrollView 
-				style={styles.content} 
+		<SafeAreaView style={styles.container}>
+			<ScrollView
+				style={styles.content}
 				showsVerticalScrollIndicator={false}
-				refreshControl={
-					<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#007AFF" />
-				}
+				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6C5CE7" />}
 			>
 				{/* Header */}
 				<View style={styles.header}>
-					<Text style={styles.welcomeText}>Bonjour</Text>
-					<Text style={styles.nameText}>{subAccount?.name || "Parent"}</Text>
-					<Text style={styles.roleText}>Compte {subAccount?.role || "PARENT"}</Text>
+					<Text style={[styles.greeting, fontStylesRegular]}>{getGreeting()}</Text>
+					<Text style={[styles.nameText, fontStylesTitle]}>{subAccount?.name || "Parent"} !</Text>
+					<Text style={[styles.roleText, fontStylesRegular]}>Tableau de bord familial</Text>
+				</View>
+
+				{/* Stats générales */}
+				<View style={styles.generalStats}>
+					<View style={styles.statCard}>
+						<Text style={styles.statIcon}>👨‍👩‍👧‍👦</Text>
+						<Text style={[styles.statNumber, fontStylesTitle]}>{childAccounts.length}</Text>
+						<Text style={[styles.statText, fontStylesRegular]}>
+							{childAccounts.length > 1 ? "Enfants" : "Enfant"}
+						</Text>
+					</View>
+
+					<View style={styles.statCard}>
+						<Text style={styles.statIcon}>💰</Text>
+						<Text style={[styles.statNumber, fontStylesTitle]}>{getTotalMoney().toFixed(0)}€</Text>
+						<Text style={[styles.statText, fontStylesRegular]}>Argent de poche</Text>
+					</View>
+
+					<View style={styles.statCard}>
+						<Text style={styles.statIcon}>✅</Text>
+						<Text style={[styles.statNumber, fontStylesTitle]}>
+							{getTotalCompletedTasks()}/{getTotalTasks()}
+						</Text>
+						<Text style={[styles.statText, fontStylesRegular]}>Tâches faites</Text>
+					</View>
 				</View>
 
 				{/* Section Enfants */}
 				{childAccounts.length > 0 ? (
 					<View style={styles.section}>
 						<View style={styles.sectionHeader}>
-							<Text style={styles.sectionTitle}>Mes enfants</Text>
+							<Text style={[styles.sectionTitle, fontStylesTitle]}>Mes enfants</Text>
 							<Link href="/(app)/children" asChild>
 								<TouchableOpacity style={styles.seeAllButton}>
-									<Text style={styles.seeAllText}>Tout voir</Text>
+									<Text style={[styles.seeAllText, fontStylesSemiBold]}>Tout voir</Text>
 								</TouchableOpacity>
 							</Link>
 						</View>
-						
-						{childrenSummary.map(renderChildCard)}
+
+						<View style={styles.childrenContainer}>{childrenSummary.map(renderChildCard)}</View>
 					</View>
 				) : (
 					<View style={styles.section}>
 						<View style={styles.emptyContainer}>
 							<Text style={styles.emptyIcon}>👶</Text>
-							<Text style={styles.emptyTitle}>Aucun enfant</Text>
-							<Text style={styles.emptyText}>Créez un compte enfant pour commencer</Text>
+							<Text style={[styles.emptyTitle, fontStylesTitle]}>Aucun enfant</Text>
+							<Text style={[styles.emptyText, fontStylesRegular]}>
+								Créez un compte enfant pour commencer l'aventure !
+							</Text>
 							<Link href="/accounts/create" asChild>
 								<TouchableOpacity style={styles.createButton}>
-									<Text style={styles.createButtonText}>Créer un compte enfant</Text>
+									<Text style={[styles.createButtonText, fontStylesSemiBold]}>
+										Créer un compte enfant
+									</Text>
 								</TouchableOpacity>
 							</Link>
 						</View>
 					</View>
 				)}
 
-				{/* Quick Actions */}
+				{/* Actions rapides */}
 				<View style={styles.section}>
-					<Text style={styles.sectionTitle}>Actions rapides</Text>
+					<Text style={[styles.sectionTitle, fontStylesTitle]}>Actions rapides</Text>
 					<View style={styles.actionGrid}>
 						<Link href="/(app)/courses" asChild>
 							<TouchableOpacity style={styles.actionCard}>
 								<Text style={styles.actionIcon}>📚</Text>
-								<Text style={styles.actionText}>Mes cours</Text>
+								<Text style={[styles.actionText, fontStylesSemiBold]}>Mes cours</Text>
+								<Text style={[styles.actionDescription, fontStylesRegular]}>
+									Apprendre pour mieux enseigner
+								</Text>
 							</TouchableOpacity>
 						</Link>
-						
-						<Link href="/(app)/accounts/create" asChild>
+
+						<Link href="/(app)/children" asChild>
 							<TouchableOpacity style={styles.actionCard}>
-								<Text style={styles.actionIcon}>👶</Text>
-								<Text style={styles.actionText}>Ajouter enfant</Text>
+								<Text style={styles.actionIcon}>💳</Text>
+								<Text style={[styles.actionText, fontStylesSemiBold]}>Gérer l'argent</Text>
+								<Text style={[styles.actionDescription, fontStylesRegular]}>
+									Verser de l'argent de poche
+								</Text>
 							</TouchableOpacity>
 						</Link>
-						
+
+						<Link href="/(app)/children" asChild>
+							<TouchableOpacity style={styles.actionCard}>
+								<Text style={styles.actionIcon}>📝</Text>
+								<Text style={[styles.actionText, fontStylesSemiBold]}>Créer des tâches</Text>
+								<Text style={[styles.actionDescription, fontStylesRegular]}>Ajouter des missions</Text>
+							</TouchableOpacity>
+						</Link>
+
 						<Link href="/(app)/profile" asChild>
 							<TouchableOpacity style={styles.actionCard}>
 								<Text style={styles.actionIcon}>⚙️</Text>
-								<Text style={styles.actionText}>Paramètres</Text>
+								<Text style={[styles.actionText, fontStylesSemiBold]}>Paramètres</Text>
+								<Text style={[styles.actionDescription, fontStylesRegular]}>Gérer les comptes</Text>
 							</TouchableOpacity>
 						</Link>
 					</View>
@@ -248,7 +311,7 @@ export default function Home() {
 
 				<View style={styles.bottomPadding} />
 			</ScrollView>
-		</View>
+		</SafeAreaView>
 	);
 }
 
@@ -271,10 +334,10 @@ const styles = StyleSheet.create({
 		color: "#666",
 	},
 	header: {
-		paddingTop: 60,
+		paddingTop: 40,
 		paddingBottom: 30,
 	},
-	welcomeText: {
+	greeting: {
 		fontSize: 18,
 		color: "#666",
 		marginBottom: 4,
@@ -287,8 +350,43 @@ const styles = StyleSheet.create({
 	},
 	roleText: {
 		fontSize: 16,
-		color: "#007AFF",
-		fontWeight: "600",
+		color: "#6C5CE7",
+		fontWeight: "500",
+	},
+	generalStats: {
+		flexDirection: "row",
+		gap: 12,
+		marginBottom: 30,
+	},
+	statCard: {
+		flex: 1,
+		backgroundColor: "#fff",
+		borderRadius: 16,
+		padding: 20,
+		alignItems: "center",
+		shadowColor: "#BFD0EA",
+		shadowOffset: {
+			width: 0,
+			height: 3.89,
+		},
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 4,
+	},
+	statIcon: {
+		fontSize: 28,
+		marginBottom: 8,
+	},
+	statNumber: {
+		fontSize: 24,
+		fontWeight: "bold",
+		color: "#333",
+		marginBottom: 4,
+	},
+	statText: {
+		fontSize: 12,
+		color: "#666",
+		textAlign: "center",
 	},
 	section: {
 		marginBottom: 30,
@@ -300,7 +398,7 @@ const styles = StyleSheet.create({
 		marginBottom: 16,
 	},
 	sectionTitle: {
-		fontSize: 20,
+		fontSize: 22,
 		fontWeight: "bold",
 		color: "#333",
 	},
@@ -309,27 +407,29 @@ const styles = StyleSheet.create({
 	},
 	seeAllText: {
 		fontSize: 14,
-		color: "#007AFF",
+		color: "#6C5CE7",
 		fontWeight: "600",
+	},
+	childrenContainer: {
+		gap: 12,
 	},
 	childCard: {
 		backgroundColor: "#fff",
 		borderRadius: 16,
 		padding: 16,
-		marginBottom: 12,
-		shadowColor: "#000",
+		shadowColor: "#BFD0EA",
 		shadowOffset: {
 			width: 0,
-			height: 2,
+			height: 3.89,
 		},
-		shadowOpacity: 0.05,
-		shadowRadius: 4,
-		elevation: 2,
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 4,
 	},
 	childHeader: {
 		flexDirection: "row",
 		alignItems: "center",
-		marginBottom: 16,
+		marginBottom: 12,
 	},
 	childIconContainer: {
 		width: 40,
@@ -352,26 +452,18 @@ const styles = StyleSheet.create({
 		color: "#333",
 		marginBottom: 2,
 	},
-	childRole: {
-		fontSize: 12,
-		color: "#666",
-	},
-	arrowIcon: {
-		fontSize: 16,
-		color: "#999",
+	childMoney: {
+		fontSize: 14,
+		color: "#6C5CE7",
+		fontWeight: "500",
 	},
 	childStats: {
 		flexDirection: "row",
+		alignItems: "center",
 		justifyContent: "space-between",
-		marginBottom: 12,
 	},
 	stat: {
 		alignItems: "center",
-		flex: 1,
-	},
-	statIcon: {
-		fontSize: 20,
-		marginBottom: 4,
 	},
 	statValue: {
 		fontSize: 16,
@@ -380,36 +472,53 @@ const styles = StyleSheet.create({
 		marginBottom: 2,
 	},
 	statLabel: {
-		fontSize: 11,
+		fontSize: 12,
 		color: "#666",
-		textAlign: "center",
 	},
 	progressContainer: {
-		marginTop: 8,
+		flex: 1,
+		flexDirection: "row",
+		alignItems: "center",
+		marginLeft: 16,
+		gap: 8,
 	},
-	progressTrack: {
-		height: 4,
+	progressBar: {
+		flex: 1,
+		height: 6,
 		backgroundColor: "#e0e0e0",
-		borderRadius: 2,
+		borderRadius: 3,
 		overflow: "hidden",
 	},
 	progressFill: {
 		height: "100%",
 		backgroundColor: "#4CAF50",
-		borderRadius: 2,
+		borderRadius: 3,
+	},
+	progressText: {
+		fontSize: 12,
+		color: "#666",
+		minWidth: 30,
 	},
 	emptyContainer: {
 		backgroundColor: "#fff",
 		borderRadius: 16,
 		padding: 40,
 		alignItems: "center",
+		shadowColor: "#BFD0EA",
+		shadowOffset: {
+			width: 0,
+			height: 3.89,
+		},
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 4,
 	},
 	emptyIcon: {
 		fontSize: 48,
 		marginBottom: 16,
 	},
 	emptyTitle: {
-		fontSize: 18,
+		fontSize: 20,
 		fontWeight: "bold",
 		color: "#333",
 		marginBottom: 8,
@@ -419,12 +528,13 @@ const styles = StyleSheet.create({
 		color: "#666",
 		textAlign: "center",
 		marginBottom: 20,
+		lineHeight: 22,
 	},
 	createButton: {
-		backgroundColor: "#007AFF",
+		backgroundColor: "#6C5CE7",
 		paddingHorizontal: 24,
 		paddingVertical: 12,
-		borderRadius: 8,
+		borderRadius: 12,
 	},
 	createButtonText: {
 		color: "#fff",
@@ -440,26 +550,33 @@ const styles = StyleSheet.create({
 		backgroundColor: "#fff",
 		borderRadius: 16,
 		padding: 20,
-		width: "30%",
+		width: "47%",
 		alignItems: "center",
-		shadowColor: "#000",
+		shadowColor: "#BFD0EA",
 		shadowOffset: {
 			width: 0,
-			height: 2,
+			height: 3.89,
 		},
-		shadowOpacity: 0.05,
-		shadowRadius: 4,
-		elevation: 2,
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 4,
 	},
 	actionIcon: {
 		fontSize: 32,
-		marginBottom: 8,
+		marginBottom: 12,
 	},
 	actionText: {
-		fontSize: 12,
+		fontSize: 14,
 		fontWeight: "600",
 		color: "#333",
 		textAlign: "center",
+		marginBottom: 4,
+	},
+	actionDescription: {
+		fontSize: 12,
+		color: "#666",
+		textAlign: "center",
+		lineHeight: 16,
 	},
 	bottomPadding: {
 		height: 20,
