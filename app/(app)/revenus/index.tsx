@@ -133,6 +133,20 @@ export default function Revenus() {
 					</TouchableOpacity>
 				</View>
 
+				{/* Conseils */}
+				<View style={[styles.tipsCard, styles.card]}>
+					<View style={styles.tipsHeader}>
+						<View style={styles.tipIconContainer}>
+							<Ionicons name="bulb" size={20} color="#FF9800" />
+						</View>
+						<Text style={[styles.tipsTitle, typography.subheading]}>Conseil du jour</Text>
+					</View>
+					<Text style={[styles.tipsText, typography.body]}>
+						💡 Essaie d'économiser un petit peu de ton argent de poche chaque semaine. Même 50 centimes te
+						permettront d'acheter quelque chose de plus gros plus tard !
+					</Text>
+				</View>
+
 				{/* Historique des transactions */}
 				<View style={styles.section}>
 					<Text style={[styles.sectionTitle, typography.heading]}>Historique des transactions</Text>
@@ -188,20 +202,6 @@ export default function Revenus() {
 							</Text>
 						</View>
 					)}
-				</View>
-
-				{/* Conseils */}
-				<View style={[styles.tipsCard, styles.card]}>
-					<View style={styles.tipsHeader}>
-						<View style={styles.tipIconContainer}>
-							<Ionicons name="bulb" size={20} color="#FF9800" />
-						</View>
-						<Text style={[styles.tipsTitle, typography.subheading]}>Conseil du jour</Text>
-					</View>
-					<Text style={[styles.tipsText, typography.body]}>
-						💡 Essaie d'économiser un petit peu de ton argent de poche chaque semaine. Même 50 centimes te
-						permettront d'acheter quelque chose de plus gros plus tard !
-					</Text>
 				</View>
 
 				<View style={styles.bottomPadding} />

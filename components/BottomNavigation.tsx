@@ -42,12 +42,7 @@ export const BottomNavigation: React.FC = () => {
 				iconName: "home-outline",
 				iconNameActive: "home",
 			},
-			{
-				route: "/(app)/courses",
-				label: "Cours",
-				iconName: "book-outline",
-				iconNameActive: "book",
-			},
+
 			{
 				route: "/(app)/profile",
 				label: "Profile",
@@ -66,12 +61,22 @@ export const BottomNavigation: React.FC = () => {
 			});
 		} else {
 			// Pour les parents : ajouter l'onglet Enfants
-			baseNavItems.splice(1, 0, {
-				route: "/(app)/children",
-				label: "Enfants",
-				iconName: "people-outline",
-				iconNameActive: "people",
-			});
+			baseNavItems.splice(
+				1,
+				0,
+				{
+					route: "/(app)/children",
+					label: "Enfants",
+					iconName: "people-outline",
+					iconNameActive: "people",
+				},
+				{
+					route: "/(app)/courses",
+					label: "Cours",
+					iconName: "book-outline",
+					iconNameActive: "book",
+				}
+			);
 		}
 
 		return baseNavItems;

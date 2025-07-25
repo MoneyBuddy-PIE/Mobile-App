@@ -17,6 +17,7 @@ import { tasksService } from "@/services/tasksService";
 import { Task } from "@/types/Task";
 import { typography } from "@/styles/typography";
 import { Ionicons } from "@expo/vector-icons";
+import { logger } from "@/utils/logger";
 
 export default function ChildHome() {
 	const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
@@ -31,6 +32,7 @@ export default function ChildHome() {
 
 			if (accountData) {
 				const childTasks = await tasksService.getTasksByChild(accountData.id, "CHILD");
+				logger.log("Child tasks loaded:", childTasks);
 				setTasks(childTasks);
 			}
 		} catch (error) {
@@ -126,52 +128,6 @@ export default function ChildHome() {
 					</View>
 				</View>
 
-				{/* Mes tâches à faire */}
-				{pendingTasks.length > 0 && (
-					<View style={styles.section}>
-						<Text style={[styles.sectionTitle, typography.heading]}>Mes tâches à faire</Text>
-						{pendingTasks.slice(0, 3).map((task) => (
-							<TouchableOpacity
-								key={task.id}
-								style={[styles.taskCard, styles.card]}
-								onPress={() => handleCompleteTask(task.id)}
-								activeOpacity={0.7}
-							>
-								<View style={styles.taskInfo}>
-									<Text style={[styles.taskDescription, typography.subheading]}>
-										{task.description}
-									</Text>
-									<View style={styles.taskMeta}>
-										<View style={styles.categoryBadge}>
-											<Text style={styles.categoryIcon}>
-												{task.category === "REGULAR" ? "🔄" : "⚡"}
-											</Text>
-											<Text style={[styles.taskCategory, typography.caption]}>
-												{task.category === "REGULAR" ? "Régulière" : "Ponctuelle"}
-											</Text>
-										</View>
-										<Text style={[styles.taskReward, typography.buttonSmall]}>+{task.reward}€</Text>
-									</View>
-								</View>
-								<View style={styles.taskAction}>
-									<View style={styles.actionButton}>
-										<Ionicons name="checkmark-outline" size={24} color="#6C5CE7" />
-									</View>
-								</View>
-							</TouchableOpacity>
-						))}
-
-						{pendingTasks.length > 3 && (
-							<TouchableOpacity style={styles.viewMoreButton}>
-								<Text style={[styles.viewMoreText, typography.body]}>
-									Voir {pendingTasks.length - 3} autres tâches
-								</Text>
-								<Ionicons name="chevron-forward" size={16} color="#6C5CE7" />
-							</TouchableOpacity>
-						)}
-					</View>
-				)}
-
 				{/* Progression */}
 				{tasks.length > 0 && (
 					<View style={styles.section}>
@@ -192,6 +148,56 @@ export default function ChildHome() {
 								</Text>
 							</View>
 						</View>
+					</View>
+				)}
+
+				{/* Mes tâches à faire */}
+				{pendingTasks.length > 0 && (
+					<View style={styles.section}>
+						<Text style={[styles.sectionTitle, typography.heading]}>Mes tâches à faire</Text>
+						{pendingTasks.slice(0, 3).map((task) => (
+							<TouchableOpacity
+								key={task.id}
+								style={[styles.taskCard, styles.card]}
+								onPress={() => handleCompleteTask(task.id)}
+								activeOpacity={0.7}
+							>
+								<View style={styles.taskInfo}>
+									<Text style={[styles.taskDescription, typography.subheading]}>
+										{task.description}
+									</Text>
+									<View style={styles.taskMeta}>
+										<View
+											style={[
+												styles.categoryBadge,
+												task.category === "REGULAR"
+													? styles.regularCategory
+													: styles.punctualCategory,
+											]}
+										>
+											<Text style={[styles.taskCategory, typography.caption]}>
+												{task.category === "REGULAR" ? "Régulière" : "Ponctuelle"}
+											</Text>
+										</View>
+										<Text style={[styles.taskReward, typography.buttonSmall]}>+{task.reward}€</Text>
+									</View>
+								</View>
+								<View style={styles.taskAction}>
+									<View style={[styles.actionButton, task.done && styles.actionButtonCompleted]}>
+										{task.done ?? <Ionicons name="checkmark-outline" size={24} color="#FFF" />}
+									</View>
+								</View>
+							</TouchableOpacity>
+						))}
+
+						{pendingTasks.length > 3 && (
+							<TouchableOpacity style={styles.viewMoreButton}>
+								<Text style={[styles.viewMoreText, typography.body]}>
+									Voir {pendingTasks.length - 3} autres tâches
+								</Text>
+								<Ionicons name="chevron-forward" size={16} color="#6C5CE7" />
+							</TouchableOpacity>
+						)}
 					</View>
 				)}
 
@@ -221,26 +227,6 @@ export default function ChildHome() {
 						))}
 					</View>
 				)}
-
-				{/* Actions rapides */}
-				<View style={styles.section}>
-					<Text style={[styles.sectionTitle, typography.heading]}>Actions rapides</Text>
-					<View style={styles.quickActions}>
-						<Link href="/(app)/courses" asChild>
-							<TouchableOpacity style={[styles.actionCard, styles.card]}>
-								<Text style={styles.actionButtonIcon}>📚</Text>
-								<Text style={[styles.actionButtonText, typography.buttonSmall]}>Mes cours</Text>
-							</TouchableOpacity>
-						</Link>
-
-						<Link href="/(app)/revenus" asChild>
-							<TouchableOpacity style={[styles.actionCard, styles.card]}>
-								<Text style={styles.actionButtonIcon}>💰</Text>
-								<Text style={[styles.actionButtonText, typography.buttonSmall]}>Mes revenus</Text>
-							</TouchableOpacity>
-						</Link>
-					</View>
-				</View>
 
 				{/* Message motivant */}
 				<View style={[styles.motivationCard, styles.card]}>
@@ -391,7 +377,13 @@ const styles = StyleSheet.create({
 		backgroundColor: "#EBF2FB",
 		paddingHorizontal: 8,
 		paddingVertical: 4,
-		borderRadius: 12,
+		borderRadius: 4,
+	},
+	regularCategory: {
+		backgroundColor: "#E1FFF6",
+	},
+	punctualCategory: {
+		backgroundColor: "rgba(254, 160, 186, 0.4)",
 	},
 	categoryIcon: {
 		fontSize: 12,
@@ -409,12 +401,15 @@ const styles = StyleSheet.create({
 		marginLeft: 16,
 	},
 	actionButton: {
-		width: 48,
-		height: 48,
-		backgroundColor: "#EBF2FB",
-		borderRadius: 24,
+		width: 40,
+		height: 40,
+		backgroundColor: "#CEC5F8",
+		borderRadius: 10,
 		justifyContent: "center",
 		alignItems: "center",
+	},
+	actionButtonCompleted: {
+		backgroundColor: "#846DED",
 	},
 
 	// Boutons et actions

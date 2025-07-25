@@ -1,17 +1,35 @@
-import React, { use, useState } from "react";
+import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, SafeAreaView, ScrollView } from "react-native";
 import { router } from "expo-router";
-
+import { Ionicons } from "@expo/vector-icons";
+import { useFonts } from "expo-font";
+import { DMSans_700Bold, DMSans_400Regular, DMSans_600SemiBold } from "@expo-google-fonts/dm-sans";
 import { authService } from "@/services/authService";
+import { typography } from "@/styles/typography";
 
 interface RoleOption {
 	value: string;
 	label: string;
+	description: string;
+	icon: string;
+	color: string;
 }
 
 const roleOptions: RoleOption[] = [
-	{ value: "CHILD", label: "Child" },
-	{ value: "PARENT", label: "Parent" },
+	{
+		value: "CHILD",
+		label: "Enfant",
+		description: "Apprendre et gérer son argent de poche",
+		icon: "school-outline",
+		color: "#00D4AA",
+	},
+	{
+		value: "PARENT",
+		label: "Parent",
+		description: "Superviser et enseigner la gestion financière",
+		icon: "person-outline",
+		color: "#4A90E2",
+	},
 ];
 
 export default function Create() {
@@ -20,8 +38,17 @@ export default function Create() {
 	const [pin, setPin] = useState("");
 	const [loading, setLoading] = useState(false);
 
+	const [fontsLoaded] = useFonts({
+		DMSans_700Bold,
+		DMSans_400Regular,
+		DMSans_600SemiBold,
+	});
+
+	const fontStylesTitle = fontsLoaded ? { fontFamily: "DMSans_700Bold" } : {};
+	const fontStylesRegular = fontsLoaded ? { fontFamily: "DMSans_400Regular" } : {};
+	const fontStylesSemiBold = fontsLoaded ? { fontFamily: "DMSans_600SemiBold" } : {};
+
 	const handlePinChange = (value: string) => {
-		// Only allow 4 digits
 		if (value.length <= 4 && /^\d*$/.test(value)) {
 			setPin(value);
 		}
@@ -29,15 +56,15 @@ export default function Create() {
 
 	const validateForm = () => {
 		if (!name.trim()) {
-			Alert.alert("Error", "Please enter a name");
+			Alert.alert("Erreur", "Veuillez saisir un nom");
 			return false;
 		}
 		if (!selectedRole) {
-			Alert.alert("Error", "Please select a role");
+			Alert.alert("Erreur", "Veuillez sélectionner un rôle");
 			return false;
 		}
 		if (pin.length !== 4) {
-			Alert.alert("Error", "PIN must be exactly 4 digits");
+			Alert.alert("Erreur", "Le code PIN doit contenir exactement 4 chiffres");
 			return false;
 		}
 		return true;
@@ -48,16 +75,15 @@ export default function Create() {
 
 		setLoading(true);
 		try {
-			const t = await authService.subAccountRegister({
+			await authService.subAccountRegister({
 				name: name.trim(),
 				role: selectedRole,
 				pin: pin,
 			});
-			Alert.alert("Success", "Sub-account created successfully");
-			router.back();
+			Alert.alert("Succès", "Compte créé avec succès", [{ text: "OK", onPress: () => router.back() }]);
 		} catch (error: any) {
 			console.error("Error creating sub-account:", error);
-			Alert.alert("Error", error.response?.data?.message || "Failed to create sub-account");
+			Alert.alert("Erreur", error.response?.data?.message || "Impossible de créer le compte");
 		} finally {
 			setLoading(false);
 		}
@@ -67,98 +93,147 @@ export default function Create() {
 		router.back();
 	};
 
+	const selectedRoleOption = roleOptions.find((option) => option.value === selectedRole);
+
 	return (
 		<SafeAreaView style={styles.container}>
-			<ScrollView style={styles.content}>
-				{/* Header */}
-				<View style={styles.header}>
-					<TouchableOpacity onPress={handleCancel}>
-						<Text style={styles.cancelButton}>Cancel</Text>
-					</TouchableOpacity>
-					<Text style={styles.title}>Create Sub-Account</Text>
-					<View style={styles.placeholder} />
+			{/* Header */}
+			<View style={styles.header}>
+				<TouchableOpacity style={styles.backButton} onPress={handleCancel}>
+					<Ionicons name="arrow-back" size={20} color="#fff" />
+				</TouchableOpacity>
+				<Text style={[styles.headerTitle, fontStylesTitle]}>Nouveau compte</Text>
+				<View style={styles.placeholder} />
+			</View>
+
+			<ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+				{/* Description */}
+				<View style={styles.descriptionContainer}>
+					<Text style={[styles.subtitle, fontStylesRegular]}>
+						Créez un nouveau profil pour votre enfant ou un autre parent
+					</Text>
 				</View>
 
-				<View style={styles.form}>
-					{/* Name Input */}
-					<View style={styles.inputGroup}>
-						<Text style={styles.label}>Name</Text>
+				{/* Nom */}
+				<View style={styles.section}>
+					<Text style={[styles.sectionLabel, fontStylesSemiBold]}>Nom du profil</Text>
+					<View style={styles.inputContainer}>
 						<TextInput
-							style={styles.textInput}
-							placeholder="Enter account name"
+							style={[styles.textInput, fontStylesRegular]}
+							placeholder="Ex: Emma, Papa, Maman..."
 							value={name}
 							onChangeText={setName}
 							autoCapitalize="words"
 							maxLength={50}
 						/>
 					</View>
+				</View>
 
-					{/* Role Selection */}
-					<View style={styles.inputGroup}>
-						<Text style={styles.label}>Role</Text>
-						<View style={styles.roleContainer}>
-							{roleOptions.map((option) => (
-								<TouchableOpacity
-									key={option.value}
-									style={[
-										styles.roleOption,
-										selectedRole === option.value && styles.roleOptionSelected,
-									]}
-									onPress={() => setSelectedRole(option.value)}
-								>
+				{/* Sélection du rôle */}
+				<View style={styles.section}>
+					<Text style={[styles.sectionLabel, fontStylesSemiBold]}>Type de compte</Text>
+					<View style={styles.roleContainer}>
+						{roleOptions.map((option) => (
+							<TouchableOpacity
+								key={option.value}
+								style={[styles.roleCard, selectedRole === option.value && styles.roleCardSelected]}
+								onPress={() => setSelectedRole(option.value)}
+								activeOpacity={0.7}
+							>
+								<View style={[styles.roleIconContainer, { backgroundColor: `${option.color}20` }]}>
+									<Ionicons name={option.icon as any} size={24} color={option.color} />
+								</View>
+								<View style={styles.roleInfo}>
 									<Text
 										style={[
-											styles.roleText,
-											selectedRole === option.value && styles.roleTextSelected,
+											styles.roleLabel,
+											fontStylesSemiBold,
+											selectedRole === option.value && styles.roleLabelSelected,
 										]}
 									>
 										{option.label}
 									</Text>
-								</TouchableOpacity>
+									<Text
+										style={[
+											styles.roleDescription,
+											fontStylesRegular,
+											selectedRole === option.value && styles.roleDescriptionSelected,
+										]}
+									>
+										{option.description}
+									</Text>
+								</View>
+								{selectedRole === option.value && (
+									<View style={styles.selectedIndicator}>
+										<Ionicons name="checkmark-circle" size={24} color={option.color} />
+									</View>
+								)}
+							</TouchableOpacity>
+						))}
+					</View>
+				</View>
+
+				{/* Code PIN */}
+				<View style={styles.section}>
+					<Text style={[styles.sectionLabel, fontStylesSemiBold]}>Code de sécurité</Text>
+					<Text style={[styles.sectionDescription, fontStylesRegular]}>
+						Choisissez un code à 4 chiffres pour protéger ce compte
+					</Text>
+
+					<View style={styles.pinContainer}>
+						<TextInput
+							style={[styles.pinInput, fontStylesRegular]}
+							value={pin}
+							onChangeText={handlePinChange}
+							keyboardType="numeric"
+							maxLength={4}
+							secureTextEntry
+							textAlign="center"
+							placeholder="••••"
+							placeholderTextColor="#ccc"
+						/>
+
+						{/* Indicateurs de PIN */}
+						<View style={styles.pinIndicators}>
+							{[1, 2, 3, 4].map((i) => (
+								<View
+									key={i}
+									style={[
+										styles.pinDot,
+										pin.length >= i && styles.pinDotFilled,
+										selectedRoleOption && {
+											backgroundColor: pin.length >= i ? selectedRoleOption.color : "#e0e0e0",
+										},
+									]}
+								/>
 							))}
 						</View>
 					</View>
-
-					{/* PIN Input */}
-					<View style={styles.inputGroup}>
-						<Text style={styles.label}>Security PIN</Text>
-						<Text style={styles.description}>Choose a 4-digit PIN to protect this account</Text>
-
-						<View style={styles.pinContainer}>
-							<TextInput
-								style={styles.pinInput}
-								value={pin}
-								onChangeText={handlePinChange}
-								keyboardType="numeric"
-								maxLength={4}
-								secureTextEntry
-								textAlign="center"
-								placeholder="••••"
-							/>
-
-							{/* PIN Dots */}
-							<View style={styles.pinDots}>
-								{[1, 2, 3, 4].map((i) => (
-									<View key={i} style={[styles.pinDot, pin.length >= i && styles.pinDotFilled]} />
-								))}
-							</View>
-						</View>
-					</View>
-
-					{/* Submit Button */}
-					<TouchableOpacity
-						style={[
-							styles.submitButton,
-							(!name.trim() || !selectedRole || pin.length !== 4 || loading) &&
-								styles.submitButtonDisabled,
-						]}
-						onPress={handleSubmit}
-						disabled={!name.trim() || !selectedRole || pin.length !== 4 || loading}
-					>
-						<Text style={styles.submitButtonText}>{loading ? "Creating..." : "Create Sub-Account"}</Text>
-					</TouchableOpacity>
 				</View>
+
+				<View style={styles.bottomPadding} />
 			</ScrollView>
+
+			{/* Bouton de création */}
+			<View style={styles.footer}>
+				<TouchableOpacity
+					style={[
+						styles.createButton,
+						(!name.trim() || !selectedRole || pin.length !== 4 || loading) && styles.createButtonDisabled,
+						selectedRoleOption &&
+							!loading &&
+							name.trim() &&
+							selectedRole &&
+							pin.length === 4 && { backgroundColor: selectedRoleOption.color },
+					]}
+					onPress={handleSubmit}
+					disabled={!name.trim() || !selectedRole || pin.length !== 4 || loading}
+				>
+					<Text style={[styles.createButtonText, fontStylesSemiBold]}>
+						{loading ? "Création en cours..." : "Créer le compte"}
+					</Text>
+				</TouchableOpacity>
+			</View>
 		</SafeAreaView>
 	);
 }
@@ -168,97 +243,162 @@ const styles = StyleSheet.create({
 		flex: 1,
 		backgroundColor: "#f8f9fa",
 	},
-	content: {
-		flex: 1,
-	},
 	header: {
 		flexDirection: "row",
 		justifyContent: "space-between",
 		alignItems: "center",
 		paddingHorizontal: 20,
-		paddingTop: 20,
-		paddingBottom: 30,
+		paddingTop: 10,
+		paddingBottom: 20,
+		backgroundColor: "#fff",
+		borderBottomWidth: 1,
+		borderBottomColor: "#e0e0e0",
 	},
-	cancelButton: {
-		fontSize: 16,
-		color: "#007AFF",
-		fontWeight: "600",
+	backButton: {
+		width: 44,
+		height: 44,
+		backgroundColor: "#333",
+		borderRadius: 12,
+		justifyContent: "center",
+		alignItems: "center",
 	},
-	title: {
-		fontSize: 20,
+	headerTitle: {
+		fontSize: 18,
 		fontWeight: "bold",
 		color: "#333",
 	},
 	placeholder: {
-		width: 60, // Same width as cancel button for centering
+		width: 44,
 	},
-	form: {
+	content: {
+		flex: 1,
 		paddingHorizontal: 20,
 	},
-	inputGroup: {
-		marginBottom: 24,
+	descriptionContainer: {
+		paddingVertical: 24,
+		alignItems: "center",
 	},
-	label: {
+	subtitle: {
+		fontSize: 16,
+		color: "#666",
+		textAlign: "center",
+		lineHeight: 22,
+	},
+	section: {
+		marginBottom: 32,
+	},
+	sectionLabel: {
 		fontSize: 16,
 		fontWeight: "600",
 		color: "#333",
 		marginBottom: 8,
 	},
-	description: {
+	sectionDescription: {
 		fontSize: 14,
 		color: "#666",
-		marginBottom: 12,
+		marginBottom: 16,
+		lineHeight: 20,
+	},
+	inputContainer: {
+		backgroundColor: "#fff",
+		borderRadius: 12,
+		borderWidth: 1,
+		borderColor: "#e0e0e0",
+		shadowColor: "#BFD0EA",
+		shadowOffset: {
+			width: 0,
+			height: 2,
+		},
+		shadowOpacity: 0.6,
+		shadowRadius: 0,
+		elevation: 2,
 	},
 	textInput: {
-		backgroundColor: "#fff",
-		borderWidth: 1,
-		borderColor: "#ddd",
-		borderRadius: 12,
-		padding: 16,
 		fontSize: 16,
 		color: "#333",
+		paddingHorizontal: 16,
+		paddingVertical: 16,
 	},
 	roleContainer: {
-		flexDirection: "row",
 		gap: 12,
 	},
-	roleOption: {
-		flex: 1,
+	roleCard: {
 		backgroundColor: "#fff",
-		borderWidth: 2,
-		borderColor: "#ddd",
 		borderRadius: 12,
-		padding: 16,
+		padding: 20,
+		flexDirection: "row",
 		alignItems: "center",
+		borderWidth: 2,
+		borderColor: "#e0e0e0",
+		shadowColor: "#BFD0EA",
+		shadowOffset: {
+			width: 0,
+			height: 2,
+		},
+		shadowOpacity: 0.6,
+		shadowRadius: 0,
+		elevation: 2,
 	},
-	roleOptionSelected: {
-		borderColor: "#007AFF",
-		backgroundColor: "#f0f8ff",
+	roleCardSelected: {
+		borderColor: "#6C5CE7",
+		backgroundColor: "#f8f9ff",
 	},
-	roleText: {
+	roleIconContainer: {
+		width: 48,
+		height: 48,
+		borderRadius: 12,
+		justifyContent: "center",
+		alignItems: "center",
+		marginRight: 16,
+	},
+	roleInfo: {
+		flex: 1,
+	},
+	roleLabel: {
 		fontSize: 16,
 		fontWeight: "600",
-		color: "#666",
+		color: "#333",
+		marginBottom: 4,
 	},
-	roleTextSelected: {
-		color: "#007AFF",
+	roleLabelSelected: {
+		color: "#6C5CE7",
+	},
+	roleDescription: {
+		fontSize: 14,
+		color: "#666",
+		lineHeight: 18,
+	},
+	roleDescriptionSelected: {
+		color: "#6C5CE7",
+	},
+	selectedIndicator: {
+		marginLeft: 12,
 	},
 	pinContainer: {
 		alignItems: "center",
+		gap: 16,
 	},
 	pinInput: {
 		backgroundColor: "#fff",
-		borderWidth: 1,
-		borderColor: "#ddd",
+		borderWidth: 2,
+		borderColor: "#e0e0e0",
 		borderRadius: 12,
-		padding: 16,
+		paddingHorizontal: 16,
+		paddingVertical: 16,
 		fontSize: 24,
 		width: 120,
 		textAlign: "center",
 		letterSpacing: 8,
-		marginBottom: 16,
+		shadowColor: "#BFD0EA",
+		shadowOffset: {
+			width: 0,
+			height: 2,
+		},
+		shadowOpacity: 0.6,
+		shadowRadius: 0,
+		elevation: 2,
 	},
-	pinDots: {
+	pinIndicators: {
 		flexDirection: "row",
 		gap: 12,
 	},
@@ -266,25 +406,44 @@ const styles = StyleSheet.create({
 		width: 12,
 		height: 12,
 		borderRadius: 6,
-		backgroundColor: "#ddd",
+		backgroundColor: "#e0e0e0",
 	},
 	pinDotFilled: {
-		backgroundColor: "#007AFF",
+		backgroundColor: "#6C5CE7",
 	},
-	submitButton: {
-		backgroundColor: "#007AFF",
+	bottomPadding: {
+		height: 40,
+	},
+	footer: {
+		paddingHorizontal: 20,
+		paddingBottom: 20,
+		paddingTop: 16,
+		backgroundColor: "#fff",
+		borderTopWidth: 1,
+		borderTopColor: "#e0e0e0",
+	},
+	createButton: {
+		backgroundColor: "#6C5CE7",
+		paddingVertical: 16,
 		borderRadius: 12,
-		padding: 16,
 		alignItems: "center",
-		marginTop: 20,
-		marginBottom: 40,
+		shadowColor: "#4E31CF",
+		shadowOffset: {
+			width: 0,
+			height: 4,
+		},
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 4,
 	},
-	submitButtonDisabled: {
+	createButtonDisabled: {
 		backgroundColor: "#ccc",
+		shadowOpacity: 0,
+		elevation: 0,
 	},
-	submitButtonText: {
+	createButtonText: {
 		color: "#fff",
 		fontSize: 16,
-		fontWeight: "bold",
+		fontWeight: "600",
 	},
 });
