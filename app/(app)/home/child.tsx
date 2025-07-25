@@ -15,6 +15,8 @@ import { UserStorage } from "@/utils/storage";
 import { SubAccount } from "@/types/Account";
 import { tasksService } from "@/services/tasksService";
 import { Task } from "@/types/Task";
+import { typography } from "@/styles/typography";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function ChildHome() {
 	const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
@@ -65,7 +67,7 @@ export default function ChildHome() {
 		return (
 			<View style={[styles.container, styles.center]}>
 				<ActivityIndicator size="large" color="#6C5CE7" />
-				<Text style={styles.loadingText}>Chargement...</Text>
+				<Text style={[styles.loadingText, typography.body]}>Chargement...</Text>
 			</View>
 		);
 	}
@@ -93,9 +95,9 @@ export default function ChildHome() {
 			>
 				{/* Header */}
 				<View style={styles.header}>
-					<Text style={styles.greeting}>{getGreeting()}</Text>
-					<Text style={styles.childName}>{subAccount?.name || "Mon petit"} !</Text>
-					<Text style={styles.motivationText}>
+					<Text style={[styles.greeting, typography.greeting]}>{getGreeting()}</Text>
+					<Text style={[styles.childName, typography.title]}>{subAccount?.name || "Mon petit"} !</Text>
+					<Text style={[styles.motivationText, typography.subtitle]}>
 						{pendingTasks.length > 0
 							? `Tu as ${pendingTasks.length} tâche${
 									pendingTasks.length > 1 ? "s" : ""
@@ -106,20 +108,20 @@ export default function ChildHome() {
 
 				{/* Solde et stats */}
 				<View style={styles.statsContainer}>
-					<View style={[styles.statCard, styles.balanceCard]}>
+					<View style={[styles.balanceCard, styles.card]}>
 						<Text style={styles.balanceIcon}>💰</Text>
-						<Text style={styles.balanceAmount}>{currentBalance.toFixed(2)}€</Text>
-						<Text style={styles.balanceLabel}>Mon argent de poche</Text>
+						<Text style={[styles.balanceAmount, typography.heading]}>{currentBalance.toFixed(2)}€</Text>
+						<Text style={[styles.balanceLabel, typography.caption]}>Mon argent de poche</Text>
 					</View>
 
 					<View style={styles.miniStatsContainer}>
-						<View style={styles.miniStatCard}>
-							<Text style={styles.miniStatValue}>{completedTasks.length}</Text>
-							<Text style={styles.miniStatLabel}>Tâches faites</Text>
+						<View style={[styles.miniStatCard, styles.card]}>
+							<Text style={[styles.miniStatValue, typography.subheading]}>{completedTasks.length}</Text>
+							<Text style={[styles.miniStatLabel, typography.caption]}>Tâches faites</Text>
 						</View>
-						<View style={styles.miniStatCard}>
-							<Text style={styles.miniStatValue}>{totalEarned.toFixed(0)}€</Text>
-							<Text style={styles.miniStatLabel}>Gagné</Text>
+						<View style={[styles.miniStatCard, styles.card]}>
+							<Text style={[styles.miniStatValue, typography.subheading]}>{totalEarned.toFixed(0)}€</Text>
+							<Text style={[styles.miniStatLabel, typography.caption]}>Gagné</Text>
 						</View>
 					</View>
 				</View>
@@ -127,32 +129,44 @@ export default function ChildHome() {
 				{/* Mes tâches à faire */}
 				{pendingTasks.length > 0 && (
 					<View style={styles.section}>
-						<Text style={styles.sectionTitle}>Mes tâches à faire</Text>
+						<Text style={[styles.sectionTitle, typography.heading]}>Mes tâches à faire</Text>
 						{pendingTasks.slice(0, 3).map((task) => (
 							<TouchableOpacity
 								key={task.id}
-								style={styles.taskCard}
+								style={[styles.taskCard, styles.card]}
 								onPress={() => handleCompleteTask(task.id)}
+								activeOpacity={0.7}
 							>
 								<View style={styles.taskInfo}>
-									<Text style={styles.taskDescription}>{task.description}</Text>
+									<Text style={[styles.taskDescription, typography.subheading]}>
+										{task.description}
+									</Text>
 									<View style={styles.taskMeta}>
-										<Text style={styles.taskCategory}>
-											{task.category === "REGULAR" ? "🔄 Régulière" : "⚡ Ponctuelle"}
-										</Text>
-										<Text style={styles.taskReward}>+{task.reward}€</Text>
+										<View style={styles.categoryBadge}>
+											<Text style={styles.categoryIcon}>
+												{task.category === "REGULAR" ? "🔄" : "⚡"}
+											</Text>
+											<Text style={[styles.taskCategory, typography.caption]}>
+												{task.category === "REGULAR" ? "Régulière" : "Ponctuelle"}
+											</Text>
+										</View>
+										<Text style={[styles.taskReward, typography.buttonSmall]}>+{task.reward}€</Text>
 									</View>
 								</View>
 								<View style={styles.taskAction}>
-									<Text style={styles.actionIcon}>○</Text>
-									<Text style={styles.actionText}>Terminer</Text>
+									<View style={styles.actionButton}>
+										<Ionicons name="checkmark-outline" size={24} color="#6C5CE7" />
+									</View>
 								</View>
 							</TouchableOpacity>
 						))}
 
 						{pendingTasks.length > 3 && (
 							<TouchableOpacity style={styles.viewMoreButton}>
-								<Text style={styles.viewMoreText}>Voir {pendingTasks.length - 3} autres tâches</Text>
+								<Text style={[styles.viewMoreText, typography.body]}>
+									Voir {pendingTasks.length - 3} autres tâches
+								</Text>
+								<Ionicons name="chevron-forward" size={16} color="#6C5CE7" />
 							</TouchableOpacity>
 						)}
 					</View>
@@ -161,17 +175,19 @@ export default function ChildHome() {
 				{/* Progression */}
 				{tasks.length > 0 && (
 					<View style={styles.section}>
-						<Text style={styles.sectionTitle}>Ma progression</Text>
-						<View style={styles.progressCard}>
+						<Text style={[styles.sectionTitle, typography.heading]}>Ma progression</Text>
+						<View style={[styles.progressCard, styles.card]}>
 							<View style={styles.progressHeader}>
-								<Text style={styles.progressTitle}>Tâches complétées</Text>
-								<Text style={styles.progressPercentage}>{completionRate}%</Text>
+								<Text style={[styles.progressTitle, typography.subheading]}>Tâches complétées</Text>
+								<Text style={[styles.progressPercentage, typography.subheading]}>
+									{completionRate}%
+								</Text>
 							</View>
 							<View style={styles.progressBarContainer}>
 								<View style={styles.progressBar}>
 									<View style={[styles.progressFill, { width: `${completionRate}%` }]} />
 								</View>
-								<Text style={styles.progressLabel}>
+								<Text style={[styles.progressLabel, typography.caption]}>
 									{completedTasks.length}/{tasks.length}
 								</Text>
 							</View>
@@ -182,18 +198,24 @@ export default function ChildHome() {
 				{/* Tâches complétées récemment */}
 				{completedTasks.length > 0 && (
 					<View style={styles.section}>
-						<Text style={styles.sectionTitle}>Récemment terminées</Text>
+						<Text style={[styles.sectionTitle, typography.heading]}>Récemment terminées</Text>
 						{completedTasks.slice(0, 3).map((task) => (
-							<View key={task.id} style={styles.completedTaskCard}>
+							<View key={task.id} style={[styles.completedTaskCard, styles.card]}>
 								<View style={styles.taskInfo}>
-									<Text style={styles.completedTaskDescription}>{task.description}</Text>
-									<Text style={styles.completedTaskDate}>
+									<Text style={[styles.completedTaskDescription, typography.body]}>
+										{task.description}
+									</Text>
+									<Text style={[styles.completedTaskDate, typography.caption]}>
 										{new Date(task.updatedAt).toLocaleDateString("fr-FR")}
 									</Text>
 								</View>
 								<View style={styles.completedReward}>
-									<Text style={styles.completedIcon}>✓</Text>
-									<Text style={styles.completedAmount}>+{task.reward}€</Text>
+									<View style={styles.completedIcon}>
+										<Ionicons name="checkmark" size={16} color="#4CAF50" />
+									</View>
+									<Text style={[styles.completedAmount, typography.buttonSmall]}>
+										+{task.reward}€
+									</Text>
 								</View>
 							</View>
 						))}
@@ -202,37 +224,37 @@ export default function ChildHome() {
 
 				{/* Actions rapides */}
 				<View style={styles.section}>
-					<Text style={styles.sectionTitle}>Actions rapides</Text>
+					<Text style={[styles.sectionTitle, typography.heading]}>Actions rapides</Text>
 					<View style={styles.quickActions}>
 						<Link href="/(app)/courses" asChild>
-							<TouchableOpacity style={styles.actionButton}>
+							<TouchableOpacity style={[styles.actionCard, styles.card]}>
 								<Text style={styles.actionButtonIcon}>📚</Text>
-								<Text style={styles.actionButtonText}>Mes cours</Text>
+								<Text style={[styles.actionButtonText, typography.buttonSmall]}>Mes cours</Text>
 							</TouchableOpacity>
 						</Link>
 
 						<Link href="/(app)/revenus" asChild>
-							<TouchableOpacity style={styles.actionButton}>
+							<TouchableOpacity style={[styles.actionCard, styles.card]}>
 								<Text style={styles.actionButtonIcon}>💰</Text>
-								<Text style={styles.actionButtonText}>Mes revenus</Text>
+								<Text style={[styles.actionButtonText, typography.buttonSmall]}>Mes revenus</Text>
 							</TouchableOpacity>
 						</Link>
 					</View>
 				</View>
 
 				{/* Message motivant */}
-				<View style={styles.motivationCard}>
+				<View style={[styles.motivationCard, styles.card]}>
 					<Text style={styles.motivationIcon}>
 						{pendingTasks.length === 0 ? "🎉" : potentialEarnings > 0 ? "💪" : "🌟"}
 					</Text>
-					<Text style={styles.motivationTitle}>
+					<Text style={[styles.motivationTitle, typography.subheading]}>
 						{pendingTasks.length === 0
 							? "Excellent travail !"
 							: potentialEarnings > 0
 							? "Continue comme ça !"
 							: "Tu es formidable !"}
 					</Text>
-					<Text style={styles.motivationDescription}>
+					<Text style={[styles.motivationDescription, typography.body]}>
 						{pendingTasks.length === 0
 							? "Tu as terminé toutes tes tâches ! Tu peux être fier de toi."
 							: potentialEarnings > 0
@@ -262,7 +284,6 @@ const styles = StyleSheet.create({
 	},
 	loadingText: {
 		marginTop: 12,
-		fontSize: 16,
 		color: "#666",
 	},
 	header: {
@@ -270,54 +291,52 @@ const styles = StyleSheet.create({
 		paddingBottom: 30,
 	},
 	greeting: {
-		fontSize: 18,
-		color: "#666",
 		marginBottom: 4,
 	},
 	childName: {
-		fontSize: 32,
-		fontWeight: "bold",
-		color: "#333",
 		marginBottom: 8,
 	},
 	motivationText: {
-		fontSize: 16,
-		color: "#666",
 		lineHeight: 22,
 	},
+
+	// Cards et composants réutilisables
+	card: {
+		backgroundColor: "#fff",
+		borderRadius: 8,
+		shadowColor: "#BFD0EA",
+		shadowOffset: {
+			width: 0,
+			height: 3.89,
+		},
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 4,
+	},
+
+	// Stats
 	statsContainer: {
 		flexDirection: "row",
 		gap: 12,
 		marginBottom: 30,
 	},
-	statCard: {
-		backgroundColor: "#fff",
-		borderRadius: 16,
-		padding: 20,
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.05,
-		shadowRadius: 4,
-		elevation: 2,
-	},
 	balanceCard: {
 		flex: 2,
 		alignItems: "center",
 		backgroundColor: "#6C5CE7",
+		padding: 24,
 	},
 	balanceIcon: {
 		fontSize: 32,
 		marginBottom: 8,
 	},
 	balanceAmount: {
-		fontSize: 28,
-		fontWeight: "bold",
 		color: "#fff",
 		marginBottom: 4,
 	},
 	balanceLabel: {
-		fontSize: 12,
 		color: "rgba(255, 255, 255, 0.8)",
+		textAlign: "center",
 	},
 	miniStatsContainer: {
 		flex: 1,
@@ -325,126 +344,111 @@ const styles = StyleSheet.create({
 	},
 	miniStatCard: {
 		flex: 1,
-		backgroundColor: "#fff",
-		borderRadius: 12,
-		padding: 12,
+		padding: 16,
 		alignItems: "center",
 		justifyContent: "center",
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 1 },
-		shadowOpacity: 0.05,
-		shadowRadius: 2,
-		elevation: 1,
 	},
 	miniStatValue: {
-		fontSize: 16,
-		fontWeight: "bold",
 		color: "#333",
-		marginBottom: 2,
+		marginBottom: 4,
 	},
 	miniStatLabel: {
-		fontSize: 10,
-		color: "#666",
 		textAlign: "center",
+		color: "#666",
 	},
+
+	// Sections
 	section: {
 		marginBottom: 30,
 	},
 	sectionTitle: {
-		fontSize: 20,
-		fontWeight: "bold",
 		color: "#333",
 		marginBottom: 16,
 	},
+
+	// Tâches
 	taskCard: {
-		backgroundColor: "#fff",
-		borderRadius: 16,
 		padding: 16,
 		marginBottom: 12,
 		flexDirection: "row",
 		alignItems: "center",
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.05,
-		shadowRadius: 4,
-		elevation: 2,
 	},
 	taskInfo: {
 		flex: 1,
 	},
 	taskDescription: {
-		fontSize: 16,
-		fontWeight: "600",
 		color: "#333",
-		marginBottom: 6,
+		marginBottom: 8,
 	},
 	taskMeta: {
 		flexDirection: "row",
 		justifyContent: "space-between",
 		alignItems: "center",
 	},
-	taskCategory: {
+	categoryBadge: {
+		flexDirection: "row",
+		alignItems: "center",
+		backgroundColor: "#EBF2FB",
+		paddingHorizontal: 8,
+		paddingVertical: 4,
+		borderRadius: 12,
+	},
+	categoryIcon: {
 		fontSize: 12,
-		color: "#666",
+		marginRight: 4,
+	},
+	taskCategory: {
+		color: "#6C5CE7",
 	},
 	taskReward: {
-		fontSize: 14,
-		fontWeight: "bold",
 		color: "#FF9800",
+		fontWeight: "bold",
 	},
 	taskAction: {
 		alignItems: "center",
 		marginLeft: 16,
-		minWidth: 60,
 	},
-	actionIcon: {
-		fontSize: 24,
-		color: "#ddd",
-		marginBottom: 4,
+	actionButton: {
+		width: 48,
+		height: 48,
+		backgroundColor: "#EBF2FB",
+		borderRadius: 24,
+		justifyContent: "center",
+		alignItems: "center",
 	},
-	actionText: {
-		fontSize: 12,
-		color: "#666",
-		fontWeight: "500",
-	},
+
+	// Boutons et actions
 	viewMoreButton: {
 		backgroundColor: "#f8f9fa",
-		borderRadius: 12,
+		borderRadius: 8,
 		padding: 16,
+		flexDirection: "row",
 		alignItems: "center",
+		justifyContent: "center",
 		borderWidth: 1,
 		borderColor: "#e0e0e0",
 		borderStyle: "dashed",
+		gap: 8,
 	},
 	viewMoreText: {
-		fontSize: 14,
-		color: "#666",
+		color: "#6C5CE7",
 		fontWeight: "500",
 	},
+
+	// Progression
 	progressCard: {
-		backgroundColor: "#fff",
-		borderRadius: 16,
 		padding: 20,
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.05,
-		shadowRadius: 4,
-		elevation: 2,
 	},
 	progressHeader: {
 		flexDirection: "row",
 		justifyContent: "space-between",
 		alignItems: "center",
-		marginBottom: 12,
+		marginBottom: 16,
 	},
 	progressTitle: {
-		fontSize: 16,
-		fontWeight: "600",
 		color: "#333",
 	},
 	progressPercentage: {
-		fontSize: 18,
-		fontWeight: "bold",
 		color: "#4CAF50",
 	},
 	progressBarContainer: {
@@ -465,27 +469,24 @@ const styles = StyleSheet.create({
 		borderRadius: 4,
 	},
 	progressLabel: {
-		fontSize: 12,
 		color: "#666",
-		fontWeight: "500",
 		minWidth: 40,
+		textAlign: "right",
 	},
+
+	// Tâches complétées
 	completedTaskCard: {
 		backgroundColor: "#E8F5E8",
-		borderRadius: 12,
 		padding: 16,
 		marginBottom: 8,
 		flexDirection: "row",
 		alignItems: "center",
 	},
 	completedTaskDescription: {
-		fontSize: 14,
-		fontWeight: "500",
 		color: "#333",
 		marginBottom: 4,
 	},
 	completedTaskDate: {
-		fontSize: 12,
 		color: "#666",
 	},
 	completedReward: {
@@ -493,42 +494,41 @@ const styles = StyleSheet.create({
 		gap: 4,
 	},
 	completedIcon: {
-		fontSize: 16,
-		color: "#4CAF50",
+		width: 24,
+		height: 24,
+		backgroundColor: "#4CAF50",
+		borderRadius: 12,
+		justifyContent: "center",
+		alignItems: "center",
 	},
 	completedAmount: {
-		fontSize: 12,
-		fontWeight: "bold",
 		color: "#4CAF50",
+		fontWeight: "bold",
 	},
+
+	// Actions rapides
 	quickActions: {
 		flexDirection: "row",
 		gap: 12,
 	},
-	actionButton: {
+	actionCard: {
 		flex: 1,
-		backgroundColor: "#fff",
-		borderRadius: 16,
 		padding: 20,
 		alignItems: "center",
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.05,
-		shadowRadius: 4,
-		elevation: 2,
 	},
 	actionButtonIcon: {
 		fontSize: 32,
 		marginBottom: 8,
 	},
 	actionButtonText: {
-		fontSize: 14,
-		fontWeight: "600",
 		color: "#333",
+		fontWeight: "600",
+		textAlign: "center",
 	},
+
+	// Motivation
 	motivationCard: {
 		backgroundColor: "#FFF8E1",
-		borderRadius: 16,
 		padding: 24,
 		alignItems: "center",
 		marginBottom: 20,
@@ -538,18 +538,16 @@ const styles = StyleSheet.create({
 		marginBottom: 12,
 	},
 	motivationTitle: {
-		fontSize: 18,
-		fontWeight: "bold",
 		color: "#333",
 		marginBottom: 8,
 		textAlign: "center",
 	},
 	motivationDescription: {
-		fontSize: 14,
 		color: "#666",
 		textAlign: "center",
 		lineHeight: 20,
 	},
+
 	bottomPadding: {
 		height: 20,
 	},
