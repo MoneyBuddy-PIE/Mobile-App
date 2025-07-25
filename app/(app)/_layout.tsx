@@ -7,7 +7,8 @@ export default function AppLayout() {
 	const pathname = usePathname();
 	console.log("Current pathname:", pathname);
 
-	const hideBottomNav = pathname.startsWith("/accounts");
+	const hideBottomNav =
+		pathname.startsWith("/accounts") || (pathname.startsWith("/courses/") && pathname !== "/courses");
 
 	return (
 		<AuthGuard>

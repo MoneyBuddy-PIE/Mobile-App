@@ -159,11 +159,6 @@ export const CourseDetailModal: React.FC<CourseDetailModalProps> = ({ course, vi
 							</View>
 						</View>
 
-						{/* Start Button */}
-						<TouchableOpacity style={styles.startButton} onPress={() => onStartCourse(course)}>
-							<Text style={[styles.startButtonText, typography.button]}>Commencer</Text>
-						</TouchableOpacity>
-
 						{/* Sources Section */}
 						{course.resources && course.resources.length > 0 && (
 							<View style={styles.sourcesSection}>
@@ -186,6 +181,11 @@ export const CourseDetailModal: React.FC<CourseDetailModalProps> = ({ course, vi
 								))}
 							</View>
 						)}
+
+						{/* Start Button */}
+						<TouchableOpacity style={styles.startButton} onPress={() => onStartCourse(course)}>
+							<Text style={[styles.startButtonText, typography.button]}>Commencer</Text>
+						</TouchableOpacity>
 					</View>
 				</Animated.View>
 			</View>
@@ -244,11 +244,9 @@ const styles = StyleSheet.create({
 	courseTitle: {
 		marginBottom: 16,
 		lineHeight: 30,
-		textAlign: "center",
 	},
 	courseInfo: {
 		flexDirection: "row",
-		justifyContent: "center",
 		gap: 24,
 		marginBottom: 32,
 	},
@@ -263,18 +261,18 @@ const styles = StyleSheet.create({
 		fontFamily: "DMSans_400Regular",
 	},
 	startButton: {
-		backgroundColor: "#6C5CE7",
+		backgroundColor: "#846DED",
 		paddingVertical: 16,
 		borderRadius: 12,
 		alignItems: "center",
 		marginBottom: 32,
-		shadowColor: "#6C5CE7",
+		shadowColor: "#4E31CF",
 		shadowOffset: {
 			width: 0,
 			height: 4,
 		},
-		shadowOpacity: 0.3,
-		shadowRadius: 8,
+		shadowOpacity: 1,
+		shadowRadius: 0,
 		elevation: 8,
 	},
 	startButtonText: {
