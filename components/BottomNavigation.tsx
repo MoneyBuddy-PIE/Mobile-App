@@ -35,46 +35,63 @@ export const BottomNavigation: React.FC = () => {
 	const getNavItems = (): NavItem[] => {
 		const homeRoute = subAccount?.role === "CHILD" ? "/(app)/home/child" : "/(app)/home/parent";
 
-		const baseNavItems: NavItem[] = [
-			{
-				route: homeRoute,
-				label: "Home",
-				iconName: "home-outline",
-				iconNameActive: "home",
-			},
-			{
-				route: "/(app)/courses",
-				label: "Cours",
-				iconName: "book-outline",
-				iconNameActive: "book",
-			},
-			{
-				route: "/(app)/profile",
-				label: "Profile",
-				iconName: "person-outline",
-				iconNameActive: "person",
-			},
-		];
-
 		if (subAccount?.role === "CHILD") {
-			// Pour les enfants : ajouter l'onglet Revenus
-			baseNavItems.splice(1, 0, {
-				route: "/(app)/revenus",
-				label: "Revenus",
-				iconName: "wallet-outline",
-				iconNameActive: "wallet",
-			});
+			// Navigation pour les enfants
+			return [
+				{
+					route: homeRoute,
+					label: "Home",
+					iconName: "home-outline",
+					iconNameActive: "home",
+				},
+				{
+					route: "/(app)/revenus",
+					label: "Revenus",
+					iconName: "wallet-outline",
+					iconNameActive: "wallet",
+				},
+				{
+					route: "/(app)/tasks",
+					label: "Tâches",
+					iconName: "checkmark-circle-outline",
+					iconNameActive: "checkmark-circle",
+				},
+				{
+					route: "/(app)/profile",
+					label: "Profile",
+					iconName: "person-outline",
+					iconNameActive: "person",
+				},
+			];
 		} else {
-			// Pour les parents : ajouter l'onglet Enfants
-			baseNavItems.splice(1, 0, {
-				route: "/(app)/children",
-				label: "Enfants",
-				iconName: "people-outline",
-				iconNameActive: "people",
-			});
+			// Navigation pour les parents
+			return [
+				{
+					route: homeRoute,
+					label: "Home",
+					iconName: "home-outline",
+					iconNameActive: "home",
+				},
+				{
+					route: "/(app)/children",
+					label: "Enfants",
+					iconName: "people-outline",
+					iconNameActive: "people",
+				},
+				{
+					route: "/(app)/courses",
+					label: "Cours",
+					iconName: "book-outline",
+					iconNameActive: "book",
+				},
+				{
+					route: "/(app)/profile",
+					label: "Profile",
+					iconName: "person-outline",
+					iconNameActive: "person",
+				},
+			];
 		}
-
-		return baseNavItems;
 	};
 
 	const navItems = getNavItems();

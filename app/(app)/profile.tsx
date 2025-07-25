@@ -180,30 +180,6 @@ export default function Profile() {
 								<Ionicons name="chevron-forward" size={16} color="#999" />
 							</TouchableOpacity>
 						</Link>
-
-						<TouchableOpacity style={styles.actionItem}>
-							<View style={styles.actionIcon}>
-								<Ionicons name="help-circle" size={20} color="#6C5CE7" />
-							</View>
-							<Text style={[styles.actionText, fontStylesSemiBold]}>Aide et support</Text>
-							<Ionicons name="chevron-forward" size={16} color="#999" />
-						</TouchableOpacity>
-
-						<TouchableOpacity style={styles.actionItem}>
-							<View style={styles.actionIcon}>
-								<Ionicons name="document-text" size={20} color="#6C5CE7" />
-							</View>
-							<Text style={[styles.actionText, fontStylesSemiBold]}>Conditions d'utilisation</Text>
-							<Ionicons name="chevron-forward" size={16} color="#999" />
-						</TouchableOpacity>
-
-						<TouchableOpacity style={styles.actionItem}>
-							<View style={styles.actionIcon}>
-								<Ionicons name="shield-checkmark" size={20} color="#6C5CE7" />
-							</View>
-							<Text style={[styles.actionText, fontStylesSemiBold]}>Politique de confidentialité</Text>
-							<Ionicons name="chevron-forward" size={16} color="#999" />
-						</TouchableOpacity>
 					</View>
 				</View>
 
@@ -252,7 +228,7 @@ const styles = StyleSheet.create({
 	},
 	profileCard: {
 		backgroundColor: "#fff",
-		borderRadius: 16,
+		borderRadius: 8,
 		padding: 20,
 		marginBottom: 30,
 		shadowColor: "#BFD0EA",
@@ -272,7 +248,7 @@ const styles = StyleSheet.create({
 	avatarContainer: {
 		width: 60,
 		height: 60,
-		borderRadius: 30,
+		borderRadius: 8,
 		backgroundColor: "#f0f8ff",
 		justifyContent: "center",
 		alignItems: "center",
@@ -293,7 +269,7 @@ const styles = StyleSheet.create({
 	roleBadge: {
 		paddingHorizontal: 12,
 		paddingVertical: 6,
-		borderRadius: 12,
+		borderRadius: 4,
 		alignSelf: "flex-start",
 	},
 	roleText: {
@@ -303,7 +279,7 @@ const styles = StyleSheet.create({
 	},
 	moneyContainer: {
 		backgroundColor: "#f8f9fa",
-		borderRadius: 12,
+		borderRadius: 8,
 		padding: 16,
 		alignItems: "center",
 	},
@@ -328,7 +304,7 @@ const styles = StyleSheet.create({
 	},
 	infoCard: {
 		backgroundColor: "#fff",
-		borderRadius: 16,
+		borderRadius: 8,
 		padding: 20,
 		shadowColor: "#BFD0EA",
 		shadowOffset: {
@@ -358,7 +334,7 @@ const styles = StyleSheet.create({
 	},
 	actionsContainer: {
 		backgroundColor: "#fff",
-		borderRadius: 16,
+		borderRadius: 8,
 		overflow: "hidden",
 		shadowColor: "#BFD0EA",
 		shadowOffset: {
@@ -396,7 +372,7 @@ const styles = StyleSheet.create({
 	},
 	logoutButton: {
 		backgroundColor: "#fff",
-		borderRadius: 16,
+		borderRadius: 8,
 		padding: 16,
 		flexDirection: "row",
 		alignItems: "center",

@@ -16,6 +16,9 @@ import { tasksService } from "@/services/tasksService";
 import { transactionService } from "@/services/transactionService";
 import { Task } from "@/types/Task";
 import { Transaction } from "@/types/Transaction";
+import { typography } from "@/styles/typography";
+import { Ionicons } from "@expo/vector-icons";
+import { logger } from "@/utils/logger";
 
 export default function Revenus() {
 	const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
@@ -32,7 +35,7 @@ export default function Revenus() {
 		try {
 			const accountData = await UserStorage.getSubAccount();
 			setSubAccount(accountData);
-
+			logger.log("Revenus - SubAccount loaded:", accountData);
 			if (accountData) {
 				// Charger les tâches pour les statistiques
 				const childTasks = await tasksService.getTasksByChild(accountData.id, "CHILD");
@@ -65,7 +68,7 @@ export default function Revenus() {
 		return (
 			<View style={[styles.container, styles.center]}>
 				<ActivityIndicator size="large" color="#6C5CE7" />
-				<Text style={styles.loadingText}>Chargement...</Text>
+				<Text style={[styles.loadingText, typography.body]}>Chargement...</Text>
 			</View>
 		);
 	}
@@ -79,75 +82,124 @@ export default function Revenus() {
 			>
 				{/* Header */}
 				<View style={styles.header}>
-					<Text style={styles.title}>Mes revenus</Text>
-					<Text style={styles.subtitle}>Ton argent de poche et tes gains</Text>
+					<Text style={[styles.title, typography.title]}>Mes revenus</Text>
+					<Text style={[styles.subtitle, typography.subtitle]}>Ton argent de poche et tes gains</Text>
 				</View>
 
 				{/* Solde actuel */}
-				<View style={styles.balanceCard}>
-					<Text style={styles.balanceLabel}>Mon argent de poche</Text>
-					<Text style={styles.balanceAmount}>{parseFloat(subAccount?.money || "0").toFixed(2)}€</Text>
-					<View style={styles.balanceIcon}>
-						<Text style={styles.balanceEmoji}>💰</Text>
+				<View style={[styles.balanceCard, styles.card]}>
+					<View style={styles.balanceHeader}>
+						<Text style={[styles.balanceLabel, typography.body]}>Mon argent de poche</Text>
+						<View style={styles.balanceIcon}>
+							<Text style={styles.balanceEmoji}>💰</Text>
+						</View>
 					</View>
+					<Text style={[styles.balanceAmount, typography["5xl"], typography.bold]}>
+						{parseFloat(subAccount?.money || "0").toFixed(2)}€
+					</Text>
 				</View>
 
 				{/* Statistiques */}
 				<View style={styles.statsContainer}>
-					<View style={styles.statCard}>
-						<Text style={styles.statIcon}>✅</Text>
-						<Text style={styles.statValue}>{totalEarned.toFixed(2)}€</Text>
-						<Text style={styles.statLabel}>Gagné au total</Text>
+					<View style={[styles.statCard, styles.card]}>
+						<View style={styles.statIconContainer}>
+							<Text style={styles.statIcon}>✅</Text>
+						</View>
+						<Text style={[styles.statValue, typography.heading]}>{totalEarned.toFixed(2)}€</Text>
+						<Text style={[styles.statLabel, typography.caption]}>Gagné au total</Text>
 					</View>
-					<View style={styles.statCard}>
-						<Text style={styles.statIcon}>📈</Text>
-						<Text style={styles.statValue}>{completedTasks.length}</Text>
-						<Text style={styles.statLabel}>Tâches terminées</Text>
+					<View style={[styles.statCard, styles.card]}>
+						<View style={styles.statIconContainer}>
+							<Text style={styles.statIcon}>📈</Text>
+						</View>
+						<Text style={[styles.statValue, typography.heading]}>{completedTasks.length}</Text>
+						<Text style={[styles.statLabel, typography.caption]}>Tâches terminées</Text>
 					</View>
 				</View>
 
 				{/* Actions */}
 				<View style={styles.actionsContainer}>
 					<TouchableOpacity
-						style={styles.addExpenseButton}
+						style={[styles.addExpenseButton]}
 						onPress={() => router.push("/(app)/revenus/add-expense")}
 					>
-						<Text style={styles.addExpenseIcon}>💸</Text>
-						<Text style={styles.addExpenseText}>Ajouter une dépense</Text>
+						<View style={styles.expenseButtonContent}>
+							<View style={styles.expenseIconContainer}>
+								<Ionicons name="remove-circle" size={24} color="#fff" />
+							</View>
+							<Text style={[styles.addExpenseText, typography.button]}>Ajouter une dépense</Text>
+							<Ionicons name="chevron-forward" size={20} color="#fff" />
+						</View>
 					</TouchableOpacity>
+				</View>
+
+				{/* Conseils */}
+				<View style={[styles.tipsCard, styles.card]}>
+					<View style={styles.tipsHeader}>
+						<View style={styles.tipIconContainer}>
+							<Ionicons name="bulb" size={20} color="#FF9800" />
+						</View>
+						<Text style={[styles.tipsTitle, typography.subheading]}>Conseil du jour</Text>
+					</View>
+					<Text style={[styles.tipsText, typography.body]}>
+						💡 Essaie d'économiser un petit peu de ton argent de poche chaque semaine. Même 50 centimes te
+						permettront d'acheter quelque chose de plus gros plus tard !
+					</Text>
 				</View>
 
 				{/* Historique des transactions */}
 				<View style={styles.section}>
-					<Text style={styles.sectionTitle}>Historique des transactions</Text>
+					<Text style={[styles.sectionTitle, typography.heading]}>Historique des transactions</Text>
 					{transactions.length > 0 ? (
-						transactions
-							.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-							.slice(0, 15)
-							.map((transaction) => (
-								<View key={transaction.id} style={styles.historyItem}>
-									<View style={styles.historyInfo}>
-										<Text style={styles.historyDescription}>{transaction.description}</Text>
-										<Text style={styles.historyDate}>
-											{new Date(transaction.createdAt).toLocaleDateString("fr-FR")}
-										</Text>
-									</View>
-									<Text
+						<View style={[styles.historyContainer, styles.card]}>
+							{transactions
+								.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+								.slice(0, 15)
+								.map((transaction, index) => (
+									<View
+										key={transaction.id}
 										style={[
-											styles.historyAmount,
-											transaction.type === "CREDIT" ? styles.creditAmount : styles.debitAmount,
+											styles.historyItem,
+											index < transactions.slice(0, 15).length - 1 && styles.historyItemBorder,
 										]}
 									>
-										{transaction.type === "CREDIT" ? "+" : "-"}
-										{parseFloat(transaction.amount).toFixed(2)}€
-									</Text>
-								</View>
-							))
+										<View style={styles.transactionIcon}>
+											<Ionicons
+												name={transaction.type === "CREDIT" ? "arrow-up" : "arrow-down"}
+												size={16}
+												color={transaction.type === "CREDIT" ? "#4CAF50" : "#FF6B6B"}
+											/>
+										</View>
+										<View style={styles.historyInfo}>
+											<Text style={[styles.historyDescription, typography.body]}>
+												{transaction.description}
+											</Text>
+											<Text style={[styles.historyDate, typography.caption]}>
+												{new Date(transaction.createdAt).toLocaleDateString("fr-FR")}
+											</Text>
+										</View>
+										<Text
+											style={[
+												styles.historyAmount,
+												typography.buttonSmall,
+												transaction.type === "CREDIT"
+													? styles.creditAmount
+													: styles.debitAmount,
+											]}
+										>
+											{transaction.type === "CREDIT" ? "+" : "-"}
+											{parseFloat(transaction.amount).toFixed(2)}€
+										</Text>
+									</View>
+								))}
+						</View>
 					) : (
-						<View style={styles.emptyHistory}>
+						<View style={[styles.emptyHistory, styles.card]}>
 							<Text style={styles.emptyIcon}>💰</Text>
-							<Text style={styles.emptyTitle}>Pas encore de transactions</Text>
-							<Text style={styles.emptyText}>Tes gains et dépenses apparaîtront ici !</Text>
+							<Text style={[styles.emptyTitle, typography.subheading]}>Pas encore de transactions</Text>
+							<Text style={[styles.emptyText, typography.body]}>
+								Tes gains et dépenses apparaîtront ici !
+							</Text>
 						</View>
 					)}
 				</View>
@@ -173,53 +225,63 @@ const styles = StyleSheet.create({
 	},
 	loadingText: {
 		marginTop: 12,
-		fontSize: 16,
 		color: "#666",
 	},
+
+	// Cards et composants réutilisables
+	card: {
+		backgroundColor: "#fff",
+		borderRadius: 8,
+		shadowColor: "#BFD0EA",
+		shadowOffset: {
+			width: 0,
+			height: 3.89,
+		},
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 4,
+	},
+
+	// Header
 	header: {
-		paddingTop: 20,
+		paddingTop: 60,
 		paddingBottom: 24,
 	},
 	title: {
-		fontSize: 32,
-		fontWeight: "bold",
-		color: "#333",
 		marginBottom: 8,
 	},
 	subtitle: {
-		fontSize: 16,
-		color: "#666",
 		lineHeight: 22,
 	},
+
+	// Solde
 	balanceCard: {
-		backgroundColor: "#6C5CE7",
-		borderRadius: 20,
 		padding: 24,
-		alignItems: "center",
 		marginBottom: 24,
 		position: "relative",
 		overflow: "hidden",
+		backgroundColor: "#6C5CE7",
+	},
+	balanceHeader: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
+		marginBottom: 16,
 	},
 	balanceLabel: {
-		fontSize: 16,
-		color: "rgba(255, 255, 255, 0.8)",
-		marginBottom: 8,
-	},
-	balanceAmount: {
-		fontSize: 48,
-		fontWeight: "bold",
-		color: "#fff",
-		marginBottom: 8,
+		color: "rgba(255, 255, 255, 0.9)",
 	},
 	balanceIcon: {
-		position: "absolute",
-		top: 20,
-		right: 20,
 		opacity: 0.3,
 	},
 	balanceEmoji: {
-		fontSize: 40,
+		fontSize: 32,
 	},
+	balanceAmount: {
+		textAlign: "center",
+	},
+
+	// Stats
 	statsContainer: {
 		flexDirection: "row",
 		gap: 12,
@@ -227,94 +289,111 @@ const styles = StyleSheet.create({
 	},
 	statCard: {
 		flex: 1,
-		backgroundColor: "#fff",
-		borderRadius: 16,
 		padding: 20,
 		alignItems: "center",
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.05,
-		shadowRadius: 4,
-		elevation: 2,
+	},
+	statIconContainer: {
+		width: 48,
+		height: 48,
+		backgroundColor: "#EBF2FB",
+		borderRadius: 24,
+		justifyContent: "center",
+		alignItems: "center",
+		marginBottom: 12,
 	},
 	statIcon: {
-		fontSize: 24,
-		marginBottom: 8,
+		fontSize: 20,
 	},
 	statValue: {
-		fontSize: 20,
-		fontWeight: "bold",
 		color: "#333",
 		marginBottom: 4,
 	},
 	statLabel: {
-		fontSize: 12,
-		color: "#666",
 		textAlign: "center",
+		color: "#666",
 	},
+
+	// Actions
 	actionsContainer: {
 		marginBottom: 24,
 	},
 	addExpenseButton: {
-		backgroundColor: "#FF6B6B",
-		borderRadius: 16,
-		padding: 16,
+		backgroundColor: "#846DED",
+		paddingHorizontal: 48,
+		paddingVertical: 16,
+		borderRadius: 12,
+		minWidth: 200,
+		shadowColor: "#4E31CF",
+		shadowOffset: {
+			width: 0,
+			height: 4,
+		},
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 4,
+	},
+	expenseButtonContent: {
 		flexDirection: "row",
 		alignItems: "center",
-		justifyContent: "center",
-		gap: 12,
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.1,
-		shadowRadius: 4,
-		elevation: 3,
+		justifyContent: "space-between",
 	},
-	addExpenseIcon: {
-		fontSize: 20,
+	expenseIconContainer: {
+		width: 40,
+		height: 40,
+		backgroundColor: "rgba(255, 255, 255, 0.2)",
+		borderRadius: 20,
+		justifyContent: "center",
+		alignItems: "center",
 	},
 	addExpenseText: {
 		color: "#fff",
-		fontSize: 16,
-		fontWeight: "600",
+		flex: 1,
+		marginLeft: 16,
 	},
+
+	// Sections
 	section: {
 		marginBottom: 24,
 	},
 	sectionTitle: {
-		fontSize: 18,
-		fontWeight: "bold",
 		color: "#333",
 		marginBottom: 16,
 	},
+
+	// Historique
+	historyContainer: {
+		padding: 0,
+		overflow: "hidden",
+	},
 	historyItem: {
-		backgroundColor: "#fff",
-		borderRadius: 12,
 		padding: 16,
-		marginBottom: 8,
 		flexDirection: "row",
-		justifyContent: "space-between",
 		alignItems: "center",
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 1 },
-		shadowOpacity: 0.05,
-		shadowRadius: 2,
-		elevation: 1,
+	},
+	historyItemBorder: {
+		borderBottomWidth: 1,
+		borderBottomColor: "#f0f0f0",
+	},
+	transactionIcon: {
+		width: 32,
+		height: 32,
+		backgroundColor: "#f8f9fa",
+		borderRadius: 16,
+		justifyContent: "center",
+		alignItems: "center",
+		marginRight: 12,
 	},
 	historyInfo: {
 		flex: 1,
 	},
 	historyDescription: {
-		fontSize: 14,
-		fontWeight: "500",
 		color: "#333",
 		marginBottom: 4,
 	},
 	historyDate: {
-		fontSize: 12,
 		color: "#666",
 	},
 	historyAmount: {
-		fontSize: 16,
 		fontWeight: "bold",
 	},
 	creditAmount: {
@@ -323,9 +402,9 @@ const styles = StyleSheet.create({
 	debitAmount: {
 		color: "#FF6B6B",
 	},
+
+	// Empty state
 	emptyHistory: {
-		backgroundColor: "#fff",
-		borderRadius: 16,
 		padding: 32,
 		alignItems: "center",
 	},
@@ -334,17 +413,44 @@ const styles = StyleSheet.create({
 		marginBottom: 12,
 	},
 	emptyTitle: {
-		fontSize: 16,
-		fontWeight: "bold",
 		color: "#333",
 		marginBottom: 8,
+		textAlign: "center",
 	},
 	emptyText: {
-		fontSize: 14,
 		color: "#666",
 		textAlign: "center",
 		lineHeight: 20,
 	},
+
+	// Tips
+	tipsCard: {
+		padding: 20,
+		backgroundColor: "#FFF8E1",
+		marginBottom: 20,
+	},
+	tipsHeader: {
+		flexDirection: "row",
+		alignItems: "center",
+		marginBottom: 12,
+	},
+	tipIconContainer: {
+		width: 32,
+		height: 32,
+		backgroundColor: "#FFE0B2",
+		borderRadius: 16,
+		justifyContent: "center",
+		alignItems: "center",
+		marginRight: 12,
+	},
+	tipsTitle: {
+		color: "#333",
+	},
+	tipsText: {
+		color: "#666",
+		lineHeight: 20,
+	},
+
 	bottomPadding: {
 		height: 20,
 	},
