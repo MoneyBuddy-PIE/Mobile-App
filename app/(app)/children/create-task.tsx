@@ -55,7 +55,7 @@ export default function CreateTask() {
 				category: taskType === "REGULAR" ? "REGULAR" : "PUNCTUAL",
 				subAccountId: childId,
 				reward: finalAmount,
-				dateLimit: new Date().toISOString(), // TODO: Ajouter sélection de date
+				dateLimit: new Date().toISOString(),
 			});
 
 			Alert.alert("Succès", "Tâche créée avec succès", [{ text: "OK", onPress: () => router.back() }]);

@@ -18,6 +18,7 @@ import { Task } from "@/types/Task";
 import { logger } from "@/utils/logger";
 import { typography } from "@/styles/typography";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 
 export default function Children() {
 	const { user, refreshUserData } = useAuthContext();
@@ -30,6 +31,14 @@ export default function Children() {
 
 	const childAccounts = user?.subAccounts?.filter((account) => account.role === "CHILD") || [];
 	const selectedChild = childAccounts.find((child) => child.id === selectedChildId);
+
+	useFocusEffect(
+		React.useCallback(() => {
+			if (selectedChildId) {
+				loadChildTasks();
+			}
+		}, [selectedChildId])
+	);
 
 	useEffect(() => {
 		loadData();
@@ -63,10 +72,9 @@ export default function Children() {
 		setLoadingTasks(true);
 		try {
 			const childTasks = await tasksService.getTasksByChild(selectedChildId, "PARENT");
-			logger.log("Child tasks loaded:", childTasks);
 			setTasks(childTasks);
 		} catch (error) {
-			console.error("Error loading child tasks:", error);
+			logger.error("Error loading child tasks:", error);
 		} finally {
 			setLoadingTasks(false);
 		}
@@ -76,6 +84,9 @@ export default function Children() {
 		setRefreshing(true);
 		try {
 			await refreshUserData();
+			if (selectedChildId) {
+				await loadChildTasks();
+			}
 		} finally {
 			setRefreshing(false);
 		}
@@ -194,7 +205,6 @@ export default function Children() {
 									{/* Tâches régulières */}
 									<View style={styles.taskCategory}>
 										<TouchableOpacity style={styles.taskCategoryHeader}>
-											{/* <Text style={styles.taskIcon}>✅</Text> */}
 											<View style={styles.taskIconContainer}>
 												<Ionicons name="checkbox-outline" size={20} color="#16AA75" />
 											</View>
@@ -219,7 +229,6 @@ export default function Children() {
 									{/* Défis ponctuels */}
 									<View style={styles.taskCategory}>
 										<TouchableOpacity style={styles.taskCategoryHeader}>
-											{/* <Text style={styles.taskIcon}>🚀</Text> */}
 											<View style={styles.taskIconContainer}>
 												<Ionicons name="rocket-outline" size={20} color="#16AA75" />
 											</View>
@@ -244,7 +253,6 @@ export default function Children() {
 									{/* Message aucune tâche */}
 									{tasks.length === 0 && (
 										<View style={styles.infoCard}>
-											{/* <Text style={styles.infoIcon}>📝</Text> */}
 											<View style={styles.infoContent}>
 												<Ionicons
 													name="list-outline"
@@ -391,7 +399,6 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		gap: 16,
 		marginBottom: 24,
-		// paddingHorizontal: 20,
 	},
 	actionButtonContainer: {
 		flex: 1,
@@ -417,7 +424,6 @@ const styles = StyleSheet.create({
 		padding: 16,
 		borderRadius: 4,
 		marginBottom: 24,
-		// alignItems: "center",
 	},
 	infoContent: {
 		flexDirection: "row",
@@ -430,11 +436,9 @@ const styles = StyleSheet.create({
 	},
 	infoTitle: {
 		color: "#333",
-		// marginBottom: 8,
 	},
 	infoText: {
 		color: "#666",
-		// textAlign: "center",
 		lineHeight: 20,
 	},
 	tasksSection: {
@@ -589,7 +593,6 @@ const styles = StyleSheet.create({
 	},
 	taskDescription: {
 		color: "#333",
-		// marginBottom: 2,
 	},
 	taskReward: {
 		color: "#6C5CE7",

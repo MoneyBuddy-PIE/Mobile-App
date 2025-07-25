@@ -5,8 +5,6 @@ import { Task, CreateTaskRequest } from "@/types/Task";
 export const tasksService = {
 	// Récupérer toutes les tâches
 	async getAllTasks(source: string): Promise<Task[]> {
-		// const endpoint = `/tasks?source=${source}`;
-		// console.log("Fetching all tasks from endpoint:", endpoint);
 		return apiService.get<Task[]>('/tasks?source=' + source);
 	},
 
@@ -38,7 +36,6 @@ export const tasksService = {
 	// Récupérer les tâches d'un enfant spécifique
 	async getTasksByChild(childId: string, role: string): Promise<Task[]> {
 		const allTasks = await this.getAllTasks(role);
-		logger.log("All tasks loaded:", allTasks);
 		return allTasks.filter((task) => task.subaccountIdChild === childId);
 	},
 

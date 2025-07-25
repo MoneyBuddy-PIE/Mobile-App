@@ -60,14 +60,6 @@ class ApiService {
 					config.headers.Authorization = `Bearer ${token}`;
 				}
 
-				logger.log("Request config:", {
-					url: config.url,
-					method: config.method,
-					headers: config.headers,
-					data: config.data,
-					params: config.params,
-				});
-
 				return config;
 			},
 			(error) => {
@@ -174,10 +166,8 @@ class ApiService {
 	async post<T>(url: string, data?: any): Promise<T> {
 		try {
 			const response = await this.api.post(url, data);
-			logger.log("POST response:", response);
 			return response.data;
 		} catch (error) {
-			console.error("POST request error:", error);
 			logger.error("POST request error:", error);
 			this.handleApiError(error);
 			throw error;
