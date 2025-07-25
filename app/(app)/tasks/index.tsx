@@ -73,8 +73,8 @@ export default function Tasks() {
 
 	const completedTasks = tasks.filter((task) => task.done);
 	const pendingTasks = tasks.filter((task) => !task.done);
-	const regularTasks = pendingTasks.filter((task) => task.category === "REGULAR");
-	const punctualTasks = pendingTasks.filter((task) => task.category === "PUNCTUAL");
+	const regularTasks = tasks.filter((task) => task.category === "REGULAR");
+	const punctualTasks = tasks.filter((task) => task.category === "PUNCTUAL");
 
 	const renderTask = (task: Task) => (
 		<TouchableOpacity
@@ -105,23 +105,6 @@ export default function Tasks() {
 				</View>
 			</View>
 		</TouchableOpacity>
-	);
-
-	const renderCompletedTask = (task: Task) => (
-		<View key={task.id} style={[styles.completedTaskCard, styles.card]}>
-			<View style={styles.taskInfo}>
-				<Text style={[styles.completedTaskDescription, typography.body]}>{task.description}</Text>
-				<Text style={[styles.completedTaskDate, typography.caption]}>
-					{new Date(task.updatedAt).toLocaleDateString("fr-FR")}
-				</Text>
-			</View>
-			<View style={styles.completedReward}>
-				<View style={styles.completedIcon}>
-					<Ionicons name="checkmark" size={16} color="#4CAF50" />
-				</View>
-				<Text style={[styles.completedAmount, typography.buttonSmall]}>+{task.reward}€</Text>
-			</View>
-		</View>
 	);
 
 	return (
@@ -204,14 +187,6 @@ export default function Tasks() {
 						<Text style={[styles.emptyText, typography.body]}>
 							Demande à tes parents de t'ajouter des tâches pour gagner de l'argent de poche !
 						</Text>
-					</View>
-				)}
-
-				{/* Tâches complétées récemment */}
-				{completedTasks.length > 0 && (
-					<View style={styles.section}>
-						<Text style={[styles.sectionTitle, typography.heading]}>Récemment terminées</Text>
-						{completedTasks.slice(0, 5).map(renderCompletedTask)}
 					</View>
 				)}
 
