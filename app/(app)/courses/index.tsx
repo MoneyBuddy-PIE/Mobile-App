@@ -9,15 +9,18 @@ import {
 	TouchableOpacity,
 	RefreshControl,
 	Dimensions,
+	Image,
 } from "react-native";
 import { router } from "expo-router";
 import { UserStorage } from "@/utils/storage";
 import { SubAccount } from "@/types/Account";
-import { courseService } from "@/services/courseService";
-import { Course } from "@/types/Course";
+import { chapterService } from "@/services/chapterService";
+import { Chapter } from "@/types/Chapter";
+import { logger } from "@/utils/logger";
+import { typography } from "@/styles/typography";
 
 const { width } = Dimensions.get("window");
-const cardWidth = (width - 60) / 2; // 20px padding + 20px gap
+const cardWidth = (width - 60) / 2;
 
 const AGE_FILTERS = [
 	{ id: "6-10", label: "6 à 10 ans", color: "#FF6B6B" },
@@ -25,19 +28,20 @@ const AGE_FILTERS = [
 	{ id: "bases", label: "Les bases", color: "#45B7D1" },
 ];
 
-const COURSE_COLORS = [
-	"#FFE5E5", // Rose pâle
-	"#E5F3FF", // Bleu pâle
-	"#E5FFE5", // Vert pâle
-	"#FFF5E5", // Orange pâle
-	"#F0E5FF", // Violet pâle
-	"#FFFFE5", // Jaune pâle
+// Images des cours
+const COURSE_IMAGES = [
+	require("@/assets/images/cours/course-1.png"),
+	require("@/assets/images/cours/course-2.png"),
+	require("@/assets/images/cours/course-3.png"),
+	require("@/assets/images/cours/course-4.png"),
+	require("@/assets/images/cours/course-5.png"),
+	require("@/assets/images/cours/course-6.png"),
 ];
 
 export default function Courses() {
 	const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
-	const [courses, setCourses] = useState<Course[]>([]);
-	const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
+	const [chapters, setChapters] = useState<Chapter[]>([]);
+	const [filteredChapters, setFilteredChapters] = useState<Chapter[]>([]);
 	const [selectedFilter, setSelectedFilter] = useState<string>("all");
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
@@ -47,8 +51,8 @@ export default function Courses() {
 	}, []);
 
 	useEffect(() => {
-		filterCourses();
-	}, [courses, selectedFilter]);
+		filterChapters();
+	}, [chapters, selectedFilter]);
 
 	const loadData = async () => {
 		try {
@@ -56,11 +60,12 @@ export default function Courses() {
 			setSubAccount(accountData);
 
 			if (accountData) {
-				const coursesData = await courseService.getCoursesByRole(accountData.role);
-				setCourses(coursesData);
+				const chaptersData = await chapterService.getChaptersByRole(accountData.role);
+				logger.log("Chapters loaded:", chaptersData);
+				setChapters(chaptersData);
 			}
 		} catch (error) {
-			console.error("Error loading courses:", error);
+			console.error("Error loading chapters:", error);
 		} finally {
 			setLoading(false);
 		}
@@ -75,13 +80,11 @@ export default function Courses() {
 		}
 	};
 
-	const filterCourses = () => {
+	const filterChapters = () => {
 		if (selectedFilter === "all") {
-			setFilteredCourses(courses);
+			setFilteredChapters(chapters);
 		} else {
-			// Pour l'instant, on affiche tous les cours car l'API ne fournit pas de critères d'âge
-			// On pourrait filtrer par title ou description si nécessaire
-			setFilteredCourses(courses);
+			setFilteredChapters(chapters);
 		}
 	};
 
@@ -89,37 +92,28 @@ export default function Courses() {
 		setSelectedFilter(filterId);
 	};
 
-	const renderCourseCard = (course: Course, index: number) => {
-		const backgroundColor = COURSE_COLORS[index % COURSE_COLORS.length];
+	const renderChapterCard = (chapter: Chapter, index: number) => {
+		const courseImage = COURSE_IMAGES[index % COURSE_IMAGES.length];
 
 		return (
 			<TouchableOpacity
-				key={course.id}
-				style={[styles.courseCard, { backgroundColor, width: cardWidth }]}
+				key={chapter.id}
+				style={[styles.chapterCard, { width: cardWidth }]}
 				onPress={() => {
-					router.push(`/(app)/courses/${course.id}`);
+                    console.log(`Navigate to chapter ${chapter.id}`);
+					router.push(`/(app)/courses/${chapter.id}?imgIndex=${index}`);
 				}}
 			>
-				<View style={styles.courseImagePlaceholder}>
-					<Text style={styles.courseEmoji}>
-						{index % 6 === 0
-							? "📚"
-							: index % 6 === 1
-							? "💰"
-							: index % 6 === 2
-							? "🎯"
-							: index % 6 === 3
-							? "🏦"
-							: index % 6 === 4
-							? "🎮"
-							: "💡"}
-					</Text>
+				<View style={styles.test}>
+					<View style={styles.chapterImageContainer}>
+						<Image source={courseImage} style={styles.chapterImage} resizeMode="cover" />
+					</View>
 				</View>
-				<View style={styles.courseInfo}>
-					<Text style={styles.courseTitle} numberOfLines={2}>
-						{course.title}
+				<View style={styles.chapterInfo}>
+					<Text style={styles.chapterTitle} numberOfLines={2}>
+						{chapter.title}
 					</Text>
-					<Text style={styles.courseLevel}>Niveau I</Text>
+					<Text style={styles.chapterLevel}>Niveau {chapter.level}</Text>
 				</View>
 			</TouchableOpacity>
 		);
@@ -145,8 +139,8 @@ export default function Courses() {
 			>
 				{/* Header */}
 				<View style={styles.header}>
-					<Text style={styles.title}>Mes cours</Text>
-					<Text style={styles.subtitle}>
+					<Text style={[styles.title, typography.heading]}>Mes cours</Text>
+					<Text style={[styles.subtitle, typography.body]}>
 						{isChildAccount
 							? "Apprendre l'argent en s'amusant"
 							: "Comprendre l'argent pour mieux l'expliquer"}
@@ -154,7 +148,7 @@ export default function Courses() {
 				</View>
 
 				{/* Age Filters */}
-				<View style={styles.filtersContainer}>
+				{/* <View style={styles.filtersContainer}>
 					<TouchableOpacity
 						style={[
 							styles.filterChip,
@@ -185,20 +179,20 @@ export default function Courses() {
 							</Text>
 						</TouchableOpacity>
 					))}
-				</View>
+				</View> */}
 
-				{/* Courses Grid */}
-				<View style={styles.coursesContainer}>
-					{filteredCourses.length > 0 ? (
-						<View style={styles.coursesGrid}>
-							{filteredCourses.map((course, index) => renderCourseCard(course, index))}
+				{/* Chapters Grid */}
+				<View style={styles.chaptersContainer}>
+					{filteredChapters.length > 0 ? (
+						<View style={styles.chaptersGrid}>
+							{filteredChapters.map((chapter, index) => renderChapterCard(chapter, index))}
 						</View>
 					) : (
 						<View style={styles.emptyContainer}>
 							<Text style={styles.emptyIcon}>📚</Text>
-							<Text style={styles.emptyTitle}>Aucun cours disponible</Text>
+							<Text style={styles.emptyTitle}>Aucun chapitre disponible</Text>
 							<Text style={styles.emptyText}>
-								Les cours seront bientôt disponibles pour votre niveau.
+								Les chapitres seront bientôt disponibles pour votre niveau.
 							</Text>
 						</View>
 					)}
@@ -233,19 +227,16 @@ const styles = StyleSheet.create({
 		paddingBottom: 24,
 	},
 	title: {
-		fontSize: 32,
-		fontWeight: "bold",
-		color: "#333",
 		marginBottom: 8,
+		textAlign: "center",
 	},
 	subtitle: {
-		fontSize: 16,
-		color: "#666",
-		lineHeight: 22,
+		textAlign: "center",
 	},
 	filtersContainer: {
 		flexDirection: "row",
 		gap: 8,
+        backgroundColor: "#EBF2FB",
 		marginBottom: 24,
 		flexWrap: "wrap",
 	},
@@ -266,49 +257,48 @@ const styles = StyleSheet.create({
 	filterTextSelected: {
 		color: "#fff",
 	},
-	coursesContainer: {
+	chaptersContainer: {
 		marginBottom: 20,
 	},
-	coursesGrid: {
+	chaptersGrid: {
 		flexDirection: "row",
 		flexWrap: "wrap",
 		justifyContent: "space-between",
-		gap: 20,
+		gap: 12,
 	},
-	courseCard: {
-		borderRadius: 16,
-		padding: 16,
-		marginBottom: 20,
-		shadowColor: "#000",
+	chapterCard: {
+		marginBottom: 24,
+	},
+	test: {
+		shadowColor: "#BFD0EA",
 		shadowOffset: {
 			width: 0,
-			height: 2,
+			height: 3.89,
 		},
-		shadowOpacity: 0.05,
-		shadowRadius: 4,
-		elevation: 2,
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 4,
 	},
-	courseImagePlaceholder: {
-		height: 100,
-		borderRadius: 12,
-		backgroundColor: "rgba(255, 255, 255, 0.3)",
-		justifyContent: "center",
-		alignItems: "center",
+	chapterImageContainer: {
+		height: 130,
+		borderRadius: 8,
 		marginBottom: 12,
+		overflow: "hidden",
 	},
-	courseEmoji: {
-		fontSize: 48,
+	chapterImage: {
+		width: "100%",
+		height: "100%",
 	},
-	courseInfo: {
+	chapterInfo: {
 		gap: 4,
 	},
-	courseTitle: {
+	chapterTitle: {
 		fontSize: 16,
 		fontWeight: "600",
 		color: "#333",
 		lineHeight: 20,
 	},
-	courseLevel: {
+	chapterLevel: {
 		fontSize: 12,
 		color: "#666",
 		fontWeight: "500",
