@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { tasksService } from "@/services/tasksService";
+import { Ionicons } from "@expo/vector-icons";
 
 const PREDEFINED_AMOUNTS = ["0.50", "1", "1.50"];
 
@@ -89,7 +90,7 @@ export default function CreateTask() {
 							onChangeText={setTaskName}
 							autoCapitalize="sentences"
 						/>
-						{taskName.trim() && <Text style={styles.inputCheck}>✓</Text>}
+						{taskName.trim() && <Ionicons name="checkmark-outline" size={18} color="#16AA75" />}
 					</View>
 				</View>
 
@@ -255,35 +256,28 @@ const styles = StyleSheet.create({
 		color: "#333",
 		paddingVertical: 16,
 	},
-	inputCheck: {
-		color: "#4CAF50",
-		fontSize: 18,
-		fontWeight: "bold",
-	},
 	amountContainer: {
 		flexDirection: "row",
 		gap: 12,
 		flexWrap: "wrap",
 	},
 	amountButton: {
-		backgroundColor: "#f0f0f0",
-		paddingHorizontal: 20,
-		paddingVertical: 12,
-		borderRadius: 20,
+		backgroundColor: "#EAEAEA",
+		padding: 8,
+		borderRadius: 8,
 		borderWidth: 2,
 		borderColor: "transparent",
 	},
 	amountButtonSelected: {
-		backgroundColor: "#6C5CE7",
-		borderColor: "#6C5CE7",
+		backgroundColor: "#E6E2FB",
+		borderColor: "#846DED",
 	},
 	amountButtonText: {
 		fontSize: 14,
-		fontWeight: "600",
-		color: "#666",
+		color: "#6E6E6E",
 	},
 	amountButtonTextSelected: {
-		color: "#fff",
+		color: "#2F2F2F",
 	},
 	customAmountContainer: {
 		flexDirection: "row",
@@ -311,24 +305,23 @@ const styles = StyleSheet.create({
 		gap: 12,
 	},
 	taskTypeButton: {
-		backgroundColor: "#f0f0f0",
+		backgroundColor: "#EAEAEA",
 		paddingHorizontal: 24,
 		paddingVertical: 12,
-		borderRadius: 20,
+		borderRadius: 8,
 		borderWidth: 2,
 		borderColor: "transparent",
 	},
 	taskTypeButtonSelected: {
-		backgroundColor: "#6C5CE7",
-		borderColor: "#6C5CE7",
+		backgroundColor: "#E6E2FB",
+		borderColor: "#846DED",
 	},
 	taskTypeButtonText: {
 		fontSize: 14,
-		fontWeight: "600",
-		color: "#666",
+		color: "#6E6E6E",
 	},
 	taskTypeButtonTextSelected: {
-		color: "#fff",
+		color: "#2F2F2F",
 	},
 	bottomPadding: {
 		height: 100,
@@ -339,10 +332,18 @@ const styles = StyleSheet.create({
 		paddingTop: 16,
 	},
 	createButton: {
-		backgroundColor: "#6C5CE7",
+		backgroundColor: "#846DED",
 		paddingVertical: 16,
 		borderRadius: 12,
 		alignItems: "center",
+		shadowColor: "#4E31CF",
+		shadowOffset: {
+			width: 0,
+			height: 4,
+		},
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 4,
 	},
 	createButtonDisabled: {
 		backgroundColor: "#ccc",

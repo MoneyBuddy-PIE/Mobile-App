@@ -16,6 +16,8 @@ import { router } from "expo-router";
 import { tasksService } from "@/services/tasksService";
 import { Task } from "@/types/Task";
 import { logger } from "@/utils/logger";
+import { typography } from "@/styles/typography";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function Children() {
 	const { user, refreshUserData } = useAuthContext();
@@ -86,13 +88,11 @@ export default function Children() {
 	const renderTask = (task: Task) => (
 		<View key={task.id} style={styles.taskItem}>
 			<View style={styles.taskInfo}>
-				<Text style={styles.taskDescription}>{task.description}</Text>
-				<Text style={styles.taskReward}>{task.reward}€</Text>
+				<Text style={[styles.taskReward, typography.bold, typography["xs"]]}>{task.reward}€</Text>
+				<Text style={[styles.taskDescription, typography["sm"]]}>{task.description}</Text>
 			</View>
 			<View style={[styles.taskStatus, task.done && styles.taskStatusCompleted]}>
-				<Text style={[styles.taskStatusText, task.done && styles.taskStatusTextCompleted]}>
-					{task.done ? "✓" : "○"}
-				</Text>
+				{task.done ?? <Ionicons name="checkmark-outline" size={20} color={task.done ? "#fff" : "#ddd"} />}
 			</View>
 		</View>
 	);
@@ -121,7 +121,7 @@ export default function Children() {
 	return (
 		<SafeAreaView style={styles.container}>
 			<ScrollView
-				style={styles.content}
+				style={styles.contentScrollView}
 				showsVerticalScrollIndicator={false}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#007AFF" />}
 			>
@@ -137,39 +137,45 @@ export default function Children() {
 				</View>
 
 				{selectedChild && (
-					<>
+					<View style={styles.content}>
 						{/* Solde */}
 						<View style={styles.balanceSection}>
-							<Text style={styles.balanceLabel}>Solde disponible</Text>
-							<Text style={styles.balanceAmount}>{selectedChild.money || "0.00"}€</Text>
+							<Text style={[styles.balanceLabel, typography.regular]}>Solde disponible</Text>
+							<Text style={[styles.balanceAmount, typography.title, typography["5xl"]]}>
+								{selectedChild.money || "0.00"}€
+							</Text>
 						</View>
 
 						{/* Boutons actions */}
 						<View style={styles.actionButtons}>
-							<TouchableOpacity 
-								style={styles.primaryButton}
-								onPress={() => router.push({
-									pathname: "/(app)/children/add-money",
-									params: { 
-										childId: selectedChildId, 
-										childName: selectedChild.name 
-									},
-								})}
-							>
-								<Text style={styles.primaryButtonIcon}>💳</Text>
-								<Text style={styles.primaryButtonText}>Verser de l'argent</Text>
-							</TouchableOpacity>
-							<TouchableOpacity style={styles.secondaryButton}>
-								<Text style={styles.secondaryButtonIcon}>⚙️</Text>
-								<Text style={styles.secondaryButtonText}>Paramétrer</Text>
-							</TouchableOpacity>
+							<View style={styles.actionButtonContainer}>
+								<TouchableOpacity
+									style={styles.primaryActionButton}
+									onPress={() =>
+										router.push({
+											pathname: "/(app)/children/add-money",
+											params: {
+												childId: selectedChildId,
+												childName: selectedChild.name,
+											},
+										})
+									}
+								>
+									<Ionicons name="wallet" size={28} color="#fff" />
+								</TouchableOpacity>
+								<Text style={[typography.regular, styles.actionButtonText]}>Verser de l'argent</Text>
+							</View>
 						</View>
 
 						{/* Message argent de poche */}
 						{(!selectedChild.money || selectedChild.money === "0") && (
 							<View style={styles.infoCard}>
-								<Text style={styles.infoIcon}>💰</Text>
-								<Text style={styles.infoTitle}>Pas encore d'argent de poche</Text>
+								<View style={styles.infoContent}>
+									<Ionicons name="bulb-outline" size={20} color="#52A5FF" style={styles.infoIcon} />
+									<Text style={[styles.infoTitle, typography.bold, typography["md"]]}>
+										Pas encore d'argent de poche
+									</Text>
+								</View>
 								<Text style={styles.infoText}>
 									Commencez à lui verser une petite somme à poche pour l'aider à apprendre à gérer un
 									vrai budget.
@@ -179,7 +185,7 @@ export default function Children() {
 
 						{/* Section Tâches */}
 						<View style={styles.tasksSection}>
-							<Text style={styles.sectionTitle}>Ses tâches</Text>
+							<Text style={[styles.sectionTitle, typography.title, typography["xl"]]}>Ses tâches</Text>
 
 							{loadingTasks ? (
 								<ActivityIndicator size="small" color="#007AFF" />
@@ -188,8 +194,11 @@ export default function Children() {
 									{/* Tâches régulières */}
 									<View style={styles.taskCategory}>
 										<TouchableOpacity style={styles.taskCategoryHeader}>
-											<Text style={styles.taskIcon}>✅</Text>
-											<Text style={styles.taskCategoryTitle}>
+											{/* <Text style={styles.taskIcon}>✅</Text> */}
+											<View style={styles.taskIconContainer}>
+												<Ionicons name="checkbox-outline" size={20} color="#16AA75" />
+											</View>
+											<Text style={[styles.taskCategoryTitle, typography.bold, typography["sm"]]}>
 												Tâches régulières ({regularTasks.length})
 											</Text>
 											<TouchableOpacity
@@ -210,8 +219,11 @@ export default function Children() {
 									{/* Défis ponctuels */}
 									<View style={styles.taskCategory}>
 										<TouchableOpacity style={styles.taskCategoryHeader}>
-											<Text style={styles.taskIcon}>🚀</Text>
-											<Text style={styles.taskCategoryTitle}>
+											{/* <Text style={styles.taskIcon}>🚀</Text> */}
+											<View style={styles.taskIconContainer}>
+												<Ionicons name="rocket-outline" size={20} color="#16AA75" />
+											</View>
+											<Text style={[styles.taskCategoryTitle, typography.bold, typography["sm"]]}>
 												Défis ponctuels ({punctualTasks.length})
 											</Text>
 											<TouchableOpacity
@@ -223,7 +235,7 @@ export default function Children() {
 													})
 												}
 											>
-												<Text style={styles.addButtonText}>+</Text>
+												<Ionicons name="add-outline" size={20} color="#828282" />
 											</TouchableOpacity>
 										</TouchableOpacity>
 										{punctualTasks.map(renderTask)}
@@ -232,8 +244,18 @@ export default function Children() {
 									{/* Message aucune tâche */}
 									{tasks.length === 0 && (
 										<View style={styles.infoCard}>
-											<Text style={styles.infoIcon}>📝</Text>
-											<Text style={styles.infoTitle}>Aucune tâche pour l'instant</Text>
+											{/* <Text style={styles.infoIcon}>📝</Text> */}
+											<View style={styles.infoContent}>
+												<Ionicons
+													name="list-outline"
+													size={24}
+													color="#52A5FF"
+													style={styles.infoIcon}
+												/>
+												<Text style={[styles.infoTitle, typography.bold, typography["md"]]}>
+													Aucune tâche pour l'instant
+												</Text>
+											</View>
 											<Text style={styles.infoText}>
 												Ajoutez une tâche pour aider votre enfant à gagner en autonomie (et
 												peut-être quelques pièces 💰).
@@ -243,24 +265,23 @@ export default function Children() {
 								</>
 							)}
 						</View>
-					</>
+						{/* Bouton flottant pour ajouter une tâche */}
+						<TouchableOpacity
+							style={styles.addTaskButton}
+							onPress={() => {
+								router.push({
+									pathname: "/(app)/children/create-task",
+									params: { childId: selectedChildId },
+								});
+							}}
+						>
+							<Text style={styles.addTaskButtonText}>+ Ajouter une tâche</Text>
+						</TouchableOpacity>
+					</View>
 				)}
 
 				<View style={styles.bottomPadding} />
 			</ScrollView>
-
-			{/* Bouton flottant pour ajouter une tâche */}
-			<TouchableOpacity
-				style={styles.addTaskButton}
-				onPress={() => {
-					router.push({
-						pathname: "/(app)/children/create-task",
-						params: { childId: selectedChildId },
-					});
-				}}
-			>
-				<Text style={styles.addTaskButtonText}>+ Ajouter une tâche</Text>
-			</TouchableOpacity>
 
 			{/* Modal de sélection d'enfant */}
 			<Modal
@@ -302,7 +323,11 @@ export default function Children() {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: "#f8f9fa",
+		backgroundColor: "#FFF",
+	},
+	contentScrollView: {
+		flex: 1,
+		backgroundColor: "#EBF2FB",
 	},
 	content: {
 		flex: 1,
@@ -314,24 +339,21 @@ const styles = StyleSheet.create({
 	},
 	loadingText: {
 		marginTop: 12,
-		fontSize: 16,
 		color: "#666",
 	},
 	header: {
 		paddingTop: 20,
 		paddingBottom: 20,
+		backgroundColor: "#fff",
+		borderBottomWidth: 1,
+		borderBottomColor: "#e0e0e0",
+		marginBottom: 20,
 	},
 	childSelector: {
 		flexDirection: "row",
 		alignItems: "center",
-		backgroundColor: "#fff",
 		padding: 12,
-		borderRadius: 12,
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.05,
-		shadowRadius: 4,
-		elevation: 2,
+		marginHorizontal: 20,
 	},
 	childIcon: {
 		width: 32,
@@ -347,8 +369,6 @@ const styles = StyleSheet.create({
 	},
 	childName: {
 		flex: 1,
-		fontSize: 16,
-		fontWeight: "600",
 		color: "#333",
 	},
 	dropdownArrow: {
@@ -360,83 +380,67 @@ const styles = StyleSheet.create({
 		marginBottom: 24,
 	},
 	balanceLabel: {
-		fontSize: 16,
 		color: "#666",
 		marginBottom: 8,
 	},
 	balanceAmount: {
-		fontSize: 48,
-		fontWeight: "bold",
 		color: "#333",
 	},
+
 	actionButtons: {
 		flexDirection: "row",
-		gap: 12,
+		gap: 16,
 		marginBottom: 24,
+		// paddingHorizontal: 20,
 	},
-	primaryButton: {
+	actionButtonContainer: {
 		flex: 1,
+		alignItems: "center",
+	},
+	primaryActionButton: {
+		width: "100%",
+		height: 64,
 		backgroundColor: "#6C5CE7",
-		padding: 16,
-		borderRadius: 12,
+		borderRadius: 8,
 		alignItems: "center",
+		justifyContent: "center",
+		marginBottom: 8,
 	},
-	primaryButtonIcon: {
-		fontSize: 20,
-		marginBottom: 4,
-	},
-	primaryButtonText: {
-		color: "#fff",
+	actionButtonText: {
+		textAlign: "center",
 		fontSize: 14,
-		fontWeight: "600",
-	},
-	secondaryButton: {
-		flex: 1,
-		backgroundColor: "#fff",
-		padding: 16,
-		borderRadius: 12,
-		alignItems: "center",
-		borderWidth: 1,
-		borderColor: "#ddd",
-	},
-	secondaryButtonIcon: {
-		fontSize: 20,
-		marginBottom: 4,
-	},
-	secondaryButtonText: {
 		color: "#333",
-		fontSize: 14,
-		fontWeight: "600",
 	},
+
 	infoCard: {
-		backgroundColor: "#E3F2FD",
+		backgroundColor: "rgba(191, 208, 234, 0.6)",
 		padding: 16,
-		borderRadius: 12,
+		borderRadius: 4,
 		marginBottom: 24,
+		// alignItems: "center",
+	},
+	infoContent: {
+		flexDirection: "row",
 		alignItems: "center",
+		marginBottom: 8,
 	},
 	infoIcon: {
 		fontSize: 24,
 		marginBottom: 8,
 	},
 	infoTitle: {
-		fontSize: 16,
-		fontWeight: "600",
 		color: "#333",
-		marginBottom: 8,
+		// marginBottom: 8,
 	},
 	infoText: {
-		fontSize: 14,
 		color: "#666",
-		textAlign: "center",
+		// textAlign: "center",
 		lineHeight: 20,
 	},
 	tasksSection: {
 		marginBottom: 20,
 	},
 	sectionTitle: {
-		fontSize: 20,
-		fontWeight: "bold",
 		color: "#333",
 		marginBottom: 16,
 	},
@@ -447,29 +451,36 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		alignItems: "center",
 		backgroundColor: "#fff",
-		padding: 16,
-		borderRadius: 12,
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.05,
-		shadowRadius: 4,
-		elevation: 2,
+		marginBottom: 8,
+		padding: 8,
+		borderRadius: 4,
+		shadowColor: "#BFD0EA",
+		shadowOffset: {
+			width: 0,
+			height: 3.89,
+		},
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 4,
 	},
-	taskIcon: {
-		fontSize: 20,
+	taskIconContainer: {
+		width: 32,
+		height: 32,
+		borderRadius: 4,
+		backgroundColor: "rgba(155, 255, 226, 0.3)",
+		justifyContent: "center",
+		alignItems: "center",
 		marginRight: 12,
 	},
 	taskCategoryTitle: {
 		flex: 1,
-		fontSize: 16,
-		fontWeight: "600",
 		color: "#333",
 	},
 	addButton: {
 		width: 32,
 		height: 32,
-		backgroundColor: "#f0f0f0",
-		borderRadius: 16,
+		backgroundColor: "#EAEAEA",
+		borderRadius: 4,
 		justifyContent: "center",
 		alignItems: "center",
 	},
@@ -489,14 +500,10 @@ const styles = StyleSheet.create({
 		marginBottom: 16,
 	},
 	emptyTitle: {
-		fontSize: 18,
-		fontWeight: "bold",
-		color: "#333",
 		marginBottom: 8,
 		textAlign: "center",
 	},
 	emptyText: {
-		fontSize: 16,
 		color: "#666",
 		textAlign: "center",
 		lineHeight: 22,
@@ -520,8 +527,6 @@ const styles = StyleSheet.create({
 		elevation: 10,
 	},
 	modalTitle: {
-		fontSize: 18,
-		fontWeight: "bold",
 		color: "#333",
 		marginBottom: 16,
 		textAlign: "center",
@@ -538,12 +543,10 @@ const styles = StyleSheet.create({
 		backgroundColor: "#6C5CE7",
 	},
 	modalOptionText: {
-		fontSize: 16,
 		color: "#333",
 	},
 	modalOptionTextSelected: {
 		color: "#fff",
-		fontWeight: "600",
 	},
 	checkmark: {
 		fontSize: 16,
@@ -551,33 +554,31 @@ const styles = StyleSheet.create({
 		fontWeight: "bold",
 	},
 	bottomPadding: {
-		height: 20,
+		height: 60,
 	},
 	addTaskButton: {
-		position: "absolute",
-		bottom: 30,
-		left: 20,
-		right: 20,
-		backgroundColor: "#6C5CE7",
-		padding: 16,
-		borderRadius: 12,
+		backgroundColor: "#846DED",
+		paddingVertical: 12,
+		paddingHorizontal: 16,
+		borderRadius: 8,
 		alignItems: "center",
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 4 },
-		shadowOpacity: 0.25,
-		shadowRadius: 8,
-		elevation: 8,
+		shadowColor: "#4E31CF",
+		shadowOffset: {
+			width: 0,
+			height: 3.89,
+		},
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 4,
 	},
 	addTaskButtonText: {
 		color: "#fff",
-		fontSize: 16,
-		fontWeight: "600",
 	},
 	taskItem: {
-		backgroundColor: "#f8f9fa",
+		backgroundColor: "#fff",
 		padding: 12,
 		marginVertical: 4,
-		marginHorizontal: 16,
+		marginHorizontal: 8,
 		borderRadius: 8,
 		flexDirection: "row",
 		justifyContent: "space-between",
@@ -587,24 +588,20 @@ const styles = StyleSheet.create({
 		flex: 1,
 	},
 	taskDescription: {
-		fontSize: 14,
-		fontWeight: "500",
 		color: "#333",
-		marginBottom: 2,
+		// marginBottom: 2,
 	},
 	taskReward: {
-		fontSize: 12,
 		color: "#6C5CE7",
-		fontWeight: "600",
+		marginBottom: 8,
 	},
 	taskStatus: {
-		width: 24,
-		height: 24,
-		borderRadius: 12,
-		borderWidth: 2,
-		borderColor: "#ddd",
+		width: 40,
+		height: 40,
+		borderRadius: 10,
 		justifyContent: "center",
 		alignItems: "center",
+		backgroundColor: "#CEC5F8",
 	},
 	taskStatusCompleted: {
 		backgroundColor: "#4CAF50",

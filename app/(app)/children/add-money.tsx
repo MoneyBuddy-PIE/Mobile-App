@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
 		paddingTop: 20,
 	},
 	amountDisplay: {
-		backgroundColor: "#E8E6FF",
+		backgroundColor: "#EBF2FB",
 		borderRadius: 12,
 		paddingVertical: 32,
 		paddingHorizontal: 20,
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 	},
 	amountButtonSelected: {
-		backgroundColor: "#6C5CE7",
+		backgroundColor: "#846DED",
 		borderColor: "#6C5CE7",
 	},
 	amountButtonText: {
@@ -359,10 +359,18 @@ const styles = StyleSheet.create({
 		paddingTop: 16,
 	},
 	transferButton: {
-		backgroundColor: "#6C5CE7",
+		backgroundColor: "#846DED",
 		paddingVertical: 16,
 		borderRadius: 12,
 		alignItems: "center",
+		shadowColor: "#4E31CF",
+		shadowOffset: {
+			width: 0,
+			height: 4,
+		},
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 4,
 	},
 	transferButtonDisabled: {
 		backgroundColor: "#ccc",
@@ -420,11 +428,19 @@ const styles = StyleSheet.create({
 		left: 30,
 	},
 	finishButton: {
-		backgroundColor: "#6C5CE7",
+		backgroundColor: "#846DED",
 		paddingHorizontal: 48,
 		paddingVertical: 16,
 		borderRadius: 12,
 		minWidth: 200,
+		shadowColor: "#4E31CF",
+		shadowOffset: {
+			width: 0,
+			height: 4,
+		},
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 4,
 	},
 	finishButtonText: {
 		color: "#fff",

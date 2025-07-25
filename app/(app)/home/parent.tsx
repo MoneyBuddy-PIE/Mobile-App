@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
 	statCard: {
 		flex: 1,
 		backgroundColor: "#fff",
-		borderRadius: 16,
+		borderRadius: 8,
 		padding: 20,
 		alignItems: "center",
 		shadowColor: "#BFD0EA",
@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
 	},
 	childCard: {
 		backgroundColor: "#fff",
-		borderRadius: 16,
+		borderRadius: 8,
 		padding: 16,
 		shadowColor: "#BFD0EA",
 		shadowOffset: {
@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
 	childIconContainer: {
 		width: 40,
 		height: 40,
-		borderRadius: 20,
+		borderRadius: 8,
 		backgroundColor: "#f0f8ff",
 		justifyContent: "center",
 		alignItems: "center",
@@ -501,7 +501,7 @@ const styles = StyleSheet.create({
 	},
 	emptyContainer: {
 		backgroundColor: "#fff",
-		borderRadius: 16,
+		borderRadius: 8,
 		padding: 40,
 		alignItems: "center",
 		shadowColor: "#BFD0EA",
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
 		backgroundColor: "#6C5CE7",
 		paddingHorizontal: 24,
 		paddingVertical: 12,
-		borderRadius: 12,
+		borderRadius: 8,
 	},
 	createButtonText: {
 		color: "#fff",
@@ -545,10 +545,11 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		flexWrap: "wrap",
 		gap: 12,
+		marginTop: 16,
 	},
 	actionCard: {
 		backgroundColor: "#fff",
-		borderRadius: 16,
+		borderRadius: 8,
 		padding: 20,
 		width: "47%",
 		alignItems: "center",
