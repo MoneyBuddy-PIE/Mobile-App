@@ -69,8 +69,8 @@ export const typography = StyleSheet.create({
 	},
 	heading: {
 		fontFamily: "DMSans_700Bold",
-		fontSize: 20,
-		color: "#333",
+		fontSize: 24,
+		color: "#2F2F2F",
 	},
 	subheading: {
 		fontFamily: "DMSans_600SemiBold",

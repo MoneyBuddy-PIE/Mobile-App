@@ -8,159 +8,129 @@ import {
 	ActivityIndicator,
 	TouchableOpacity,
 	Alert,
-	Animated,
+	Image,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { courseService } from "@/services/courseService";
-import { Course, Question } from "@/types/Course";
+import { chapterService } from "@/services/chapterService";
+import { Chapter, Course } from "@/types/Chapter";
+import { Ionicons } from "@expo/vector-icons";
+import { typography } from "@/styles/typography";
 
-type ViewMode = "overview" | "quiz" | "completed";
+const COURSE_IMAGES = [
+	require("@/assets/images/cours/course-1.png"),
+	require("@/assets/images/cours/course-2.png"),
+	require("@/assets/images/cours/course-3.png"),
+	require("@/assets/images/cours/course-4.png"),
+	require("@/assets/images/cours/course-5.png"),
+	require("@/assets/images/cours/course-6.png"),
+];
 
-export default function CourseDetail() {
+export default function ChapterDetail() {
 	const params = useLocalSearchParams();
-	const courseId = params.id as string;
+	const chapterId = params.id as string;
+	const imgIndex = parseInt(params.imgIndex as string) || 0;
+	const courseImage = COURSE_IMAGES[imgIndex % COURSE_IMAGES.length];
 
-	const [course, setCourse] = useState<Course | null>(null);
+	console.log("chapter", imgIndex, courseImage);
+
+	const [chapter, setChapter] = useState<Chapter | null>(null);
 	const [loading, setLoading] = useState(true);
-	const [viewMode, setViewMode] = useState<ViewMode>("overview");
-	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-	const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
-	const [correctAnswers, setCorrectAnswers] = useState(0);
-	const [showResult, setShowResult] = useState(false);
-	const [quizCompleting, setQuizCompleting] = useState(false);
-
-	// Animation
-	const [progressAnimation] = useState(new Animated.Value(0));
-	const [scaleAnimation] = useState(new Animated.Value(0));
 
 	useEffect(() => {
-		loadCourse();
-	}, [courseId]);
+		loadChapter();
+	}, [chapterId]);
 
-	useEffect(() => {
-		if (viewMode === "quiz") {
-			// Animer la barre de progression
-			const progress = (currentQuestionIndex + 1) / (course?.questions.length || 1);
-			Animated.timing(progressAnimation, {
-				toValue: progress,
-				duration: 300,
-				useNativeDriver: false,
-			}).start();
-		}
-	}, [currentQuestionIndex, viewMode, course]);
-
-	const loadCourse = async () => {
+	const loadChapter = async () => {
 		try {
-			const courseData = await courseService.getCourseById(courseId);
-			setCourse(courseData);
+			const chapterData = await chapterService.getChapterById(chapterId);
+			setChapter(chapterData);
 		} catch (error) {
-			console.error("Error loading course:", error);
-			Alert.alert("Erreur", "Impossible de charger le cours", [{ text: "Retour", onPress: () => router.back() }]);
+			console.error("Error loading chapter:", error);
+			Alert.alert("Erreur", "Impossible de charger le chapitre", [
+				{ text: "Retour", onPress: () => router.back() },
+			]);
 		} finally {
 			setLoading(false);
 		}
 	};
 
-	const startQuiz = () => {
-		setViewMode("quiz");
-		setCurrentQuestionIndex(0);
-		setSelectedAnswers([]);
-		setCorrectAnswers(0);
-		setShowResult(false);
-	};
-
-	const selectAnswer = (answerIndex: number) => {
-		const newSelectedAnswers = [...selectedAnswers];
-		newSelectedAnswers[currentQuestionIndex] = answerIndex;
-		setSelectedAnswers(newSelectedAnswers);
-	};
-
-	const nextQuestion = () => {
-		if (!course) return;
-
-		// Vérifier si la réponse est correcte
-		const currentQuestion = course.questions[currentQuestionIndex];
-		const selectedAnswerIndex = selectedAnswers[currentQuestionIndex];
-		const isCorrect = currentQuestion.answers[selectedAnswerIndex]?.correct;
-
-		if (isCorrect) {
-			setCorrectAnswers((prev) => prev + 1);
+	const handleCoursePress = (course: Course, index: number) => {
+		if (course.locked) {
+			Alert.alert("Cours verrouillé", "Complétez les cours précédents pour débloquer celui-ci.");
+			return;
 		}
-
-		// Afficher le résultat de la question
-		setShowResult(true);
-
-		// Passer à la question suivante après un délai
-		setTimeout(() => {
-			if (currentQuestionIndex + 1 < course.questions.length) {
-				setCurrentQuestionIndex((prev) => prev + 1);
-				setShowResult(false);
-			} else {
-				// Quiz terminé
-				completeQuiz();
-			}
-		}, 1500);
+		// TODO: Navigation vers le détail du cours
+		console.log(`Navigate to course ${index} of chapter ${chapterId}`);
 	};
 
-	const completeQuiz = async () => {
-		if (!course) return;
+	const renderCourse = (course: Course, index: number) => {
+		const isCompleted = false;
+		const isLocked = course.locked;
 
-		setQuizCompleting(true);
-		try {
-			await courseService.completeCourse(course.id, {
-				questionAnswered: correctAnswers,
-			});
+		return (
+			<TouchableOpacity
+				key={index}
+				style={[styles.courseCard, isLocked && styles.courseCardLocked]}
+				onPress={() => handleCoursePress(course, index)}
+				disabled={isLocked}
+			>
+				{/* Progression indicator */}
+				<View style={styles.progressIndicator}>
+					<View style={[styles.progressDot, isCompleted && styles.progressDotCompleted]}>
+						{isCompleted && <Ionicons name="checkmark" size={12} color="#fff" />}
+					</View>
+					{index < (chapter?.courses.length || 0) - 1 && (
+						<View style={[styles.progressLine, isCompleted && styles.progressLineCompleted]} />
+					)}
+				</View>
 
-			// Animation de succès
-			Animated.spring(scaleAnimation, {
-				toValue: 1,
-				friction: 8,
-				tension: 100,
-				useNativeDriver: true,
-			}).start();
+				{/* Course content */}
+				<View style={styles.courseContent}>
+					<View style={styles.courseHeader}>
+						<View style={styles.courseInfo}>
+							<Text style={[styles.courseTitle, typography.bold, typography["sm"], isLocked && styles.courseTextLocked]}>
+								{course.title}
+							</Text>
+							<View style={styles.courseMeta}>
+								<Ionicons name="book-outline" size={14} color={isLocked ? "#ccc" : "#666"} />
+								<Text style={[styles.courseMetaText, isLocked && styles.courseTextLocked]}>
+									Lecture - {course.readTime} min
+								</Text>
+							</View>
+						</View>
 
-			setViewMode("completed");
-		} catch (error) {
-			console.error("Error completing course:", error);
-			Alert.alert("Erreur", "Impossible de terminer le cours");
-		} finally {
-			setQuizCompleting(false);
-		}
-	};
+						{/* Course illustration placeholder */}
+						<View style={[styles.courseImage, isLocked && styles.courseImageLocked]}>
+							<Text style={styles.courseImageEmoji}>
+								{index % 4 === 0 ? "💰" : index % 4 === 1 ? "📊" : index % 4 === 2 ? "🎯" : "👥"}
+							</Text>
+						</View>
+					</View>
 
-	const getScoreMessage = () => {
-		if (!course) return "";
-		const percentage = (correctAnswers / course.questions.length) * 100;
-
-		if (percentage >= 80) return "Excellent ! 🎉";
-		if (percentage >= 60) return "Bien joué ! 👍";
-		if (percentage >= 40) return "Pas mal ! 👌";
-		return "Continue tes efforts ! 💪";
-	};
-
-	const getScoreColor = () => {
-		if (!course) return "#666";
-		const percentage = (correctAnswers / course.questions.length) * 100;
-
-		if (percentage >= 80) return "#4CAF50";
-		if (percentage >= 60) return "#FF9800";
-		return "#f44336";
+					{isLocked && (
+						<View style={styles.lockOverlay}>
+							<Ionicons name="lock-closed" size={16} color="#ccc" />
+						</View>
+					)}
+				</View>
+			</TouchableOpacity>
+		);
 	};
 
 	if (loading) {
 		return (
 			<View style={[styles.container, styles.center]}>
 				<ActivityIndicator size="large" color="#6C5CE7" />
-				<Text style={styles.loadingText}>Chargement du cours...</Text>
+				<Text style={styles.loadingText}>Chargement du chapitre...</Text>
 			</View>
 		);
 	}
 
-	if (!course) {
+	if (!chapter) {
 		return (
 			<SafeAreaView style={styles.container}>
 				<View style={[styles.container, styles.center]}>
-					<Text style={styles.errorText}>Cours non trouvé</Text>
+					<Text style={styles.errorText}>Chapitre non trouvé</Text>
 					<TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
 						<Text style={styles.backButtonText}>Retour</Text>
 					</TouchableOpacity>
@@ -169,209 +139,43 @@ export default function CourseDetail() {
 		);
 	}
 
-	// Vue d'aperçu du cours
-	if (viewMode === "overview") {
-		return (
-			<SafeAreaView style={styles.container}>
-				{/* Header */}
-				<View style={styles.header}>
-					<TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-						<Text style={styles.backIcon}>←</Text>
-					</TouchableOpacity>
-					<Text style={styles.headerTitle}>Cours</Text>
-					<View style={styles.placeholder} />
+	return (
+		<SafeAreaView style={styles.container}>
+			{/* Header avec illustration */}
+			<View style={styles.headerContainer}>
+				<View style={styles.headerBackground}>
+					{/* Image de fond */}
+					<Image source={courseImage} style={styles.headerImage} resizeMode="cover" />
 				</View>
 
-				<ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-					{/* Course Info */}
-					<View style={styles.courseHeader}>
-						<View style={styles.courseIcon}>
-							<Text style={styles.courseEmoji}>📚</Text>
-						</View>
-						<Text style={styles.courseTitle}>{course.title}</Text>
-						<Text style={styles.courseDescription}>{course.description}</Text>
+				{/* Bouton retour */}
+				<TouchableOpacity style={styles.backIcon} onPress={() => router.back()}>
+					<Ionicons name="arrow-back" size={20} color="#fff" />
+				</TouchableOpacity>
+			</View>
 
-						<View style={styles.courseMetrics}>
-							<View style={styles.metric}>
-								<Text style={styles.metricIcon}>⏱️</Text>
-								<Text style={styles.metricText}>{course.readTime} min</Text>
-							</View>
-							<View style={styles.metric}>
-								<Text style={styles.metricIcon}>❓</Text>
-								<Text style={styles.metricText}>{course.questions.length} questions</Text>
-							</View>
-						</View>
-					</View>
-
-					{/* Course Content Preview */}
-					<View style={styles.contentPreview}>
-						<Text style={styles.sectionTitle}>Ce que vous allez apprendre</Text>
-						{course.questions.slice(0, 3).map((question, index) => (
-							<View key={index} style={styles.topicItem}>
-								<Text style={styles.topicIcon}>✓</Text>
-								<Text style={styles.topicText}>Sujet {index + 1}</Text>
-							</View>
-						))}
-						{course.questions.length > 3 && (
-							<Text style={styles.moreTopics}>Et {course.questions.length - 3} autres sujets...</Text>
-						)}
-					</View>
-				</ScrollView>
-
-				{/* Start Button */}
-				<View style={styles.footer}>
-					<TouchableOpacity style={styles.startButton} onPress={startQuiz}>
-						<Text style={styles.startButtonText}>Commencer le cours</Text>
-					</TouchableOpacity>
-				</View>
-			</SafeAreaView>
-		);
-	}
-
-	// Vue du quiz
-	if (viewMode === "quiz") {
-		const currentQuestion = course.questions[currentQuestionIndex];
-		const selectedAnswerIndex = selectedAnswers[currentQuestionIndex];
-		const hasSelectedAnswer = selectedAnswerIndex !== undefined;
-
-		return (
-			<SafeAreaView style={styles.container}>
-				{/* Header with progress */}
-				<View style={styles.quizHeader}>
-					<TouchableOpacity onPress={() => setViewMode("overview")}>
-						<Text style={styles.backIcon}>←</Text>
-					</TouchableOpacity>
-					<View style={styles.progressContainer}>
-						<View style={styles.progressTrack}>
-							<Animated.View
-								style={[
-									styles.progressFill,
-									{
-										width: progressAnimation.interpolate({
-											inputRange: [0, 1],
-											outputRange: ["0%", "100%"],
-										}),
-									},
-								]}
-							/>
-						</View>
-						<Text style={styles.progressText}>
-							{currentQuestionIndex + 1}/{course.questions.length}
-						</Text>
-					</View>
+			<ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+				{/* Titre et description du chapitre */}
+				<View style={styles.chapterHeader}>
+					<Text style={[styles.chapterTitle, typography.heading]}>{chapter.title}</Text>
+					<Text style={styles.chapterDescription}>{chapter.description}</Text>
 				</View>
 
-				<ScrollView style={styles.quizContent} showsVerticalScrollIndicator={false}>
-					{/* Question */}
-					<View style={styles.questionContainer}>
-						<Text style={styles.questionText}>{currentQuestion.question}</Text>
-					</View>
-
-					{/* Answers */}
-					<View style={styles.answersContainer}>
-						{currentQuestion.answers.map((answer, index) => {
-							const isSelected = selectedAnswerIndex === index;
-							const isCorrect = answer.correct;
-
-							let answerStyle: any[] = [styles.answerOption];
-							if (showResult) {
-								if (isCorrect) {
-									answerStyle.push(styles.correctAnswer);
-								} else if (isSelected && !isCorrect) {
-									answerStyle.push(styles.wrongAnswer);
-								}
-							} else if (isSelected) {
-								answerStyle.push(styles.selectedAnswer);
-							}
-
-							return (
-								<TouchableOpacity
-									key={index}
-									style={answerStyle}
-									onPress={() => !showResult && selectAnswer(index)}
-									disabled={showResult}
-								>
-									<Text
-										style={[
-											styles.answerText,
-											isSelected && !showResult && styles.selectedAnswerText,
-											showResult && isCorrect && styles.correctAnswerText,
-											showResult && isSelected && !isCorrect && styles.wrongAnswerText,
-										]}
-									>
-										{answer.answer}
-									</Text>
-									{showResult && isCorrect && <Text style={styles.resultIcon}>✓</Text>}
-									{showResult && isSelected && !isCorrect && <Text style={styles.resultIcon}>✗</Text>}
-								</TouchableOpacity>
-							);
-						})}
-					</View>
-				</ScrollView>
-
-				{/* Next Button */}
-				{!showResult && (
-					<View style={styles.footer}>
-						<TouchableOpacity
-							style={[styles.nextButton, !hasSelectedAnswer && styles.nextButtonDisabled]}
-							onPress={nextQuestion}
-							disabled={!hasSelectedAnswer}
-						>
-							<Text style={styles.nextButtonText}>
-								{currentQuestionIndex + 1 === course.questions.length ? "Terminer" : "Suivant"}
-							</Text>
-						</TouchableOpacity>
-					</View>
-				)}
-
-				{/* Loading overlay for completion */}
-				{quizCompleting && (
-					<View style={styles.loadingOverlay}>
-						<ActivityIndicator size="large" color="#fff" />
-						<Text style={styles.loadingOverlayText}>Finalisation...</Text>
-					</View>
-				)}
-			</SafeAreaView>
-		);
-	}
-
-	// Vue de complétion
-	if (viewMode === "completed") {
-		return (
-			<SafeAreaView style={styles.container}>
-				<View style={styles.completedContainer}>
-					<Animated.View style={[styles.successIcon, { transform: [{ scale: scaleAnimation }] }]}>
-						<Text style={styles.successEmoji}>🎉</Text>
-					</Animated.View>
-
-					<Text style={styles.completedTitle}>Cours terminé !</Text>
-					<Text style={styles.completedMessage}>{getScoreMessage()}</Text>
-
-					<View style={styles.scoreContainer}>
-						<Text style={styles.scoreLabel}>Votre score</Text>
-						<Text style={[styles.scoreValue, { color: getScoreColor() }]}>
-							{correctAnswers}/{course.questions.length}
-						</Text>
-						<Text style={styles.scorePercentage}>
-							{Math.round((correctAnswers / course.questions.length) * 100)}%
-						</Text>
-					</View>
-
-					<TouchableOpacity style={styles.finishButton} onPress={() => router.back()}>
-						<Text style={styles.finishButtonText}>Retour aux cours</Text>
-					</TouchableOpacity>
+				{/* Liste des cours */}
+				<View style={styles.coursesContainer}>
+					{chapter.courses.map((course, index) => renderCourse(course, index))}
 				</View>
-			</SafeAreaView>
-		);
-	}
 
-	return null;
+				<View style={styles.bottomPadding} />
+			</ScrollView>
+		</SafeAreaView>
+	);
 }
 
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: "#f8f9fa",
+		backgroundColor: "#EBF2FB",
 	},
 	center: {
 		justifyContent: "center",
@@ -387,334 +191,159 @@ const styles = StyleSheet.create({
 		color: "#f44336",
 		marginBottom: 20,
 	},
-	header: {
-		flexDirection: "row",
-		justifyContent: "space-between",
-		alignItems: "center",
-		paddingHorizontal: 20,
-		paddingTop: 10,
-		paddingBottom: 20,
-		borderBottomWidth: 1,
-		borderBottomColor: "#e0e0e0",
-	},
 	backButton: {
-		width: 40,
-		height: 40,
-		borderRadius: 20,
-		backgroundColor: "#f0f0f0",
-		justifyContent: "center",
-		alignItems: "center",
+		backgroundColor: "#6C5CE7",
+		paddingHorizontal: 24,
+		paddingVertical: 12,
+		borderRadius: 8,
+	},
+	backButtonText: {
+		color: "#fff",
+		fontSize: 16,
+		fontWeight: "600",
+	},
+	headerContainer: {
+		height: 200,
+		position: "relative",
+	},
+	headerImage: {
+		width: "100%",
+		height: "100%",
+		opacity: 0.8,
+	},
+	headerBackground: {
+		flex: 1,
+		backgroundColor: "#E5F3FF",
+		position: "relative",
+		overflow: "hidden",
 	},
 	backIcon: {
-		fontSize: 18,
-		color: "#333",
-	},
-	headerTitle: {
-		fontSize: 18,
-		fontWeight: "600",
-		color: "#333",
-	},
-	placeholder: {
-		width: 40,
+		position: "absolute",
+		top: 20,
+		left: 20,
+		width: 48,
+		height: 48,
+		backgroundColor: "#2F2F2F",
+		borderRadius: 8,
+		justifyContent: "center",
+		alignItems: "center",
 	},
 	content: {
 		flex: 1,
 		paddingHorizontal: 20,
 	},
-	courseHeader: {
-		alignItems: "center",
-		paddingVertical: 32,
+	chapterHeader: {
+		paddingVertical: 24,
 	},
-	courseIcon: {
-		width: 80,
-		height: 80,
-		borderRadius: 40,
-		backgroundColor: "#E5F3FF",
-		justifyContent: "center",
-		alignItems: "center",
-		marginBottom: 20,
-	},
-	courseEmoji: {
-		fontSize: 40,
-	},
-	courseTitle: {
-		fontSize: 24,
-		fontWeight: "bold",
-		color: "#333",
-		textAlign: "center",
-		marginBottom: 12,
-	},
-	courseDescription: {
-		fontSize: 16,
-		color: "#666",
-		textAlign: "center",
-		lineHeight: 22,
-		marginBottom: 24,
-		paddingHorizontal: 20,
-	},
-	courseMetrics: {
-		flexDirection: "row",
-		gap: 32,
-	},
-	metric: {
-		alignItems: "center",
-		gap: 8,
-	},
-	metricIcon: {
-		fontSize: 24,
-	},
-	metricText: {
-		fontSize: 14,
-		color: "#666",
-		fontWeight: "500",
-	},
-	contentPreview: {
-		backgroundColor: "#fff",
-		borderRadius: 16,
-		padding: 20,
-		marginBottom: 20,
-	},
-	sectionTitle: {
-		fontSize: 18,
-		fontWeight: "bold",
-		color: "#333",
+	chapterTitle: {
 		marginBottom: 16,
+		lineHeight: 30,
 	},
-	topicItem: {
-		flexDirection: "row",
-		alignItems: "center",
-		marginBottom: 12,
-	},
-	topicIcon: {
+	chapterDescription: {
 		fontSize: 16,
-		color: "#4CAF50",
-		marginRight: 12,
-		width: 20,
-	},
-	topicText: {
-		fontSize: 16,
-		color: "#333",
-	},
-	moreTopics: {
-		fontSize: 14,
 		color: "#666",
-		fontStyle: "italic",
-		marginTop: 8,
+		lineHeight: 24,
 	},
-	footer: {
-		paddingHorizontal: 20,
+	coursesContainer: {
 		paddingBottom: 20,
-		paddingTop: 16,
 	},
-	startButton: {
-		backgroundColor: "#6C5CE7",
-		paddingVertical: 16,
-		borderRadius: 12,
-		alignItems: "center",
-	},
-	startButtonText: {
-		color: "#fff",
-		fontSize: 16,
-		fontWeight: "600",
-	},
-	backButtonText: {
-		color: "#6C5CE7",
-		fontSize: 16,
-		fontWeight: "600",
-	},
-
-	// Quiz styles
-	quizHeader: {
+	courseCard: {
 		flexDirection: "row",
-		alignItems: "center",
-		paddingHorizontal: 20,
-		paddingTop: 10,
-		paddingBottom: 20,
-		gap: 16,
+		marginBottom: 16,
+		backgroundColor: "#fff",
+		borderRadius: 12,
+		padding: 8,
+		shadowColor: "#BFD0EA",
+		shadowOffset: {
+			width: 0,
+			height: 3.89,
+		},
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 4,
 	},
-	progressContainer: {
-		flex: 1,
-		alignItems: "center",
-		gap: 8,
+	courseCardLocked: {
+		opacity: 0.6,
 	},
-	progressTrack: {
-		width: "100%",
-		height: 6,
+	progressIndicator: {
+		alignItems: "center",
+		marginRight: 16,
+		paddingTop: 4,
+	},
+	progressDot: {
+		width: 24,
+		height: 24,
+		borderRadius: 8,
 		backgroundColor: "#e0e0e0",
-		borderRadius: 3,
-		overflow: "hidden",
-	},
-	progressFill: {
-		height: "100%",
-		backgroundColor: "#6C5CE7",
-		borderRadius: 3,
-	},
-	progressText: {
-		fontSize: 14,
-		color: "#666",
-		fontWeight: "500",
-	},
-	quizContent: {
-		flex: 1,
-		paddingHorizontal: 20,
-	},
-	questionContainer: {
-		backgroundColor: "#fff",
-		borderRadius: 16,
-		padding: 24,
-		marginBottom: 24,
-	},
-	questionText: {
-		fontSize: 20,
-		fontWeight: "600",
-		color: "#333",
-		lineHeight: 28,
-		textAlign: "center",
-	},
-	answersContainer: {
-		gap: 12,
-		marginBottom: 20,
-	},
-	answerOption: {
-		backgroundColor: "#fff",
-		borderRadius: 12,
-		padding: 20,
-		borderWidth: 2,
-		borderColor: "#e0e0e0",
-		flexDirection: "row",
-		justifyContent: "space-between",
-		alignItems: "center",
-	},
-	selectedAnswer: {
-		borderColor: "#6C5CE7",
-		backgroundColor: "#F5F3FF",
-	},
-	correctAnswer: {
-		borderColor: "#4CAF50",
-		backgroundColor: "#E8F5E8",
-	},
-	wrongAnswer: {
-		borderColor: "#f44336",
-		backgroundColor: "#FFEBEE",
-	},
-	answerText: {
-		fontSize: 16,
-		color: "#333",
-		flex: 1,
-	},
-	selectedAnswerText: {
-		color: "#6C5CE7",
-		fontWeight: "600",
-	},
-	correctAnswerText: {
-		color: "#4CAF50",
-		fontWeight: "600",
-	},
-	wrongAnswerText: {
-		color: "#f44336",
-		fontWeight: "600",
-	},
-	resultIcon: {
-		fontSize: 20,
-		fontWeight: "bold",
-	},
-	nextButton: {
-		backgroundColor: "#6C5CE7",
-		paddingVertical: 16,
-		borderRadius: 12,
-		alignItems: "center",
-	},
-	nextButtonDisabled: {
-		backgroundColor: "#ccc",
-	},
-	nextButtonText: {
-		color: "#fff",
-		fontSize: 16,
-		fontWeight: "600",
-	},
-	loadingOverlay: {
-		position: "absolute",
-		top: 0,
-		left: 0,
-		right: 0,
-		bottom: 0,
-		backgroundColor: "rgba(0, 0, 0, 0.8)",
 		justifyContent: "center",
 		alignItems: "center",
-		gap: 16,
-	},
-	loadingOverlayText: {
-		color: "#fff",
-		fontSize: 16,
-		fontWeight: "500",
-	},
-
-	// Completion styles
-	completedContainer: {
-		flex: 1,
-		justifyContent: "center",
-		alignItems: "center",
-		paddingHorizontal: 40,
-	},
-	successIcon: {
-		width: 120,
-		height: 120,
-		borderRadius: 60,
-		backgroundColor: "#E8F5E8",
-		justifyContent: "center",
-		alignItems: "center",
-		marginBottom: 32,
-	},
-	successEmoji: {
-		fontSize: 60,
-	},
-	completedTitle: {
-		fontSize: 28,
-		fontWeight: "bold",
-		color: "#333",
-		textAlign: "center",
-		marginBottom: 12,
-	},
-	completedMessage: {
-		fontSize: 18,
-		color: "#666",
-		textAlign: "center",
-		marginBottom: 32,
-	},
-	scoreContainer: {
-		alignItems: "center",
-		backgroundColor: "#fff",
-		borderRadius: 16,
-		padding: 24,
-		marginBottom: 32,
-		minWidth: 200,
-	},
-	scoreLabel: {
-		fontSize: 16,
-		color: "#666",
 		marginBottom: 8,
 	},
-	scoreValue: {
-		fontSize: 36,
-		fontWeight: "bold",
-		marginBottom: 4,
-	},
-	scorePercentage: {
-		fontSize: 18,
-		color: "#666",
-		fontWeight: "600",
-	},
-	finishButton: {
+	progressDotCompleted: {
 		backgroundColor: "#6C5CE7",
-		paddingHorizontal: 48,
-		paddingVertical: 16,
-		borderRadius: 12,
-		minWidth: 200,
 	},
-	finishButtonText: {
-		color: "#fff",
+	progressLine: {
+		width: 2,
+		flex: 1,
+		backgroundColor: "#e0e0e0",
+		minHeight: 40,
+	},
+	progressLineCompleted: {
+		backgroundColor: "#6C5CE7",
+	},
+	courseContent: {
+		flex: 1,
+		position: "relative",
+	},
+	courseHeader: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "flex-start",
+	},
+	courseInfo: {
+		flex: 1,
+		marginRight: 12,
+	},
+	courseTitle: {
 		fontSize: 16,
 		fontWeight: "600",
-		textAlign: "center",
+		color: "#333",
+		marginBottom: 8,
+		lineHeight: 22,
+	},
+	courseMeta: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 6,
+	},
+	courseMetaText: {
+		fontSize: 14,
+		color: "#666",
+	},
+	courseTextLocked: {
+		color: "#ccc",
+	},
+	courseImage: {
+		width: 120,
+		height: 120,
+		backgroundColor: "#f0f8ff",
+		borderRadius: 12,
+		justifyContent: "center",
+		alignItems: "center",
+	},
+	courseImageLocked: {
+		backgroundColor: "#f5f5f5",
+	},
+	courseImageEmoji: {
+		fontSize: 24,
+	},
+	lockOverlay: {
+		position: "absolute",
+		top: 0,
+		right: 0,
+		padding: 4,
+	},
+	bottomPadding: {
+		height: 20,
 	},
 });
