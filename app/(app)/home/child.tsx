@@ -179,7 +179,7 @@ export default function ChildHome() {
 												{task.category === "REGULAR" ? "Régulière" : "Ponctuelle"}
 											</Text>
 										</View>
-										<Text style={[styles.taskReward, typography.buttonSmall]}>+{task.reward}€</Text>
+										<Text style={[styles.taskReward, typography.caption]}>+{task.reward}€</Text>
 									</View>
 								</View>
 								<View style={styles.taskAction}>
@@ -191,40 +191,13 @@ export default function ChildHome() {
 						))}
 
 						{pendingTasks.length > 3 && (
-							<TouchableOpacity style={styles.viewMoreButton}>
+							<TouchableOpacity style={styles.viewMoreButton} onPress={() => router.replace("/tasks")}>
 								<Text style={[styles.viewMoreText, typography.body]}>
 									Voir {pendingTasks.length - 3} autres tâches
 								</Text>
 								<Ionicons name="chevron-forward" size={16} color="#6C5CE7" />
 							</TouchableOpacity>
 						)}
-					</View>
-				)}
-
-				{/* Tâches complétées récemment */}
-				{completedTasks.length > 0 && (
-					<View style={styles.section}>
-						<Text style={[styles.sectionTitle, typography.heading]}>Récemment terminées</Text>
-						{completedTasks.slice(0, 3).map((task) => (
-							<View key={task.id} style={[styles.completedTaskCard, styles.card]}>
-								<View style={styles.taskInfo}>
-									<Text style={[styles.completedTaskDescription, typography.body]}>
-										{task.description}
-									</Text>
-									<Text style={[styles.completedTaskDate, typography.caption]}>
-										{new Date(task.updatedAt).toLocaleDateString("fr-FR")}
-									</Text>
-								</View>
-								<View style={styles.completedReward}>
-									<View style={styles.completedIcon}>
-										<Ionicons name="checkmark" size={16} color="#4CAF50" />
-									</View>
-									<Text style={[styles.completedAmount, typography.buttonSmall]}>
-										+{task.reward}€
-									</Text>
-								</View>
-							</View>
-						))}
 					</View>
 				)}
 
@@ -368,13 +341,13 @@ const styles = StyleSheet.create({
 	},
 	taskMeta: {
 		flexDirection: "row",
-		justifyContent: "space-between",
+		// justifyContent: "space-between",
+		gap: 8,
 		alignItems: "center",
 	},
 	categoryBadge: {
 		flexDirection: "row",
 		alignItems: "center",
-		backgroundColor: "#EBF2FB",
 		paddingHorizontal: 8,
 		paddingVertical: 4,
 		borderRadius: 4,
@@ -393,7 +366,11 @@ const styles = StyleSheet.create({
 		color: "#6C5CE7",
 	},
 	taskReward: {
-		color: "#FF9800",
+		backgroundColor: "#F3F0FD",
+		paddingHorizontal: 8,
+		borderRadius: 4,
+
+		paddingVertical: 4,
 		fontWeight: "bold",
 	},
 	taskAction: {
