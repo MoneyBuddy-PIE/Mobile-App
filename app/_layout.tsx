@@ -1,6 +1,8 @@
 import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
 import { DMSans_700Bold, DMSans_400Regular, DMSans_600SemiBold } from "@expo-google-fonts/dm-sans";
+import { Corben_400Regular } from "@expo-google-fonts/corben";
+import { PlusJakartaSans_400Regular } from "@expo-google-fonts/plus-jakarta-sans";
 import { ActivityIndicator, View, StyleSheet } from "react-native";
 import { AuthProvider } from "@/contexts/AuthContext";
 
@@ -9,6 +11,8 @@ export default function RootLayout() {
 		DMSans_700Bold,
 		DMSans_400Regular,
 		DMSans_600SemiBold,
+		Corben_400Regular,
+		PlusJakartaSans_400Regular,
 	});
 
 	if (!fontsLoaded) {

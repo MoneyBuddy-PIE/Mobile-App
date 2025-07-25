@@ -11,6 +11,12 @@ export const typography = StyleSheet.create({
 	bold: {
 		fontFamily: "DMSans_700Bold",
 	},
+	regularTitleSplash: {
+		fontFamily: "Corben_400Regular",
+	},
+	regularBodySplash: {
+		fontFamily: "PlusJakartaSans_400Regular",
+	},
 
 	// Tailles
 	xs: { fontSize: 12 },
@@ -20,7 +26,7 @@ export const typography = StyleSheet.create({
 	xl: { fontSize: 20 },
 	"2xl": { fontSize: 24 },
 	"3xl": { fontSize: 32 },
-    "4xl": { fontSize: 40 },
+    xxxxl: { fontSize: 40 },
     "5xl": { fontSize: 48 },
 
 	// Couleurs courantes
@@ -31,6 +37,25 @@ export const typography = StyleSheet.create({
 	white: { color: "#fff" },
 
 	// Styles combinés les plus courants
+	titleSplash: {
+		fontFamily: "Corben_400Regular",
+		fontSize: 40,
+		color: "#fff",
+		textAlign: "center",
+		lineHeight: 64,
+	},
+	bodySplash: {
+		fontFamily: "PlusJakartaSans_400Regular",
+		fontSize: 20,
+		color: "#fff",
+		textAlign: "center",
+	},
+	subtitleSplash: {
+		fontFamily: "PlusJakartaSans_400Regular",
+		fontSize: 12,
+		color: "#fff",
+		textAlign: "center",
+	},
 	title: {
 		fontFamily: "DMSans_700Bold",
 		fontSize: 32,

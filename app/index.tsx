@@ -1,9 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 import { useFonts } from "expo-font";
-import { View, Text, TouchableOpacity, StyleSheet, Animated, Dimensions, Image, Easing } from "react-native";
-import { DMSans_900Black, DMSans_400Regular } from "@expo-google-fonts/dm-sans";
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Image, Easing, Animated } from "react-native";
 import { router } from "expo-router";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { typography } from "@/styles/typography";
+import Svg, { Path } from 'react-native-svg';
+import Reanimated, {
+  useSharedValue,
+  useAnimatedProps,
+  withTiming,
+  withDelay,
+} from 'react-native-reanimated';
 
 const { width, height } = Dimensions.get('window');
 
@@ -12,20 +19,10 @@ export default function Index() {
 	const [showSplash, setShowSplash] = useState(true);
 	const [contentAnim] = useState(new Animated.Value(0));
 
-	const [diagonalTopMargin] = useState(new Animated.Value(-110));
-	const [diagonalBottomMargin] = useState(new Animated.Value(-110));
-	const [diagonalTop2Margin] = useState(new Animated.Value(0));
-	const [diagonalBottom2Margin] = useState(new Animated.Value(0));
-	const [diagonalTop2Opacity] = useState(new Animated.Value(1));
-	const [diagonalBottom2Opacity] = useState(new Animated.Value(1));
-
-	const [fontsLoaded] = useFonts({
-		DMSans_900Black,
-		DMSans_400Regular
-	});
-
-	const fontStylesTitle = fontsLoaded ? { fontFamily: "DMSans_900Black" } : {};
-	const fontStylesRegular = fontsLoaded ? { fontFamily: "DMSans_400Regular" } : {};
+	// Animation pour le cercle qui grandit
+	const [circleScale] = useState(new Animated.Value(0));
+	const [circleOpacity] = useState(new Animated.Value(1));
+	const [splashBackgroundColor] = useState(new Animated.Value(0));
 
 	useEffect(() => {
 		if (!isLoading) {
@@ -33,56 +30,26 @@ export default function Index() {
 				router.replace("/(app)/accounts");
 			} else {
 				const timer = setTimeout(() => {
-					Animated.parallel([
-						Animated.timing(diagonalTopMargin, {
-							toValue: -280,
-							duration: 800,
-							easing: Easing.elastic(2.5),
+					Animated.timing(circleScale, {
+						toValue: 1,
+						duration: 1200,
+						easing: Easing.out(Easing.cubic),
+						useNativeDriver: true,
+					}).start(() => {
+						Animated.timing(splashBackgroundColor, {
+							toValue: 1,
+							duration: 500,
 							useNativeDriver: false,
-						}),
-						Animated.timing(diagonalBottomMargin, {
-							toValue: -280,
-							duration: 800,
-							easing: Easing.elastic(2.5),
-							useNativeDriver: false,
-						}),
-					]).start(() => {
-						Animated.parallel([
-							Animated.timing(diagonalTop2Margin, {
-								toValue: -500,
-								duration: 800,
-								easing: Easing.back(1),
-								useNativeDriver: false,
-							}),
-							Animated.timing(diagonalBottom2Margin, {
-								toValue: -500,
-								duration: 800,
-								easing: Easing.back(1),	
-								useNativeDriver: false,
-							}),
-						]).start(() => {
-							Animated.parallel([
-								Animated.timing(diagonalTop2Opacity, {
-									toValue: 0,
-									duration: 200,
-									useNativeDriver: true,
-								}),
-								Animated.timing(diagonalBottom2Opacity, {
-									toValue: 0,
-									duration: 200,
-									useNativeDriver: true,
-								}),
-							]).start(() => {
-								setShowSplash(false);
-								Animated.timing(contentAnim, {
-									toValue: 1,
-									duration: 500,
-									useNativeDriver: true,
-								}).start();
-							});
+						}).start(() => {
+							setShowSplash(false);
+							Animated.timing(contentAnim, {
+								toValue: 1,
+								duration: 500,
+								useNativeDriver: true,
+							}).start();
 						});
 					});
-				}, 1500);
+				}, 500);
 
 				return () => clearTimeout(timer);
 			}
@@ -90,35 +57,30 @@ export default function Index() {
 	}, [isLoading, isAuthenticated]);
 
 	if (isLoading || showSplash) {
+		const finalSize = Math.sqrt(width * width + height * height) * 2;
+		
+		const backgroundColorInterpolated = splashBackgroundColor.interpolate({
+			inputRange: [0, 1],
+			outputRange: ['#FFFFFF', '#F5F5F5']
+		});
+		
 		return (
-			<View style={styles.splashContainer}>
-				<Animated.View style={[
-					styles.diagonalTop2,
-					{
-						marginTop: diagonalTop2Margin,
-						opacity: diagonalTop2Opacity,
-					}
-				]} />
-				<Animated.View style={[
-					styles.diagonalTop,
-					{
-						marginTop: diagonalTopMargin,
-					}
-				]} />
-				<Animated.View style={[
-					styles.diagonalBottom2,
-					{
-						marginBottom: diagonalBottom2Margin,
-						opacity: diagonalBottom2Opacity,
-					}
-				]} />
-				<Animated.View style={[
-					styles.diagonalBottom,
-					{
-						marginBottom: diagonalBottomMargin,
-					}
-				]} />
-			</View>
+			<Animated.View style={[styles.splashContainer, { backgroundColor: backgroundColorInterpolated }]}>
+				<Animated.View 
+					style={[
+						styles.backgroundFill,
+						{
+							width: finalSize,
+							height: finalSize,
+							borderRadius: finalSize / 2,
+							left: width / 2 - finalSize / 2,
+							top: height / 2 - finalSize / 2,
+							transform: [{ scale: circleScale }],
+							opacity: circleOpacity,
+						}
+					]} 
+				/>
+			</Animated.View>
 		);
 	}
 
@@ -132,37 +94,40 @@ export default function Index() {
 
 	return (
 		<View style={styles.container}>
-			<View style={styles.diagonalTopMain} />
-			<View style={styles.diagonalBottomMain} />
+			{/* <Animated.View style={[styles.svgBox, { opacity: contentAnim }]}>
+				<View style={styles.svgContainer}>
+					<Svg
+						width={width * 0.8}
+						height={height * 0.4}
+						viewBox="0 0 100 100"
+						style={styles.svgStyle}
+					>
+						<Path
+							d="M50 5C27.9 5 10 22.9 10 45C10 67.1 27.9 85 50 85C72.1 85 90 67.1 90 45C90 22.9 72.1 5 50 5ZM50 75C32.3 75 20 62.7 20 45C20 27.3 32.3 15 50 15C67.7 15 80 27.3 80 45C80 62.7 67.7 75 50 75Z"
+							fill="#fff"
+						/>
+					</Svg>
+				</View>
+			</Animated.View> */}
 
 			<Animated.View style={[styles.content, { opacity: contentAnim }]}>
-				<View style={styles.header}>
-					<Text style={styles.welcome}>
-						<Text style={[styles.welcomeText, fontStylesTitle]}>Welcome </Text>
-						<Text style={[styles.welcomeTextLittle, fontStylesTitle]}>to </Text>
-					</Text>
-					<Text style={styles.title}>
-						<Text style={[styles.titleMoney, fontStylesTitle]}>Money</Text>
-						<Text style={[styles.titleBuddy, fontStylesTitle]}>Buddy</Text>
-					</Text>
+				<View>
+					<Text style={typography.titleSplash}>Money Buddy</Text>
+					<Text style={typography.bodySplash}>Construisez l'avenir financier de votre enfant, 5 minutes par jour !</Text>
 				</View>
-
-				<View style={styles.dragonContainer}>
-					<Image
-						source={require('@/assets/indexPage/helloMoneyBuddy.png')}
-						style={styles.dragonImage}
-						resizeMode="contain"
-					/>
-				</View>
-
 				<View style={styles.buttonContainer}>
-					<TouchableOpacity style={styles.primaryButton} onPress={navigateToLogin}>
-						<Text style={[styles.primaryButtonText, fontStylesRegular]}>Se Connecter</Text>
+					<TouchableOpacity style={[styles.primaryButton, styles.buttonGlobal]} onPress={navigateToLogin}>
+						<Text style={[styles.primaryButtonText]}>Se connecter</Text>
 					</TouchableOpacity>
 
-					<TouchableOpacity style={styles.secondaryButton} onPress={navigateToSignUp}>
-						<Text style={[styles.secondaryButtonText, fontStylesRegular]}>Créer un Compte</Text>
+					<TouchableOpacity style={[styles.secondaryButton, styles.buttonGlobal]} onPress={navigateToSignUp}>
+						<Text style={[styles.secondaryButtonText]}>Je m'inscris</Text>
 					</TouchableOpacity>
+				</View>
+				<View>
+					<Text style={typography.subtitleSplash}>
+						En continuant, vous acceptez nos <Text style={{ textDecorationLine: 'underline', cursor: 'pointer' }}>Conditions d'utilisation</Text> et notre <Text style={{ textDecorationLine: 'underline', cursor: 'pointer' }}>Politique de confidentialité</Text>.
+					</Text>
 				</View>
 			</Animated.View>
 		</View>
@@ -173,202 +138,58 @@ const styles = StyleSheet.create({
 	splashContainer: {
 		flex: 1,
 		position: 'relative',
-		backgroundColor: '#F5F5F5',
 	},
-	diagonalTop: {
+	backgroundFill: {
 		position: 'absolute',
-		top: 0,
-		left: 0,
-		width: width * 2,
-		height: height * 0.6,
-		backgroundColor: '#62F0BF',
-		transform: [{ rotate: '-30deg' }],
-		marginLeft: -width * 0.9,
-		shadowColor: "#000",
-		shadowOffset: {
-			width: 0,
-			height: 10,
-		},
-		shadowOpacity: 0.25,
-		shadowRadius: 30,
-		elevation: 24,
-	},
-	diagonalTop2: {
-		position: 'absolute',
-		top: 0,
-		left: 0,
-		width: width * 2.5,
-		height: height * 0.6,
-		backgroundColor: '#009174',
-		transform: [{ rotate: '-30deg' }],
-		marginLeft: -width * 0.9,
-	},
-	diagonalBottom: {
-		position: 'absolute',
-		bottom: 0,
-		right: 0,
-		width: width * 2,
-		height: height * 0.6,
-		backgroundColor: '#62F0BF',
-		transform: [{ rotate: '-30deg' }],
-		marginRight: -width * 0.9,
-		shadowColor: "#000",
-		shadowOffset: {
-			width: 0,
-			height: -10,
-		},
-		shadowOpacity: 0.25,
-		shadowRadius: 30,
-		elevation: 24,
-	},
-	diagonalBottom2: {
-		position: 'absolute',
-		bottom: 0,
-		right: 0,
-		width: width * 2.5,
-		height: height * 0.6,
-		backgroundColor: '#009174',
-		transform: [{ rotate: '-30deg' }],
-		marginRight: -width * 0.9,
+		backgroundColor: '#846DED',
 	},
 
 	container: {
 		flex: 1,
-		backgroundColor: '#F5F5F5',
+		backgroundColor: '#846DED',
 		position: 'relative',
-	},
-	diagonalTopMain: {
-		position: 'absolute',
-		top: 0,
-		left: 0,
-		width: width * 2,
-		height: height * 0.6,
-		backgroundColor: '#62F0BF',
-		transform: [{ rotate: '-30deg' }],
-		marginTop: -280,
-		marginLeft: -width * 0.9,
-		shadowColor: "#000",
-		shadowOffset: {
-			width: 0,
-			height: 10,
-		},
-		shadowOpacity: 0.25,
-		shadowRadius: 30,
-		elevation: 24,
-	},
-	diagonalTopMain2: {
-		position: 'absolute',
-		top: 0,
-		left: 0,
-		width: width * 2,
-		height: height * 0.6,
-		backgroundColor: '#009174',
-		transform: [{ rotate: '-30deg' }],
-		marginTop: -190,
-		marginLeft: -width * 0.9,
-	},
-	diagonalBottomMain: {
-		position: 'absolute',
-		bottom: 0,
-		right: 0,
-		width: width * 2,
-		height: height * 0.6,
-		backgroundColor: '#62F0BF',
-		transform: [{ rotate: '-30deg' }],
-		marginBottom: -280,
-		marginRight: -width * 0.9,
-		shadowColor: "#000",
-		shadowOffset: {
-			width: 0,
-			height: -10,
-		},
-		shadowOpacity: 0.25,
-		shadowRadius: 30,
-		elevation: 24,
-	},
-	diagonalBottomMain2: {
-		position: 'absolute',
-		bottom: 0,
-		right: 0,
-		width: width * 2,
-		height: height * 0.6,
-		backgroundColor: '#009174',
-		transform: [{ rotate: '-30deg' }],
-		marginBottom: -190,
-		marginRight: -width * 0.9,
 	},
 	content: {
 		flex: 1,
 		justifyContent: 'space-between',
-		paddingHorizontal: 40,
-		paddingTop: 200,
-		paddingBottom: 200,
+		paddingHorizontal: 24,
+		paddingBottom: 48,
+		paddingTop: height * 0.4,
 		zIndex: 1,
 	},
-	header: {
-		fontFamily: "DMSans_900Bold",
-		alignItems: 'flex-start',
+
+
+	svgBox: {
+		
 	},
-	welcome: {
-		flexDirection: 'row',
-		alignItems: 'center',
+	svgContainer: {
+		marginVertical: 20,
 	},
-	welcomeText: {
-		fontSize: 32,
-		fontWeight: '900',
-		color: '#333',
-		marginBottom: 8,
-		fontFamily: "DMSans_900Bold",
+	svgStyle: {
+		overflow: 'visible',
 	},
-	welcomeTextLittle: {
-		fontSize: 18,
-		fontWeight: '900',
-		color: '#333',
-		marginBottom: 8,
-		marginLeft: 4,
-		fontFamily: "DMSans_900Bold",
-	},
-	title: {
-		fontSize: 32,
-		fontWeight: '900',
-	},
-	titleMoney: {
-		color: '#4ECDC4',
-		fontFamily: "DMSans_900Bold",
-	},
-	titleBuddy: {
-		color: '#333',
-		fontFamily: "DMSans_900Bold",
-	},
-	dragonContainer: {
-		position: 'absolute',
-		right: 0,
-		top: 90,
-	},
-	dragonImage: {
-		width: 75,
-		height: 150,
-	},
+
 	buttonContainer: {
 		gap: 16,
-		fontFamily: "DMSans_400Regular",
+	},
+	buttonGlobal: {
+		borderRadius: 8,
+		borderWidth: 2,
+		alignItems: 'center',
+		paddingVertical: 20,
+		paddingHorizontal: 24,
 	},
 	primaryButton: {
-		backgroundColor: '#62F0BF',
-		paddingVertical: 16,
-		paddingHorizontal: 32,
-		borderRadius: 16,
-		borderWidth: 2,
+		backgroundColor: '#FFFFFF',
 		borderColor: 'transparent',
 		alignItems: 'center',
-		shadowColor: '#000',
+		shadowColor: "#CEC5F8",
 		shadowOffset: {
 			width: 0,
-			height: 4,
+			height: 3.89,
 		},
-		shadowOpacity: 0.25,
+		shadowOpacity: 1,
 		shadowRadius: 0,
-		elevation: 5,
 	},
 	primaryButtonText: {
 		color: '#333',
@@ -377,11 +198,7 @@ const styles = StyleSheet.create({
 	},
 	secondaryButton: {
 		backgroundColor: 'transparent',
-		paddingVertical: 16,
-		paddingHorizontal: 32,
-		borderRadius: 16,
-		borderWidth: 2,
-		borderColor: '#62F0BF',
+		borderColor: '#FFFFFF',
 		alignItems: 'center',
 	},
 	secondaryButtonText: {
