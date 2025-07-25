@@ -4,7 +4,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Image, Easing, An
 import { router } from "expo-router";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { typography } from "@/styles/typography";
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, G, FeFlood, FeColorMatrix, FeGaussianBlur, FeComposite, FeBlend, Filter, Defs, FeOffset } from 'react-native-svg';
 import Reanimated, {
   useSharedValue,
   useAnimatedProps,
@@ -26,6 +26,18 @@ export default function Index() {
 	const [circleOpacity] = useState(new Animated.Value(1));
 	const [splashBackgroundColor] = useState(new Animated.Value(0));
 
+	const [sticker1Anim] = useState(new Animated.Value(0));
+	const [sticker2Anim] = useState(new Animated.Value(0));
+	const [sticker3Anim] = useState(new Animated.Value(0));
+	const [sticker4Anim] = useState(new Animated.Value(0));
+	const [sticker5Anim] = useState(new Animated.Value(0));
+
+	const [sticker1Rotate] = useState(new Animated.Value(0));
+	const [sticker2Rotate] = useState(new Animated.Value(0));
+	const [sticker3Rotate] = useState(new Animated.Value(0));
+	const [sticker4Rotate] = useState(new Animated.Value(0));
+	const [sticker5Rotate] = useState(new Animated.Value(0));
+
 	const strokeDashoffset = useSharedValue(2000);
 	const pathOpacity = useSharedValue(0);
 	const fillOpacity = useSharedValue(0);
@@ -42,6 +54,35 @@ export default function Index() {
 			opacity: fillOpacity.value,
 		};
 	});
+
+	const animateStickers = () => {
+		const stickers = [
+			{ anim: sticker1Anim, rotate: sticker1Rotate },
+			{ anim: sticker2Anim, rotate: sticker2Rotate },
+			{ anim: sticker3Anim, rotate: sticker3Rotate },
+			{ anim: sticker4Anim, rotate: sticker4Rotate },
+			{ anim: sticker5Anim, rotate: sticker5Rotate },
+		];
+
+		stickers.forEach((sticker, index) => {
+			setTimeout(() => {
+				Animated.parallel([
+					Animated.spring(sticker.anim, {
+						toValue: 1,
+						useNativeDriver: true,
+						tension: 50,
+						friction: 7,
+					}),
+					Animated.timing(sticker.rotate, {
+						toValue: 1,
+						duration: 800,
+						easing: Easing.out(Easing.cubic),
+						useNativeDriver: true,
+					})
+				]).start();
+			}, index * 200);
+		});
+	};
 
 	useEffect(() => {
 		if (!isLoading) {
@@ -84,7 +125,11 @@ export default function Index() {
 									duration: 800,
 									useNativeDriver: false,
 								}).start();
-							}, 2200);
+								
+								setTimeout(() => {
+									animateStickers();
+								}, 600);
+							}, 1500);
 						});
 					});
 				}, 500);
@@ -132,7 +177,7 @@ export default function Index() {
 
 	return (
 		<View style={styles.container}>
-			<Animated.View style={ styles.svgBox }>
+			<Animated.View style={styles.svgBox}>
 				<Svg
 					width={width * 1.1}
 					height={height * 0.4}
@@ -158,6 +203,111 @@ export default function Index() {
 						animatedProps={animatedFillProps}
 					/>
 				</Svg>
+
+				<Animated.View style={[
+					styles.stickerContainer,
+					styles.sticker1Position,
+					{
+						transform: [
+							{ scale: sticker1Anim },
+							{ 
+								rotate: sticker1Rotate.interpolate({
+									inputRange: [0, 1],
+									outputRange: ['-15deg', '0deg']
+								})
+							}
+						],
+						opacity: sticker1Anim
+					}
+				]}>
+					<Image
+						source={require('@/assets/indexPage/Sticker_1.png')}
+					/>
+				</Animated.View>
+
+				<Animated.View style={[
+					styles.stickerContainer,
+					styles.sticker2Position,
+					{
+						transform: [
+							{ scale: sticker2Anim },
+							{ 
+								rotate: sticker2Rotate.interpolate({
+									inputRange: [0, 1],
+									outputRange: ['10deg', '0deg']
+								})
+							}
+						],
+						opacity: sticker2Anim
+					}
+				]}>
+					<Image
+						source={require('@/assets/indexPage/Sticker_2.png')}
+					/>
+				</Animated.View>
+
+				<Animated.View style={[
+					styles.stickerContainer,
+					styles.sticker3Position,
+					{
+						transform: [
+							{ scale: sticker3Anim },
+							{ 
+								rotate: sticker3Rotate.interpolate({
+									inputRange: [0, 1],
+									outputRange: ['-20deg', '0deg']
+								})
+							}
+						],
+						opacity: sticker3Anim
+					}
+				]}>
+					<Image
+						source={require('@/assets/indexPage/Sticker_3.png')}
+					/>
+				</Animated.View>
+
+				<Animated.View style={[
+					styles.stickerContainer,
+					styles.sticker4Position,
+					{
+						transform: [
+							{ scale: sticker4Anim },
+							{ 
+								rotate: sticker4Rotate.interpolate({
+									inputRange: [0, 1],
+									outputRange: ['25deg', '0deg']
+								})
+							}
+						],
+						opacity: sticker4Anim
+					}
+				]}>
+					<Image
+						source={require('@/assets/indexPage/Sticker_4.png')}
+					/>
+				</Animated.View>
+
+				<Animated.View style={[
+					styles.stickerContainer,
+					styles.sticker5Position,
+					{
+						transform: [
+							{ scale: sticker5Anim },
+							{ 
+								rotate: sticker5Rotate.interpolate({
+									inputRange: [0, 1],
+									outputRange: ['-10deg', '0deg']
+								})
+							}
+						],
+						opacity: sticker5Anim
+					}
+				]}>
+					<Image
+						source={require('@/assets/indexPage/Sticker_5.png')}
+					/>
+				</Animated.View>
 			</Animated.View>
 
 			<Animated.View style={[styles.content, { opacity: contentAnim }]}>
@@ -210,6 +360,7 @@ const styles = StyleSheet.create({
 		width: width * 1.1,
 		justifyContent: 'center',
 		alignItems: 'center',
+		position: 'relative',
 	},
 	svgStyle: {
 		position: 'relative',
@@ -255,4 +406,28 @@ const styles = StyleSheet.create({
 		fontWeight: '600',
 	},
 
+	stickerContainer: {
+		position: 'absolute',
+		zIndex: 10,
+	},
+	sticker1Position: {
+		top: 20,
+		left: 30,
+	},
+	sticker2Position: {
+		top: 60,
+		right: 40,
+	},
+	sticker3Position: {
+		top: 140,
+		left: 180,
+	},
+	sticker4Position: {
+		bottom: 60,
+		right: 45,
+	},
+	sticker5Position: {
+		bottom: 20,
+		left: 40,
+	},
 });
