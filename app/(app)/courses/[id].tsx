@@ -15,6 +15,7 @@ import { chapterService } from "@/services/chapterService";
 import { Chapter, Course } from "@/types/Chapter";
 import { Ionicons } from "@expo/vector-icons";
 import { typography } from "@/styles/typography";
+import { CourseDetailModal } from "@/components/CourseDetailModal";
 
 const COURSE_IMAGES = [
 	require("@/assets/images/cours/course-1.png"),
@@ -31,10 +32,10 @@ export default function ChapterDetail() {
 	const imgIndex = parseInt(params.imgIndex as string) || 0;
 	const courseImage = COURSE_IMAGES[imgIndex % COURSE_IMAGES.length];
 
-	console.log("chapter", imgIndex, courseImage);
-
 	const [chapter, setChapter] = useState<Chapter | null>(null);
 	const [loading, setLoading] = useState(true);
+	const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+	const [modalVisible, setModalVisible] = useState(false);
 
 	useEffect(() => {
 		loadChapter();
@@ -59,8 +60,25 @@ export default function ChapterDetail() {
 			Alert.alert("Cours verrouillé", "Complétez les cours précédents pour débloquer celui-ci.");
 			return;
 		}
-		// TODO: Navigation vers le détail du cours
-		console.log(`Navigate to course ${index} of chapter ${chapterId}`);
+		setSelectedCourse(course);
+		setModalVisible(true);
+	};
+
+	const handleCloseModal = () => {
+		setModalVisible(false);
+		setSelectedCourse(null);
+	};
+
+	const handleStartCourse = (course: Course) => {
+		// Navigation vers la page de lecture du cours
+		router.push({
+			pathname: "/(app)/courses/course/[courseId]",
+			params: {
+				courseId: course.title,
+				courseData: JSON.stringify(course),
+			},
+		});
+		handleCloseModal();
 	};
 
 	const renderCourse = (course: Course, index: number) => {
@@ -88,7 +106,14 @@ export default function ChapterDetail() {
 				<View style={styles.courseContent}>
 					<View style={styles.courseHeader}>
 						<View style={styles.courseInfo}>
-							<Text style={[styles.courseTitle, typography.bold, typography["sm"], isLocked && styles.courseTextLocked]}>
+							<Text
+								style={[
+									styles.courseTitle,
+									typography.bold,
+									typography["sm"],
+									isLocked && styles.courseTextLocked,
+								]}
+							>
 								{course.title}
 							</Text>
 							<View style={styles.courseMeta}>
@@ -168,6 +193,14 @@ export default function ChapterDetail() {
 
 				<View style={styles.bottomPadding} />
 			</ScrollView>
+
+			{/* Course Detail Modal */}
+			<CourseDetailModal
+				course={selectedCourse}
+				visible={modalVisible}
+				onClose={handleCloseModal}
+				onStartCourse={handleStartCourse}
+			/>
 		</SafeAreaView>
 	);
 }
