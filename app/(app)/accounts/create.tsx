@@ -63,7 +63,8 @@ export default function Create() {
 			Alert.alert("Erreur", "Veuillez sélectionner un rôle");
 			return false;
 		}
-		if (pin.length !== 4) {
+		// PIN requis seulement pour les parents
+		if (selectedRole === "PARENT" && pin.length !== 4) {
 			Alert.alert("Erreur", "Le code PIN doit contenir exactement 4 chiffres");
 			return false;
 		}
@@ -78,7 +79,7 @@ export default function Create() {
 			await authService.subAccountRegister({
 				name: name.trim(),
 				role: selectedRole,
-				pin: pin,
+				pin: selectedRole === "PARENT" ? pin : "", // PIN vide pour les enfants
 			});
 			Alert.alert("Succès", "Compte créé avec succès", [{ text: "OK", onPress: () => router.back() }]);
 		} catch (error: any) {
@@ -94,6 +95,15 @@ export default function Create() {
 	};
 
 	const selectedRoleOption = roleOptions.find((option) => option.value === selectedRole);
+
+	// Vérifier si le formulaire est valide
+	const isFormValid = () => {
+		if (!name.trim() || !selectedRole) return false;
+		if (selectedRole === "PARENT") {
+			return pin.length === 4;
+		}
+		return true; // Pour les enfants, pas besoin de PIN
+	};
 
 	return (
 		<SafeAreaView style={styles.container}>
@@ -137,7 +147,11 @@ export default function Create() {
 							<TouchableOpacity
 								key={option.value}
 								style={[styles.roleCard, selectedRole === option.value && styles.roleCardSelected]}
-								onPress={() => setSelectedRole(option.value)}
+								onPress={() => {
+									setSelectedRole(option.value);
+									// Reset du PIN quand on change de rôle
+									setPin("");
+								}}
 								activeOpacity={0.7}
 							>
 								<View style={[styles.roleIconContainer, { backgroundColor: `${option.color}20` }]}>
@@ -173,43 +187,45 @@ export default function Create() {
 					</View>
 				</View>
 
-				{/* Code PIN */}
-				<View style={styles.section}>
-					<Text style={[styles.sectionLabel, fontStylesSemiBold]}>Code de sécurité</Text>
-					<Text style={[styles.sectionDescription, fontStylesRegular]}>
-						Choisissez un code à 4 chiffres pour protéger ce compte
-					</Text>
+				{/* Code PIN - Affiché seulement pour les parents */}
+				{selectedRole === "PARENT" && (
+					<View style={styles.section}>
+						<Text style={[styles.sectionLabel, fontStylesSemiBold]}>Code de sécurité</Text>
+						<Text style={[styles.sectionDescription, fontStylesRegular]}>
+							Choisissez un code à 4 chiffres pour protéger ce compte
+						</Text>
 
-					<View style={styles.pinContainer}>
-						<TextInput
-							style={[styles.pinInput, fontStylesRegular]}
-							value={pin}
-							onChangeText={handlePinChange}
-							keyboardType="numeric"
-							maxLength={4}
-							secureTextEntry
-							textAlign="center"
-							placeholder="••••"
-							placeholderTextColor="#ccc"
-						/>
+						<View style={styles.pinContainer}>
+							<TextInput
+								style={[styles.pinInput, fontStylesRegular]}
+								value={pin}
+								onChangeText={handlePinChange}
+								keyboardType="numeric"
+								maxLength={4}
+								secureTextEntry
+								textAlign="center"
+								placeholder="••••"
+								placeholderTextColor="#ccc"
+							/>
 
-						{/* Indicateurs de PIN */}
-						<View style={styles.pinIndicators}>
-							{[1, 2, 3, 4].map((i) => (
-								<View
-									key={i}
-									style={[
-										styles.pinDot,
-										pin.length >= i && styles.pinDotFilled,
-										selectedRoleOption && {
-											backgroundColor: pin.length >= i ? selectedRoleOption.color : "#e0e0e0",
-										},
-									]}
-								/>
-							))}
+							{/* Indicateurs de PIN */}
+							<View style={styles.pinIndicators}>
+								{[1, 2, 3, 4].map((i) => (
+									<View
+										key={i}
+										style={[
+											styles.pinDot,
+											pin.length >= i && styles.pinDotFilled,
+											selectedRoleOption && {
+												backgroundColor: pin.length >= i ? selectedRoleOption.color : "#e0e0e0",
+											},
+										]}
+									/>
+								))}
+							</View>
 						</View>
 					</View>
-				</View>
+				)}
 
 				<View style={styles.bottomPadding} />
 			</ScrollView>
@@ -219,15 +235,13 @@ export default function Create() {
 				<TouchableOpacity
 					style={[
 						styles.createButton,
-						(!name.trim() || !selectedRole || pin.length !== 4 || loading) && styles.createButtonDisabled,
+						(!isFormValid() || loading) && styles.createButtonDisabled,
 						selectedRoleOption &&
 							!loading &&
-							name.trim() &&
-							selectedRole &&
-							pin.length === 4 && { backgroundColor: selectedRoleOption.color },
+							isFormValid() && { backgroundColor: selectedRoleOption.color },
 					]}
 					onPress={handleSubmit}
-					disabled={!name.trim() || !selectedRole || pin.length !== 4 || loading}
+					disabled={!isFormValid() || loading}
 				>
 					<Text style={[styles.createButtonText, fontStylesSemiBold]}>
 						{loading ? "Création en cours..." : "Créer le compte"}

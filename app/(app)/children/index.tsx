@@ -607,8 +607,8 @@ const styles = StyleSheet.create({
 		backgroundColor: "#CEC5F8",
 	},
 	taskStatusCompleted: {
-		backgroundColor: "#4CAF50",
-		borderColor: "#4CAF50",
+		backgroundColor: "#6C5CE7",
+		borderColor: "#6C5CE7",
 	},
 	taskStatusText: {
 		fontSize: 12,

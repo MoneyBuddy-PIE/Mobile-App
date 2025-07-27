@@ -347,6 +347,7 @@ const styles = StyleSheet.create({
 	},
 	createButtonDisabled: {
 		backgroundColor: "#ccc",
+		shadowColor: "transparent",
 	},
 	createButtonText: {
 		color: "#fff",
