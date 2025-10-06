@@ -19,10 +19,8 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
 		const isRootIndex = segments[0] === "index";
 
 		if (!isAuthenticated && inAppGroup) {
-			console.log("User not authenticated, redirecting to login...");
 			router.replace("/(auth)/login");
 		} else if (isAuthenticated && (inAuthGroup || isRootIndex)) {
-			console.log("User authenticated, redirecting to accounts...");
 			router.replace("/(app)/accounts");
 		}
 	}, [isLoading, isAuthenticated, segments]);

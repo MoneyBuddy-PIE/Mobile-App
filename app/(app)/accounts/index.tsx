@@ -40,7 +40,6 @@ export default function Accounts() {
 	}, []);
 
 	useEffect(() => {
-		logger.log("Context user updated:", contextUser);
 		setUser(contextUser);
 	}, [contextUser]);
 
