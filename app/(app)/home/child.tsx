@@ -32,7 +32,6 @@ export default function ChildHome() {
 
 			if (accountData) {
 				const childTasks = await tasksService.getTasksByChild(accountData.id, "CHILD");
-				logger.log("Child tasks loaded:", childTasks);
 				setTasks(childTasks);
 			}
 		} catch (error) {

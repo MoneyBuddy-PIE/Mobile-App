@@ -72,7 +72,6 @@ export default function PinEntry() {
 		try {
 			// Login to sub-account with PIN
 			const response = await authService.subAccountLogin(accountId, pinValue);
-			logger.log("Sub-account login successful:", response);
 			await TokenStorage.setSubAccountToken(response.token);
 
 			// Get sub-account details

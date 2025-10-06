@@ -84,7 +84,6 @@ class ApiService {
 
 					if (error.response?.status === 403) {
 						console.log("Token is forbidden (403). Logging out...");
-						// await this.handleLogout();
 						return Promise.reject(error);
 					}
 
