@@ -33,6 +33,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 	const checkAuthStatus = async () => {
 		try {
 			const token = await TokenStorage.getToken();
+            const subaccountToken = await TokenStorage.getSubAccountToken();
+            console.log("Subaccount token:", subaccountToken);
 
 			if (!token) {
 				setIsAuthenticated(false);
