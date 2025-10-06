@@ -61,7 +61,7 @@ export default function Courses() {
 
 			if (accountData) {
 				const chaptersData = await chapterService.getChaptersByRole(accountData.role);
-				logger.log("Chapters loaded:", chaptersData);
+                logger.log("Chapters loaded:", chaptersData);
 				setChapters(chaptersData);
 			}
 		} catch (error) {
@@ -100,7 +100,6 @@ export default function Courses() {
 				key={chapter.id}
 				style={[styles.chapterCard, { width: cardWidth }]}
 				onPress={() => {
-                    console.log(`Navigate to chapter ${chapter.id}`);
 					router.push(`/(app)/courses/${chapter.id}?imgIndex=${index}`);
 				}}
 			>

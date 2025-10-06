@@ -7,8 +7,8 @@ export interface Quiz {
 
 export interface Section {
 	title: string;
-	content: string;
-	quiz?: Quiz;
+	markdownContent: string;
+	quiz?: Quiz[];
 }
 
 export interface Resource {

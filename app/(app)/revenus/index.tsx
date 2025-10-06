@@ -1,14 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-	View,
-	Text,
-	StyleSheet,
-	ScrollView,
-	SafeAreaView,
-	ActivityIndicator,
-	RefreshControl,
-	TouchableOpacity,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, ActivityIndicator, RefreshControl, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
 import { UserStorage } from "@/utils/storage";
 import { SubAccount } from "@/types/Account";
@@ -35,13 +26,10 @@ export default function Revenus() {
 		try {
 			const accountData = await UserStorage.getSubAccount();
 			setSubAccount(accountData);
-			logger.log("Revenus - SubAccount loaded:", accountData);
 			if (accountData) {
-				// Charger les tâches pour les statistiques
 				const childTasks = await tasksService.getTasksByChild(accountData.id, "CHILD");
 				setTasks(childTasks);
 
-				// Charger les transactions pour l'historique
 				const accountTransactions = await transactionService.getTransactionsBySubAccount(accountData.id);
 				setTransactions(accountTransactions);
 			}
@@ -75,11 +63,7 @@ export default function Revenus() {
 
 	return (
 		<SafeAreaView style={styles.container}>
-			<ScrollView
-				style={styles.content}
-				showsVerticalScrollIndicator={false}
-				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6C5CE7" />}
-			>
+			<ScrollView style={styles.content} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6C5CE7" />}>
 				{/* Header */}
 				<View style={styles.header}>
 					<Text style={[styles.title, typography.title]}>Mes revenus</Text>
@@ -94,9 +78,7 @@ export default function Revenus() {
 							<Text style={styles.balanceEmoji}>💰</Text>
 						</View>
 					</View>
-					<Text style={[styles.balanceAmount, typography["5xl"], typography.bold]}>
-						{parseFloat(subAccount?.money || "0").toFixed(2)}€
-					</Text>
+					<Text style={[styles.balanceAmount, typography["5xl"], typography.bold]}>{parseFloat(subAccount?.money || "0").toFixed(2)}€</Text>
 				</View>
 
 				{/* Statistiques */}
@@ -119,10 +101,7 @@ export default function Revenus() {
 
 				{/* Actions */}
 				<View style={styles.actionsContainer}>
-					<TouchableOpacity
-						style={[styles.addExpenseButton]}
-						onPress={() => router.push("/(app)/revenus/add-expense")}
-					>
+					<TouchableOpacity style={[styles.addExpenseButton]} onPress={() => router.push("/(app)/revenus/add-expense")}>
 						<View style={styles.expenseButtonContent}>
 							<View style={styles.expenseIconContainer}>
 								<Ionicons name="remove-circle" size={24} color="#fff" />
@@ -142,8 +121,7 @@ export default function Revenus() {
 						<Text style={[styles.tipsTitle, typography.subheading]}>Conseil du jour</Text>
 					</View>
 					<Text style={[styles.tipsText, typography.body]}>
-						💡 Essaie d'économiser un petit peu de ton argent de poche chaque semaine. Même 50 centimes te
-						permettront d'acheter quelque chose de plus gros plus tard !
+						💡 Essaie d'économiser un petit peu de ton argent de poche chaque semaine. Même 50 centimes te permettront d'acheter quelque chose de plus gros plus tard !
 					</Text>
 				</View>
 
@@ -156,37 +134,15 @@ export default function Revenus() {
 								.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 								.slice(0, 15)
 								.map((transaction, index) => (
-									<View
-										key={transaction.id}
-										style={[
-											styles.historyItem,
-											index < transactions.slice(0, 15).length - 1 && styles.historyItemBorder,
-										]}
-									>
+									<View key={transaction.id} style={[styles.historyItem, index < transactions.slice(0, 15).length - 1 && styles.historyItemBorder]}>
 										<View style={styles.transactionIcon}>
-											<Ionicons
-												name={transaction.type === "CREDIT" ? "arrow-up" : "arrow-down"}
-												size={16}
-												color={transaction.type === "CREDIT" ? "#4CAF50" : "#FF6B6B"}
-											/>
+											<Ionicons name={transaction.type === "CREDIT" ? "arrow-up" : "arrow-down"} size={16} color={transaction.type === "CREDIT" ? "#4CAF50" : "#FF6B6B"} />
 										</View>
 										<View style={styles.historyInfo}>
-											<Text style={[styles.historyDescription, typography.body]}>
-												{transaction.description}
-											</Text>
-											<Text style={[styles.historyDate, typography.caption]}>
-												{new Date(transaction.createdAt).toLocaleDateString("fr-FR")}
-											</Text>
+											<Text style={[styles.historyDescription, typography.body]}>{transaction.description}</Text>
+											<Text style={[styles.historyDate, typography.caption]}>{new Date(transaction.createdAt).toLocaleDateString("fr-FR")}</Text>
 										</View>
-										<Text
-											style={[
-												styles.historyAmount,
-												typography.buttonSmall,
-												transaction.type === "CREDIT"
-													? styles.creditAmount
-													: styles.debitAmount,
-											]}
-										>
+										<Text style={[styles.historyAmount, typography.buttonSmall, transaction.type === "CREDIT" ? styles.creditAmount : styles.debitAmount]}>
 											{transaction.type === "CREDIT" ? "+" : "-"}
 											{parseFloat(transaction.amount).toFixed(2)}€
 										</Text>
@@ -197,9 +153,7 @@ export default function Revenus() {
 						<View style={[styles.emptyHistory, styles.card]}>
 							<Text style={styles.emptyIcon}>💰</Text>
 							<Text style={[styles.emptyTitle, typography.subheading]}>Pas encore de transactions</Text>
-							<Text style={[styles.emptyText, typography.body]}>
-								Tes gains et dépenses apparaîtront ici !
-							</Text>
+							<Text style={[styles.emptyText, typography.body]}>Tes gains et dépenses apparaîtront ici !</Text>
 						</View>
 					)}
 				</View>

@@ -1,5 +1,5 @@
 import { apiService } from "./api";
-import { Chapter, ChapterResponse } from "@/types/Chapter";
+import { Chapter, ChapterResponse, Course } from "@/types/Chapter";
 
 export interface ChapterParams {
 	page?: number;
@@ -23,6 +23,10 @@ export const chapterService = {
 	async getChapterById(chapterId: string): Promise<Chapter> {
 		return apiService.get<Chapter>(`/chapters/${chapterId}`);
 	},
+
+    async getChapterCourses(chapterId: string): Promise<Course[]> {
+        return apiService.get<Course[]>(`/courses/chapter/${chapterId}`);
+    },
 
 	async getChaptersByRole(role: string): Promise<Chapter[]> {
 		if (role === "OWNER") role = "PARENT";
