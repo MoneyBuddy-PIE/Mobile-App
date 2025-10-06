@@ -68,10 +68,12 @@ export default function CourseReader() {
         setSelectedAnswer(null);
         setShowResult(false);
         setIsCorrect(false);
-        if (currentStep.type === "quiz" && currentStep.quizIndex === 0) {
-            setQuizScore(0);
-            setTotalQuizQuestions(currentStep.section.quiz?.length || 0);
-        }
+        useEffect(() => {
+            if (currentStep.type === "quiz" && currentStep.quizIndex === 0) {
+                setQuizScore(0);
+                setTotalQuizQuestions(currentStep.section.quiz?.length || 0);
+            }
+        }, [currentStepIndex]);
     };
 
     const handleAnswerSelect = (answerIndex: number) => {
@@ -110,7 +112,9 @@ export default function CourseReader() {
                 <View style={styles.quizContainer}>
                     {/* Badge Récap */}
                     <View style={styles.recapBadge}>
-                        <Text style={styles.recapText}>Récap - Question {currentStep.quizIndex + 1}/{currentStep.section.quiz.length}</Text>
+                        <Text style={styles.recapText}>
+                            Récap - Question {currentStep.quizIndex + 1}/{currentStep.section.quiz.length}
+                        </Text>
                     </View>
 
                     <Text style={styles.quizInstruction}>Complétez la phrase</Text>
@@ -149,7 +153,9 @@ export default function CourseReader() {
                     {/* Show score summary if it's the last quiz question and result is shown */}
                     {isLastQuizQuestion && showResult && (
                         <View style={styles.scoreSummary}>
-                            <Text style={styles.scoreText}>Score: {quizScore}/{currentStep.section.quiz.length}</Text>
+                            <Text style={styles.scoreText}>
+                                Score: {quizScore}/{currentStep.section.quiz.length}
+                            </Text>
                             {quizScore >= quiz.minimumScoreToPass ? (
                                 <Text style={styles.passText}>✅ Réussi!</Text>
                             ) : (
