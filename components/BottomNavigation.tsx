@@ -145,13 +145,13 @@ const styles = StyleSheet.create({
 		paddingTop: 8,
 		...Platform.select({
 			ios: {
-				shadowColor: "#000",
-				shadowOffset: {
-					width: 0,
-					height: -2,
-				},
-				shadowOpacity: 0.1,
-				shadowRadius: 3,
+				// shadowColor: "#000",
+				// shadowOffset: {
+				// 	width: 0,
+				// 	height: -2,
+				// },
+				// shadowOpacity: 0.1,
+				// shadowRadius: 3,
 			},
 			android: {
 				elevation: 8,

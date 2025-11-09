@@ -37,8 +37,7 @@ export default function ChapterDetail() {
         try {
             const chapterData = await chapterService.getChapterById(chapterId);
             setChapter(chapterData);
-            const coursesData = await chapterService.getChapterCourses(chapterId);
-            logger.log("Courses loaded:", coursesData);
+            const coursesData = chapterData.courses;
             setCourses(coursesData);
         } catch (error) {
             logger.error("Error loading chapter:", error);

@@ -120,6 +120,7 @@ class ApiService {
 
 				if (!error.response) {
 					logger.error("Network error:", error.message);
+                    console.error('EERRRO4', error)
 					return Promise.reject({
 						message: "Network error. Please check your connection.",
 						isNetworkError: true,

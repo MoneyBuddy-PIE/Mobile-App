@@ -103,7 +103,7 @@ export default function Register() {
 		if (step === 2) {
 			setStep(1);
 		} else {
-			router.back();
+			router.replace("/");
 		}
 	};
 

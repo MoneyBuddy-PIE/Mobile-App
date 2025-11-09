@@ -61,7 +61,6 @@ export default function Courses() {
 
 			if (accountData) {
 				const chaptersData = await chapterService.getChaptersByRole(accountData.role);
-                logger.log("Chapters loaded:", chaptersData);
 				setChapters(chaptersData);
 			}
 		} catch (error) {

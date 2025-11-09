@@ -68,13 +68,14 @@ export default function CourseReader() {
         setSelectedAnswer(null);
         setShowResult(false);
         setIsCorrect(false);
-        useEffect(() => {
-            if (currentStep.type === "quiz" && currentStep.quizIndex === 0) {
-                setQuizScore(0);
-                setTotalQuizQuestions(currentStep.section.quiz?.length || 0);
-            }
-        }, [currentStepIndex]);
     };
+
+    useEffect(() => {
+        if (currentStep.type === "quiz" && currentStep.quizIndex === 0) {
+            setQuizScore(0);
+            setTotalQuizQuestions(currentStep.section.quiz?.length || 0);
+        }
+    }, [currentStepIndex]);
 
     const handleAnswerSelect = (answerIndex: number) => {
         if (!showResult) {

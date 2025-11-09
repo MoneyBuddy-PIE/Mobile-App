@@ -61,8 +61,8 @@ export default function Login() {
 	};
 
 	const handleForgotPassword = () => {
-		Alert.alert("Mot de passe oublié", "Cette fonctionnalité sera bientôt disponible");
-	};
+        router.push("/(auth)/forgot-password");
+    };
 
 	return (
 		<SafeAreaView style={styles.container}>
@@ -107,8 +107,7 @@ export default function Login() {
 					</TouchableOpacity>
 				</View>
 
-				{/* Critères de mot de passe */}
-				<Text style={[styles.passwordCriteria, fontStylesRegular]}>8 caractères, 1 majuscule, 1 chiffre</Text>
+                <Text style={styles.forgotPasswordLink} onPress={handleForgotPassword}>Mot de passe oublié ?</Text>
 
 				{/* Bouton Se connecter */}
 				<TouchableOpacity
@@ -217,9 +216,9 @@ const styles = StyleSheet.create({
 		color: "#fff",
 	},
 	forgotPasswordLink: {
-		fontSize: 16,
+		fontSize: 14,
 		color: "#6C5CE7",
-		textAlign: "center",
+		textAlign: "right",
 		marginBottom: 40,
 	},
 	registerContainer: {
