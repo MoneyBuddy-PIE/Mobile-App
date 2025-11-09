@@ -113,7 +113,7 @@ export default function Index() {
                                 withTiming(1, {
                                     duration: 500,
                                     reduceMotion: ReduceMotion.Never,
-                                })
+                                }),
                             );
 
                             setTimeout(() => {

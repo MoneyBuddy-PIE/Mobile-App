@@ -1,29 +1,29 @@
 export interface LoginRequest {
-	email: string;
-	password: string;
+    email: string;
+    password: string;
 }
 
 export interface RegisterRequest {
-	name: string;
-	email: string;
-	password: string;
-	confirmPassword: string;
-	pin: string;
+    name: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+    pin: string;
 }
 
 export interface AuthResponse {
-	token: string;
-	error: string;
+    token: string;
+    error: string;
 }
 
 export interface ApiError {
-	message: string;
-	code?: string;
-	details?: any;
+    message: string;
+    code?: string;
+    details?: any;
 }
 
 export interface SubAccountRegisterRequest {
-	name: string;
-	role: string;
-	pin?: string;
+    name: string;
+    role: string;
+    pin?: string;
 }

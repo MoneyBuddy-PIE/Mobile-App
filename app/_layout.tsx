@@ -5,6 +5,7 @@ import { Corben_400Regular } from "@expo-google-fonts/corben";
 import { PlusJakartaSans_400Regular } from "@expo-google-fonts/plus-jakarta-sans";
 import { ActivityIndicator, View, StyleSheet } from "react-native";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { router } from "expo-router";
 
 export default function RootLayout() {
     const [fontsLoaded] = useFonts({

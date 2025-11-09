@@ -42,7 +42,7 @@ export const CourseDetailModal: React.FC<CourseDetailModalProps> = ({ course, vi
                     }).start();
                 }
             },
-        })
+        }),
     ).current;
 
     useEffect(() => {

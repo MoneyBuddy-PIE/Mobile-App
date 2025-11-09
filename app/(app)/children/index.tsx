@@ -35,7 +35,7 @@ export default function Children() {
             if (selectedChildId) {
                 loadChildTasks();
             }
-        }, [selectedChildId])
+        }, [selectedChildId]),
     );
 
     useEffect(() => {
