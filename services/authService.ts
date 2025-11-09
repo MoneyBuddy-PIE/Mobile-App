@@ -48,4 +48,8 @@ export const authService = {
 			console.error("Failed to refresh user data:", error);
 		}
 	},
+
+    async forgotPassword(email: string): Promise<void> {
+        return apiService.post<void>("/reset-password", { email });
+    }
 };
