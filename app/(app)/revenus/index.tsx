@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, ActivityIndicator, RefreshControl, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, RefreshControl, TouchableOpacity } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { UserStorage } from "@/utils/storage";
 import { SubAccount } from "@/types/Account";
@@ -49,7 +50,7 @@ export default function Revenus() {
         }
     };
 
-    const completedTasks = tasks.filter((task) => task.done);
+    const completedTasks = tasks.filter((task) => task.status === "COMPLETED");
     const totalEarned = completedTasks.reduce((sum, task) => sum + parseFloat(task.reward || "0"), 0);
 
     if (loading) {

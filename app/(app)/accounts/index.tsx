@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, SafeAreaView, RefreshControl } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, RefreshControl } from "react-native";
 import { useFonts } from "expo-font";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { DMSans_700Bold, DMSans_400Regular, DMSans_600SemiBold } from "@expo-google-fonts/dm-sans";
 import { router } from "expo-router";
 import { TokenStorage, UserStorage } from "@/utils/storage";

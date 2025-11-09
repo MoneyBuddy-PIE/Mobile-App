@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, ActivityIndicator, TouchableOpacity, RefreshControl, Modal } from "react-native";
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, RefreshControl, Modal } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuthContext } from "@/contexts/AuthContext";
 import Feather from "@expo/vector-icons/Feather";
 import { SubAccount } from "@/types/Account";

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, SafeAreaView } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from "react-native";
 import { useFonts } from "expo-font";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { DMSans_700Bold, DMSans_400Regular } from "@expo-google-fonts/dm-sans";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";

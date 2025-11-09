@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { useFonts } from "expo-font";
 import { DMSans_700Bold, DMSans_400Regular, DMSans_600SemiBold } from "@expo-google-fonts/dm-sans";
 import { Ionicons } from "@expo/vector-icons";
@@ -7,6 +7,7 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { UserStorage } from "@/utils/storage";
 import { SubAccount } from "@/types/Account";
 import { Link } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Profile() {
     const { user, logout } = useAuthContext();

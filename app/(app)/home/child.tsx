@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, ActivityIndicator, TouchableOpacity, RefreshControl, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, RefreshControl, Alert } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, router } from "expo-router";
 import { UserStorage } from "@/utils/storage";
 import { SubAccount } from "@/types/Account";
@@ -63,8 +64,8 @@ export default function ChildHome() {
         );
     }
 
-    const completedTasks = tasks.filter((task) => task.done);
-    const pendingTasks = tasks.filter((task) => !task.done);
+    const completedTasks = tasks.filter((task) => task.status === "COMPLETED");
+    const pendingTasks = tasks.filter((task) => task.status === "PENDING");
     const currentBalance = parseFloat(subAccount?.money || "0");
     const totalEarned = completedTasks.reduce((sum, task) => sum + parseFloat(task.reward || "0"), 0);
     const potentialEarnings = pendingTasks.reduce((sum, task) => sum + parseFloat(task.reward || "0"), 0);
@@ -164,8 +165,8 @@ export default function ChildHome() {
                                     </View>
                                 </View>
                                 <View style={styles.taskAction}>
-                                    <View style={[styles.actionButton, task.done && styles.actionButtonCompleted]}>
-                                        {task.done ?? <Ionicons name="checkmark-outline" size={24} color="#FFF" />}
+                                    <View style={[styles.actionButton, task.status === "COMPLETED" && styles.actionButtonCompleted]}>
+                                        {task.status === "COMPLETED" && <Ionicons name="checkmark-outline" size={24} color="#FFF" />}
                                     </View>
                                 </View>
                             </TouchableOpacity>

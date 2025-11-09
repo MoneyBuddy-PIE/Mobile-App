@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, RefreshControl, SafeAreaView } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, RefreshControl } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useFonts } from "expo-font";
 import { DMSans_700Bold, DMSans_400Regular, DMSans_600SemiBold } from "@expo-google-fonts/dm-sans";
 import { Link, router } from "expo-router";
@@ -62,7 +63,7 @@ export default function ParentHome() {
             const child = childAccounts[i];
             try {
                 const tasks = await tasksService.getTasksByChild(child.id, "PARENT");
-                const completedTasks = tasks.filter((task) => task.done);
+                const completedTasks = tasks.filter((task) => task.status === "COMPLETED");
 
                 setChildrenSummary((prev) =>
                     prev.map((summary, index) =>

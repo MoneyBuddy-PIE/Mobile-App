@@ -4,13 +4,13 @@ import {
     Text,
     StyleSheet,
     ScrollView,
-    SafeAreaView,
     ActivityIndicator,
     TouchableOpacity,
     RefreshControl,
     Dimensions,
     Image,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { UserStorage } from "@/utils/storage";
 import { SubAccount } from "@/types/Account";

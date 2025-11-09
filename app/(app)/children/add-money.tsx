@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, Alert, Animated, Image } from "react-native";
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Animated, Image } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { moneyService } from "@/services/moneyService";
 import { useAuthContext } from "@/contexts/AuthContext";

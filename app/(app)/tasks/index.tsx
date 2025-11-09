@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, ActivityIndicator, TouchableOpacity, RefreshControl, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, RefreshControl, Alert } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { UserStorage } from "@/utils/storage";
 import { SubAccount } from "@/types/Account";
 import { tasksService } from "@/services/tasksService";
