@@ -29,8 +29,13 @@ export const tasksService = {
     },
 
     // Marquer une tâche comme terminée
-    async completeTask(id: string): Promise<{ token: string; error: string }> {
-        return apiService.put<{ token: string; error: string }>(`/tasks/complete/${id}`, { done: true });
+    async completeTask(id: string, done?: boolean): Promise<{ token: string; error: string }> {
+        return apiService.put<{ token: string; error: string }>(`/tasks/complete/${id}`, { done: done ?? true });
+    },
+
+    // Pré-valider une tâche
+    async preValidateTask(id: string): Promise<void> {
+        return apiService.put(`/tasks/prevalidation/${id}`, { preValidated: true });
     },
 
     // Récupérer les tâches d'un enfant spécifique

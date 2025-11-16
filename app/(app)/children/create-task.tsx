@@ -76,48 +76,50 @@ export default function CreateTask() {
     return (
         <SafeAreaView style={styles.container}>
             <Modal visible={modalVisible} animationType="slide">
-                <SafeAreaView style={styles.container}>
-                    <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>Qui pourra confirmer la finalisation de cette tâche ?</Text>
-                        <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                            <Text style={styles.closeButtonText}>✕</Text>
-                        </TouchableOpacity>
-                    </View>
+                <View style={styles.modalContainer}>
+                    <SafeAreaView style={styles.modalSafeArea}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Qui pourra confirmer la finalisation de cette tâche ?</Text>
+                            <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
+                                <Text style={styles.closeButtonText}>✕</Text>
+                            </TouchableOpacity>
+                        </View>
 
-                    <View style={styles.modalContent}>
-                        <TouchableOpacity
-                            style={[styles.radioButton, validationMode === "BOTH" && styles.radioButtonSelected]}
-                            onPress={() => setValidationMode("BOTH")}
-                        >
-                            <View style={[styles.radioCircle, validationMode === "BOTH" && styles.radioCircleValid]}>
-                                {validationMode === "BOTH" && <View style={styles.radioCircleInner} />}
-                            </View>
-                            <Text style={styles.radioButtonText}>Les parents et les enfants peuvent valider les tâches</Text>
-                        </TouchableOpacity>
+                        <View style={styles.modalContent}>
+                            <TouchableOpacity
+                                style={[styles.radioButton, validationMode === "BOTH" && styles.radioButtonSelected]}
+                                onPress={() => setValidationMode("BOTH")}
+                            >
+                                <View style={[styles.radioCircle, validationMode === "BOTH" && styles.radioCircleValid]}>
+                                    {validationMode === "BOTH" && <View style={styles.radioCircleInner} />}
+                                </View>
+                                <Text style={styles.radioButtonText}>Les parents et les enfants peuvent valider les tâches</Text>
+                            </TouchableOpacity>
 
-                        <TouchableOpacity
-                            style={[styles.radioButton, validationMode === "PARENTS_ONLY" && styles.radioButtonSelected]}
-                            onPress={() => setValidationMode("PARENTS_ONLY")}
-                        >
-                            <View style={[styles.radioCircle, validationMode === "PARENTS_ONLY" && styles.radioCircleValid]}>
-                                {validationMode === "PARENTS_ONLY" && <View style={styles.radioCircleInner} />}
-                            </View>
-                            <Text style={styles.radioButtonText}>Seuls les parents peuvent valider les tâches</Text>
-                        </TouchableOpacity>
-                    </View>
+                            <TouchableOpacity
+                                style={[styles.radioButton, validationMode === "PARENTS_ONLY" && styles.radioButtonSelected]}
+                                onPress={() => setValidationMode("PARENTS_ONLY")}
+                            >
+                                <View style={[styles.radioCircle, validationMode === "PARENTS_ONLY" && styles.radioCircleValid]}>
+                                    {validationMode === "PARENTS_ONLY" && <View style={styles.radioCircleInner} />}
+                                </View>
+                                <Text style={styles.radioButtonText}>Seuls les parents peuvent valider les tâches</Text>
+                            </TouchableOpacity>
+                        </View>
 
-                    <View style={styles.modalFooter}>
-                        <TouchableOpacity
-                            style={styles.confirmButton}
-                            onPress={() => {
-                                setModalVisible(false);
-                                handleCreateTask();
-                            }}
-                        >
-                            <Text style={styles.confirmButtonText}>Confirmer</Text>
-                        </TouchableOpacity>
-                    </View>
-                </SafeAreaView>
+                        <View style={styles.modalFooter}>
+                            <TouchableOpacity
+                                style={styles.confirmButton}
+                                onPress={() => {
+                                    setModalVisible(false);
+                                    handleCreateTask();
+                                }}
+                            >
+                                <Text style={styles.confirmButtonText}>Confirmer</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </SafeAreaView>
+                </View>
             </Modal>
             {/* Header */}
             <View style={styles.header}>
@@ -217,6 +219,13 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#f8f9fa",
+    },
+    modalContainer: {
+        flex: 1,
+        backgroundColor: "#f8f9fa",
+    },
+    modalSafeArea: {
+        flex: 1,
     },
     header: {
         flexDirection: "row",

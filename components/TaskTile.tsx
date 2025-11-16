@@ -14,7 +14,14 @@ export default function TaskTile({ task, onPress }: TaskTileProps) {
     const containerProps = onPress ? { onPress, activeOpacity: 0.7 } : {};
 
     return (
-        <Container style={[styles.taskItem, task.status === "COMPLETED" && styles.taskItemCompleted]} {...containerProps}>
+        <Container
+            style={[
+                styles.taskItem,
+                task.status === "COMPLETED" && styles.taskItemCompleted,
+                task.status === "PRE_VALIDATE" && styles.taskItemPreValidate
+            ]}
+            {...containerProps}
+        >
             <View style={styles.taskInfo}>
                 <View style={styles.taskHeader}>
                     <Text
@@ -28,13 +35,31 @@ export default function TaskTile({ task, onPress }: TaskTileProps) {
                         {task.category}
                     </Text>
                     <Text style={[styles.taskReward, typography.bold, typography["xs"]]}>+ {task.reward}€</Text>
+                    {task.status === "PRE_VALIDATE" && (
+                        <Text style={[styles.preValidateBadge, typography.bold, typography["xs"]]}>
+                            En attente
+                        </Text>
+                    )}
                 </View>
-                <Text style={[styles.taskDescription, task.status === "COMPLETED" && styles.taskDescriptionCompleted, typography["sm"]]}>
+                <Text
+                    style={[
+                        styles.taskDescription,
+                        task.status === "COMPLETED" && styles.taskDescriptionCompleted,
+                        typography["sm"]
+                    ]}
+                >
                     {task.description}
                 </Text>
             </View>
-            <View style={[styles.taskStatus, task.status === "COMPLETED" && styles.taskStatusCompleted]}>
+            <View
+                style={[
+                    styles.taskStatus,
+                    task.status === "COMPLETED" && styles.taskStatusCompleted,
+                    task.status === "PRE_VALIDATE" && styles.taskStatusPreValidate
+                ]}
+            >
                 {task.status === "COMPLETED" && <Check />}
+                {task.status === "PRE_VALIDATE" && <Text style={styles.preValidateIcon}>⏳</Text>}
             </View>
         </Container>
     );
@@ -52,6 +77,11 @@ const styles = StyleSheet.create({
     },
     taskItemCompleted: {
         backgroundColor: "#D1DEF1",
+    },
+    taskItemPreValidate: {
+        backgroundColor: "#FFF4E6",
+        borderWidth: 1,
+        borderColor: "#FFB84D",
     },
     taskInfo: {
         flex: 1,
@@ -85,6 +115,13 @@ const styles = StyleSheet.create({
         paddingVertical: 3,
         borderRadius: 4,
     },
+    preValidateBadge: {
+        backgroundColor: "#FFB84D",
+        color: "#FFFFFF",
+        paddingHorizontal: 5,
+        paddingVertical: 3,
+        borderRadius: 4,
+    },
     taskStatus: {
         width: 40,
         height: 40,
@@ -96,5 +133,11 @@ const styles = StyleSheet.create({
     taskStatusCompleted: {
         backgroundColor: "#6C5CE7",
         borderColor: "#6C5CE7",
+    },
+    taskStatusPreValidate: {
+        backgroundColor: "#FFB84D",
+    },
+    preValidateIcon: {
+        fontSize: 20,
     },
 });

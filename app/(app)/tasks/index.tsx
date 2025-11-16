@@ -8,6 +8,7 @@ import { Task } from "@/types/Task";
 import { typography } from "@/styles/typography";
 import { Ionicons } from "@expo/vector-icons";
 import TaskTile from "@/components/TaskTile";
+import { logger } from "@/utils/logger";
 
 export default function Tasks() {
     const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
@@ -44,10 +45,20 @@ export default function Tasks() {
         }
     }, [loadData]);
 
-    const handleCompleteTask = async (taskId: string) => {
+    const handleCompleteTask = async (task: Task) => {
         try {
-            await tasksService.completeTask(taskId);
-            Alert.alert("Bravo ! 🎉", "Tu as terminé cette tâche !", [{ text: "Super !", onPress: () => loadData() }]);
+            if (task.status === "PRE_VALIDATE") {
+                return;
+            }
+            if (task.preValidate) {
+                await tasksService.preValidateTask(task.id);
+                Alert.alert("Envoyé ! 📩", "Ta tâche a été envoyée à tes parents pour validation. Tu recevras ta récompense une fois validée !", [
+                    { text: "Compris !", onPress: () => loadData() },
+                ]);
+            } else {
+                await tasksService.completeTask(task.id);
+                Alert.alert("Bravo ! 🎉", "Tu as terminé cette tâche !", [{ text: "Super !", onPress: () => loadData() }]);
+            }
         } catch (error) {
             console.error("Error completing task:", error);
             Alert.alert("Erreur", "Impossible de terminer la tâche");
@@ -64,7 +75,7 @@ export default function Tasks() {
     }
 
     const completedTasks = tasks.filter((task) => task.status === "COMPLETED");
-    const pendingTasks = tasks.filter((task) => task.status === "PENDING" || task.status === "PRE_VALIDATE");
+    const pendingTasks = tasks.filter((task) => task.status === "PENDING" || task.status === "PRE_VALIDATE" || task.status === "REFUSED");
     const regularTasks = pendingTasks.filter((task) => task.category === "REGULAR");
     const punctualTasks = pendingTasks.filter((task) => task.category === "PUNCTUAL");
 
@@ -112,7 +123,7 @@ export default function Tasks() {
                             <View style={styles.section}>
                                 <Text style={[styles.sectionTitle, typography.heading]}>Tâches régulières ({regularTasks.length})</Text>
                                 {regularTasks.map((task) => (
-                                    <TaskTile key={task.id} task={task} onPress={() => handleCompleteTask(task.id)} />
+                                    <TaskTile key={task.id} task={task} onPress={() => handleCompleteTask(task)} />
                                 ))}
                             </View>
                         )}
@@ -122,7 +133,7 @@ export default function Tasks() {
                             <View style={styles.section}>
                                 <Text style={[styles.sectionTitle, typography.heading]}>Défis ponctuels ({punctualTasks.length})</Text>
                                 {punctualTasks.map((task) => (
-                                    <TaskTile key={task.id} task={task} onPress={() => handleCompleteTask(task.id)} />
+                                    <TaskTile key={task.id} task={task} onPress={() => handleCompleteTask(task)} />
                                 ))}
                             </View>
                         )}

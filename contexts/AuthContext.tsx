@@ -22,15 +22,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     useEffect(() => {
         checkAuthStatus();
-
-        const interval = setInterval(
-            () => {
-                checkAuthStatus();
-            },
-            5 * 60 * 1000,
-        );
-
-        return () => clearInterval(interval);
     }, []);
 
     const checkAuthStatus = async () => {

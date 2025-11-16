@@ -25,8 +25,11 @@ export default function Children() {
     const [refreshing, setRefreshing] = useState(false);
     const [selectedChildId, setSelectedChildId] = useState<string>("");
     const [showPicker, setShowPicker] = useState(false);
+    const [validationModalVisible, setValidationModalVisible] = useState(false);
+    const [taskToValidate, setTaskToValidate] = useState<Task | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loadingTasks, setLoadingTasks] = useState(false);
+    const [showPreValidateTasks, setShowPreValidateTasks] = useState(false);
 
     const childAccounts = user?.subAccounts?.filter((account) => account.role === "CHILD") || [];
     const selectedChild = childAccounts.find((child) => child.id === selectedChildId);
@@ -91,9 +94,29 @@ export default function Children() {
         }
     };
 
+    const validateTask = async (taskId: string, done?: boolean) => {
+        try {
+            await tasksService.completeTask(taskId, done);
+            await loadChildTasks();
+        } catch (error) {
+            logger.error("Error validating task:", error);
+        }
+    };
+
+    const handleValidationChoice = async (choice: boolean) => {
+        if (!taskToValidate) return;
+        try {
+            await validateTask(taskToValidate.id, choice);
+        } finally {
+            setValidationModalVisible(false);
+            setTaskToValidate(null);
+        }
+    };
+
     // Séparer les tâches par catégorie
-    const regularTasks = tasks.filter((task) => task.category === "REGULAR");
-    const punctualTasks = tasks.filter((task) => task.category === "PUNCTUAL");
+    const regularTasks = tasks.filter((task) => task.category === "REGULAR" && task.status !== "PRE_VALIDATE");
+    const punctualTasks = tasks.filter((task) => task.category === "PUNCTUAL" && task.status !== "PRE_VALIDATE");
+    const preValidateTasks = tasks.filter((task) => task.status === "PRE_VALIDATE");
 
     if (loading) {
         return (
@@ -193,6 +216,23 @@ export default function Children() {
                                 <ActivityIndicator size="small" color="#007AFF" />
                             ) : (
                                 <>
+                                    {preValidateTasks.length > 0 && (
+                                        <View style={styles.taskCategory}>
+                                            <Text style={[styles.taskCategoryTitle, typography.bold, typography["sm"]]}>
+                                                Tâches en attente de validation ({preValidateTasks.length})
+                                            </Text>
+                                            {preValidateTasks.map((task) => (
+                                                <TaskTile
+                                                    key={task.id}
+                                                    task={task}
+                                                    onPress={() => {
+                                                        setTaskToValidate(task);
+                                                        setValidationModalVisible(true);
+                                                    }}
+                                                />
+                                            ))}
+                                        </View>
+                                    )}
                                     {/* Tâches régulières */}
                                     <View style={styles.taskCategory}>
                                         {regularTasks.length === 0 ? (
@@ -216,7 +256,15 @@ export default function Children() {
                                                 </TouchableOpacity>
                                             </TouchableOpacity>
                                         ) : (
-                                            regularTasks.map((task) => <TaskTile key={task.id} task={task} />)
+                                            regularTasks.map((task) => (
+                                                <TaskTile
+                                                    key={task.id}
+                                                    task={task}
+                                                    onPress={() => {
+                                                        task.status === "COMPLETED" ? null : validateTask(task.id);
+                                                    }}
+                                                />
+                                            ))
                                         )}
                                     </View>
 
@@ -243,7 +291,15 @@ export default function Children() {
                                                 </TouchableOpacity>
                                             </TouchableOpacity>
                                         ) : (
-                                            punctualTasks.map((task) => <TaskTile key={task.id} task={task} />)
+                                            punctualTasks.map((task) => (
+                                                <TaskTile
+                                                    key={task.id}
+                                                    task={task}
+                                                    onPress={() => {
+                                                        task.status === "COMPLETED" ? null : validateTask(task.id);
+                                                    }}
+                                                />
+                                            ))
                                         )}
                                     </View>
 
@@ -305,6 +361,36 @@ export default function Children() {
                                 {selectedChildId === child.id && <Text style={styles.checkmark}>✓</Text>}
                             </TouchableOpacity>
                         ))}
+                    </View>
+                </TouchableOpacity>
+            </Modal>
+
+            {/* Modal de validation de tâche */}
+            <Modal visible={validationModalVisible} transparent={true} animationType="fade" onRequestClose={() => setValidationModalVisible(false)}>
+                <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setValidationModalVisible(false)}>
+                    <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Valider la tâche</Text>
+                            <TouchableOpacity onPress={() => setValidationModalVisible(false)} style={styles.closeButton}>
+                                <Ionicons name="close" size={24} color="#666" />
+                            </TouchableOpacity>
+                        </View>
+                        <Text style={[styles.infoText, { marginBottom: 12 }]}>{taskToValidate?.description}</Text>
+
+                        <View style={styles.validationButtons}>
+                            <TouchableOpacity
+                                style={[styles.validationButton, styles.validationSecondary]}
+                                onPress={() => handleValidationChoice(false)}
+                            >
+                                <Text style={{ color: "#333", fontWeight: "600" }}>Refuser</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.validationButton, styles.validationPrimary]}
+                                onPress={() => handleValidationChoice(true)}
+                            >
+                                <Text style={{ color: "#fff", fontWeight: "600" }}>Valider</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </TouchableOpacity>
             </Modal>
@@ -537,10 +623,19 @@ const styles = StyleSheet.create({
         shadowRadius: 10,
         elevation: 10,
     },
+    modalHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 16,
+    },
     modalTitle: {
         color: "#333",
-        marginBottom: 16,
-        textAlign: "center",
+        fontSize: 18,
+        fontWeight: "600",
+    },
+    closeButton: {
+        padding: 4,
     },
     modalOption: {
         padding: 16,
@@ -594,5 +689,24 @@ const styles = StyleSheet.create({
     },
     addTaskButtonText: {
         color: "#fff",
+    },
+    validationButtons: {
+        flexDirection: "row",
+        gap: 12,
+        marginBottom: 12,
+    },
+    validationButton: {
+        flex: 1,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    validationPrimary: {
+        backgroundColor: "#6C5CE7",
+    },
+    validationSecondary: {
+        backgroundColor: "#EAEAEA",
     },
 });

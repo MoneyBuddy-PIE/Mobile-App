@@ -50,6 +50,6 @@ export const authService = {
     },
 
     async forgotPassword(email: string): Promise<void> {
-        return apiService.post<void>('/reset-password', { email });
+        return apiService.post<void>('/auth/reset-password', { email });
     },
 };

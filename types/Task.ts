@@ -10,6 +10,7 @@ export interface Task {
     createdAt: string;
     updatedAt: string;
     status: 'PENDING' | 'PRE_VALIDATE' | 'COMPLETED' | 'REFUSED';
+    preValidate: boolean;
 }
 
 export interface CreateTaskRequest {
