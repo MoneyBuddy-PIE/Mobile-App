@@ -18,7 +18,7 @@ export default function TaskTile({ task, onPress }: TaskTileProps) {
             style={[
                 styles.taskItem,
                 task.status === "COMPLETED" && styles.taskItemCompleted,
-                task.status === "PRE_VALIDATE" && styles.taskItemPreValidate
+                task.status === "PRE_VALIDATE" && styles.taskItemPreValidate,
             ]}
             {...containerProps}
         >
@@ -35,19 +35,9 @@ export default function TaskTile({ task, onPress }: TaskTileProps) {
                         {task.category}
                     </Text>
                     <Text style={[styles.taskReward, typography.bold, typography["xs"]]}>+ {task.reward}€</Text>
-                    {task.status === "PRE_VALIDATE" && (
-                        <Text style={[styles.preValidateBadge, typography.bold, typography["xs"]]}>
-                            En attente
-                        </Text>
-                    )}
+                    {task.status === "PRE_VALIDATE" && <Text style={[styles.preValidateBadge, typography.bold, typography["xs"]]}>En attente</Text>}
                 </View>
-                <Text
-                    style={[
-                        styles.taskDescription,
-                        task.status === "COMPLETED" && styles.taskDescriptionCompleted,
-                        typography["sm"]
-                    ]}
-                >
+                <Text style={[styles.taskDescription, task.status === "COMPLETED" && styles.taskDescriptionCompleted, typography["sm"]]}>
                     {task.description}
                 </Text>
             </View>
@@ -55,7 +45,7 @@ export default function TaskTile({ task, onPress }: TaskTileProps) {
                 style={[
                     styles.taskStatus,
                     task.status === "COMPLETED" && styles.taskStatusCompleted,
-                    task.status === "PRE_VALIDATE" && styles.taskStatusPreValidate
+                    task.status === "PRE_VALIDATE" && styles.taskStatusPreValidate,
                 ]}
             >
                 {task.status === "COMPLETED" && <Check />}
