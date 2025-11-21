@@ -5,7 +5,7 @@ import { UserStorage } from "@/utils/storage";
 import { SubAccount } from "@/types/Account";
 import { tasksService } from "@/services/tasksService";
 import { Task } from "@/types/Task";
-import { typography } from "@/styles/typography";
+import { typography, colors, spacing, shadows } from "@/styles";
 import { Ionicons } from "@expo/vector-icons";
 import TaskTile from "@/components/TaskTile";
 import { logger } from "@/utils/logger";

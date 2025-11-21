@@ -6,6 +6,7 @@ import { PlusJakartaSans_400Regular } from "@expo-google-fonts/plus-jakarta-sans
 import { ActivityIndicator, View, StyleSheet } from "react-native";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { router } from "expo-router";
+import { colors } from "@/styles";
 
 export default function RootLayout() {
     const [fontsLoaded] = useFonts({
@@ -19,7 +20,7 @@ export default function RootLayout() {
     if (!fontsLoaded) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#6C5CE7" />
+                <ActivityIndicator size="large" color={colors.primary[100]} />
             </View>
         );
     }
@@ -40,6 +41,6 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "#f8f9fa",
+        backgroundColor: colors.screenBackground,
     },
 });

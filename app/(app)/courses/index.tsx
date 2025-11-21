@@ -7,7 +7,7 @@ import { SubAccount } from "@/types/Account";
 import { chapterService } from "@/services/chapterService";
 import { Chapter } from "@/types/Chapter";
 import { logger } from "@/utils/logger";
-import { typography } from "@/styles/typography";
+import { typography, colors, spacing, shadows } from "@/styles";
 
 const { width } = Dimensions.get("window");
 const cardWidth = (width - 60) / 2;

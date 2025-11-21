@@ -8,7 +8,7 @@ import { router } from "expo-router";
 import { tasksService } from "@/services/tasksService";
 import { Task } from "@/types/Task";
 import { logger } from "@/utils/logger";
-import { typography } from "@/styles/typography";
+import { typography, colors, spacing, shadows } from "@/styles";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 

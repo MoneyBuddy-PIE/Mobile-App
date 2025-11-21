@@ -2,6 +2,7 @@
 import React from "react";
 import { TouchableOpacity, Text, View, StyleSheet } from "react-native";
 import { SubAccount } from "@/types/Account";
+import { colors, spacing, shadows, typography } from "@/styles";
 
 interface AccountCardProps {
     account: SubAccount;
@@ -25,13 +26,13 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onPress }) => {
     const getRoleColor = (role: string) => {
         switch (role.toUpperCase()) {
             case "PARENT":
-                return "#4CAF50";
+                return colors.jadegreen[100];
             case "CHILD":
-                return "#2196F3";
+                return colors.blue[100];
             case "ADMIN":
-                return "#FF9800";
+                return colors.secondary[100];
             default:
-                return "#666";
+                return colors.carbon[60];
         }
     };
 
@@ -59,29 +60,22 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onPress }) => {
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: "#fff",
-        borderRadius: 16,
-        padding: 16,
+        backgroundColor: colors.white,
+        borderRadius: spacing.base,
+        padding: spacing.base,
         flexDirection: "row",
         alignItems: "center",
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
-        marginBottom: 12,
+        ...shadows.md,
+        marginBottom: spacing.md,
     },
     iconContainer: {
         width: 50,
         height: 50,
         borderRadius: 25,
-        backgroundColor: "#f0f0f0",
+        backgroundColor: colors.carbon[10],
         justifyContent: "center",
         alignItems: "center",
-        marginRight: 16,
+        marginRight: spacing.base,
     },
     icon: {
         fontSize: 24,
@@ -90,31 +84,31 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     name: {
-        fontSize: 18,
-        fontWeight: "600",
-        color: "#333",
-        marginBottom: 4,
+        ...typography.lg,
+        ...typography.semiBold,
+        color: colors.carbon[100],
+        marginBottom: spacing.xs,
     },
     roleContainer: {
         flexDirection: "row",
     },
     roleBadge: {
-        paddingHorizontal: 8,
-        paddingVertical: 4,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs,
         borderRadius: 6,
     },
     roleText: {
-        color: "#fff",
-        fontSize: 12,
-        fontWeight: "600",
+        color: colors.white,
+        ...typography.xs,
+        ...typography.semiBold,
         textTransform: "uppercase",
     },
     arrow: {
-        marginLeft: 12,
+        marginLeft: spacing.md,
     },
     arrowText: {
         fontSize: 20,
-        color: "#999",
+        color: colors.carbon[50],
     },
 });
 

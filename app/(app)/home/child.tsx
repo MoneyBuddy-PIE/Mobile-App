@@ -6,7 +6,7 @@ import { UserStorage } from "@/utils/storage";
 import { SubAccount } from "@/types/Account";
 import { tasksService } from "@/services/tasksService";
 import { Task } from "@/types/Task";
-import { typography } from "@/styles/typography";
+import { typography, colors, spacing, shadows } from "@/styles";
 import { Ionicons } from "@expo/vector-icons";
 import { logger } from "@/utils/logger";
 
@@ -58,8 +58,8 @@ export default function ChildHome() {
     if (loading) {
         return (
             <View style={[styles.container, styles.center]}>
-                <ActivityIndicator size="large" color="#6C5CE7" />
-                <Text style={[styles.loadingText, typography.body]}>Chargement...</Text>
+                <ActivityIndicator size="large" color={colors.primary[100]} />
+                <Text style={[styles.loadingText, typography.md]}>Chargement...</Text>
             </View>
         );
     }
@@ -83,7 +83,7 @@ export default function ChildHome() {
             <ScrollView
                 style={styles.content}
                 showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6C5CE7" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary[100]} />}
             >
                 {/* Header */}
                 <View style={styles.header}>
@@ -205,29 +205,29 @@ export default function ChildHome() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#f8f9fa",
+        backgroundColor: colors.screenBackground,
     },
     content: {
         flex: 1,
-        paddingHorizontal: 20,
+        paddingHorizontal: spacing.lg,
     },
     center: {
         justifyContent: "center",
         alignItems: "center",
     },
     loadingText: {
-        marginTop: 12,
-        color: "#666",
+        marginTop: spacing.md,
+        color: colors.carbon[60],
     },
     header: {
-        paddingTop: 60,
-        paddingBottom: 30,
+        paddingTop: spacing["5xl"],
+        paddingBottom: spacing.lg + 10,
     },
     greeting: {
-        marginBottom: 4,
+        marginBottom: spacing.xs,
     },
     childName: {
-        marginBottom: 8,
+        marginBottom: spacing.sm,
     },
     motivationText: {
         lineHeight: 22,
@@ -235,16 +235,9 @@ const styles = StyleSheet.create({
 
     // Cards et composants réutilisables
     card: {
-        backgroundColor: "#fff",
-        borderRadius: 8,
-        shadowColor: "#BFD0EA",
-        shadowOffset: {
-            width: 0,
-            height: 3.89,
-        },
-        shadowOpacity: 1,
-        shadowRadius: 0,
-        elevation: 4,
+        backgroundColor: colors.white,
+        borderRadius: spacing.sm,
+        ...shadows.md,
     },
 
     // Stats

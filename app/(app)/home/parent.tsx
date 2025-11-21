@@ -8,6 +8,7 @@ import { UserStorage } from "@/utils/storage";
 import { SubAccount } from "@/types/Account";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { tasksService } from "@/services/tasksService";
+import { colors, spacing, typography, shadows } from "@/styles";
 
 interface ChildSummary {
     child: SubAccount;
@@ -176,7 +177,7 @@ export default function ParentHome() {
     if (loading) {
         return (
             <View style={[styles.container, styles.center]}>
-                <ActivityIndicator size="large" color="#6C5CE7" />
+                <ActivityIndicator size="large" color={colors.primary[100]} />
                 <Text style={[styles.loadingText, fontStylesRegular]}>Chargement...</Text>
             </View>
         );
@@ -187,7 +188,7 @@ export default function ParentHome() {
             <ScrollView
                 style={styles.content}
                 showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6C5CE7" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary[100]} />}
             >
                 {/* Header */}
                 <View style={styles.header}>
@@ -295,127 +296,108 @@ export default function ParentHome() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#f8f9fa",
+        backgroundColor: colors.screenBackground,
     },
     content: {
         flex: 1,
-        paddingHorizontal: 20,
+        paddingHorizontal: spacing.lg,
     },
     center: {
         justifyContent: "center",
         alignItems: "center",
     },
     loadingText: {
-        marginTop: 12,
-        fontSize: 16,
-        color: "#666",
+        marginTop: spacing.md,
+        ...typography.md,
+        color: colors.carbon[60],
     },
     header: {
-        paddingTop: 40,
-        paddingBottom: 30,
+        paddingTop: spacing["3xl"],
+        paddingBottom: spacing.lg + 10,
     },
     greeting: {
-        fontSize: 18,
-        color: "#666",
-        marginBottom: 4,
+        ...typography.greeting,
+        marginBottom: spacing.xs,
     },
     nameText: {
-        fontSize: 32,
-        fontWeight: "bold",
-        color: "#333",
-        marginBottom: 4,
+        ...typography.title,
+        marginBottom: spacing.xs,
     },
     roleText: {
-        fontSize: 16,
-        color: "#6C5CE7",
-        fontWeight: "500",
+        ...typography.md,
+        color: colors.primary[100],
+        ...typography.semiBold,
     },
     generalStats: {
         flexDirection: "row",
-        gap: 12,
-        marginBottom: 30,
+        gap: spacing.md,
+        marginBottom: spacing.lg + 10,
     },
     statCard: {
         flex: 1,
-        backgroundColor: "#fff",
-        borderRadius: 8,
-        padding: 20,
+        backgroundColor: colors.white,
+        borderRadius: spacing.sm,
+        padding: spacing.lg,
         alignItems: "center",
-        shadowColor: "#BFD0EA",
-        shadowOffset: {
-            width: 0,
-            height: 3.89,
-        },
-        shadowOpacity: 1,
-        shadowRadius: 0,
-        elevation: 4,
+        ...shadows.md,
     },
     statIcon: {
         fontSize: 28,
-        marginBottom: 8,
+        marginBottom: spacing.sm,
     },
     statNumber: {
-        fontSize: 24,
-        fontWeight: "bold",
-        color: "#333",
-        marginBottom: 4,
+        ...typography["2xl"],
+        ...typography.bold,
+        color: colors.carbon[100],
+        marginBottom: spacing.xs,
     },
     statText: {
-        fontSize: 12,
-        color: "#666",
+        ...typography.xs,
+        color: colors.carbon[60],
         textAlign: "center",
     },
     section: {
-        marginBottom: 30,
+        marginBottom: spacing.lg + 10,
     },
     sectionHeader: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: 16,
+        marginBottom: spacing.base,
     },
     sectionTitle: {
-        fontSize: 22,
-        fontWeight: "bold",
-        color: "#333",
+        ...typography.subheading,
     },
     seeAllButton: {
-        padding: 8,
+        padding: spacing.sm,
     },
     seeAllText: {
-        fontSize: 14,
-        color: "#6C5CE7",
-        fontWeight: "600",
+        ...typography.sm,
+        color: colors.primary[100],
+        ...typography.semiBold,
     },
     childrenContainer: {
-        gap: 12,
+        gap: spacing.md,
     },
     childCard: {
-        backgroundColor: "#fff",
-        borderRadius: 8,
-        padding: 16,
-        shadowColor: "#BFD0EA",
-        shadowOffset: {
-            width: 0,
-            height: 3.89,
-        },
-        shadowOpacity: 1,
-        shadowRadius: 0,
-        elevation: 4,
+        backgroundColor: colors.white,
+        borderRadius: spacing.sm,
+        padding: spacing.base,
+        ...shadows.md,
     },
     childHeader: {
         flexDirection: "row",
         alignItems: "center",
-        marginBottom: 12,
+        marginBottom: spacing.md,
     },
     childIconContainer: {
         width: 40,
         height: 40,
-        borderRadius: 8,
-        backgroundColor: "#f0f8ff",
+        borderRadius: spacing.sm,
+        backgroundColor: colors.primary[10],
         justifyContent: "center",
         alignItems: "center",
-        marginRight: 12,
+        marginRight: spacing.md,
     },
     childIcon: {
         fontSize: 20,
@@ -424,15 +406,15 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     childName: {
-        fontSize: 16,
-        fontWeight: "600",
-        color: "#333",
+        ...typography.md,
+        ...typography.semiBold,
+        color: colors.carbon[100],
         marginBottom: 2,
     },
     childMoney: {
-        fontSize: 14,
-        color: "#6C5CE7",
-        fontWeight: "500",
+        ...typography.sm,
+        color: colors.primary[100],
+        ...typography.semiBold,
     },
     childStats: {
         flexDirection: "row",
@@ -443,120 +425,104 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     statValue: {
-        fontSize: 16,
-        fontWeight: "bold",
-        color: "#333",
+        ...typography.md,
+        ...typography.bold,
+        color: colors.carbon[100],
         marginBottom: 2,
     },
     statLabel: {
-        fontSize: 12,
-        color: "#666",
+        ...typography.xs,
+        color: colors.carbon[60],
     },
     progressContainer: {
         flex: 1,
         flexDirection: "row",
         alignItems: "center",
-        marginLeft: 16,
-        gap: 8,
+        marginLeft: spacing.base,
+        gap: spacing.sm,
     },
     progressBar: {
         flex: 1,
         height: 6,
-        backgroundColor: "#e0e0e0",
+        backgroundColor: colors.carbon[20],
         borderRadius: 3,
         overflow: "hidden",
     },
     progressFill: {
         height: "100%",
-        backgroundColor: "#4CAF50",
+        backgroundColor: colors.jadegreen[100],
         borderRadius: 3,
     },
     progressText: {
-        fontSize: 12,
-        color: "#666",
+        ...typography.xs,
+        color: colors.carbon[60],
         minWidth: 30,
     },
     emptyContainer: {
-        backgroundColor: "#fff",
-        borderRadius: 8,
-        padding: 40,
+        backgroundColor: colors.white,
+        borderRadius: spacing.sm,
+        padding: spacing["3xl"],
         alignItems: "center",
-        shadowColor: "#BFD0EA",
-        shadowOffset: {
-            width: 0,
-            height: 3.89,
-        },
-        shadowOpacity: 1,
-        shadowRadius: 0,
-        elevation: 4,
+        ...shadows.md,
     },
     emptyIcon: {
         fontSize: 48,
-        marginBottom: 16,
+        marginBottom: spacing.base,
     },
     emptyTitle: {
-        fontSize: 20,
-        fontWeight: "bold",
-        color: "#333",
-        marginBottom: 8,
+        ...typography.xl,
+        ...typography.bold,
+        color: colors.carbon[100],
+        marginBottom: spacing.sm,
     },
     emptyText: {
-        fontSize: 16,
-        color: "#666",
+        ...typography.subtitle,
         textAlign: "center",
-        marginBottom: 20,
-        lineHeight: 22,
+        marginBottom: spacing.lg,
     },
     createButton: {
-        backgroundColor: "#6C5CE7",
-        paddingHorizontal: 24,
-        paddingVertical: 12,
-        borderRadius: 8,
+        backgroundColor: colors.primary[100],
+        paddingHorizontal: spacing.xl,
+        paddingVertical: spacing.md,
+        borderRadius: spacing.sm,
     },
     createButtonText: {
-        color: "#fff",
-        fontSize: 14,
-        fontWeight: "600",
+        color: colors.white,
+        ...typography.sm,
+        ...typography.semiBold,
     },
     actionGrid: {
         flexDirection: "row",
         flexWrap: "wrap",
-        gap: 12,
-        marginTop: 16,
+        gap: spacing.md,
+        marginTop: spacing.base,
     },
     actionCard: {
-        backgroundColor: "#fff",
-        borderRadius: 8,
-        padding: 20,
+        backgroundColor: colors.white,
+        borderRadius: spacing.sm,
+        padding: spacing.lg,
         width: "47%",
         alignItems: "center",
-        shadowColor: "#BFD0EA",
-        shadowOffset: {
-            width: 0,
-            height: 3.89,
-        },
-        shadowOpacity: 1,
-        shadowRadius: 0,
-        elevation: 4,
+        ...shadows.md,
     },
     actionIcon: {
         fontSize: 32,
-        marginBottom: 12,
+        marginBottom: spacing.md,
     },
     actionText: {
-        fontSize: 14,
-        fontWeight: "600",
-        color: "#333",
+        ...typography.sm,
+        ...typography.semiBold,
+        color: colors.carbon[100],
         textAlign: "center",
-        marginBottom: 4,
+        marginBottom: spacing.xs,
     },
     actionDescription: {
-        fontSize: 12,
-        color: "#666",
+        ...typography.xs,
+        color: colors.carbon[60],
         textAlign: "center",
         lineHeight: 16,
     },
     bottomPadding: {
-        height: 20,
+        height: spacing.lg,
     },
 });

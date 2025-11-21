@@ -10,6 +10,7 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { authService } from "@/services/authService";
 import { userService } from "@/services/userService";
 import { logger } from "@/utils/logger";
+import { colors, spacing, typography, shadows } from "@/styles";
 
 export default function Accounts() {
     const { logout, user: contextUser, refreshUserData } = useAuthContext();
@@ -113,20 +114,20 @@ export default function Accounts() {
         switch (role.toUpperCase()) {
             case "PARENT":
             case "OWNER":
-                return "#4A90E2";
+                return colors.blue[100];
             case "CHILD":
-                return "#00D4AA";
+                return colors.aquamarine[100];
             case "ADMIN":
-                return "#FF9800";
+                return colors.secondary[100];
             default:
-                return "#666";
+                return colors.carbon[60];
         }
     };
 
     if (loading) {
         return (
             <View style={[styles.container, styles.center]}>
-                <ActivityIndicator size="large" color="#6C5CE7" />
+                <ActivityIndicator size="large" color={colors.primary[100]} />
                 <Text style={[styles.loadingText, fontStylesRegular]}>Chargement des comptes...</Text>
             </View>
         );
@@ -137,7 +138,7 @@ export default function Accounts() {
             <ScrollView
                 style={styles.content}
                 showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6C5CE7" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary[100]} />}
             >
                 {/* Header */}
                 <View style={styles.header}>
@@ -185,116 +186,103 @@ export default function Accounts() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#f8f9fa",
+        backgroundColor: colors.screenBackground,
     },
     content: {
         flex: 1,
-        paddingHorizontal: 20,
+        paddingHorizontal: spacing.lg,
     },
     center: {
         justifyContent: "center",
         alignItems: "center",
     },
     loadingText: {
-        marginTop: 12,
-        fontSize: 16,
-        color: "#666",
+        marginTop: spacing.md,
+        ...typography.md,
+        color: colors.carbon[60],
     },
     header: {
-        paddingTop: 60,
-        paddingBottom: 40,
+        paddingTop: spacing["5xl"],
+        paddingBottom: spacing["3xl"],
         alignItems: "center",
     },
     title: {
-        fontSize: 28,
-        fontWeight: "bold",
-        color: "#333",
-        marginBottom: 12,
+        ...typography.heading,
+        marginBottom: spacing.md,
         textAlign: "center",
     },
     subtitle: {
-        fontSize: 16,
-        color: "#666",
+        ...typography.subtitle,
         textAlign: "center",
-        lineHeight: 22,
-        paddingHorizontal: 20,
+        paddingHorizontal: spacing.lg,
     },
     cardsContainer: {
         flexDirection: "row",
         flexWrap: "wrap",
         justifyContent: "space-between",
-        gap: 16,
+        gap: spacing.base,
     },
     accountCard: {
-        backgroundColor: "#fff",
-        borderRadius: 16,
-        padding: 24,
+        backgroundColor: colors.white,
+        borderRadius: spacing.base,
+        padding: spacing.xl,
         alignItems: "center",
         width: "47%",
         minHeight: 160,
         justifyContent: "space-between",
-        shadowColor: "#BFD0EA",
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-        shadowOpacity: 1,
-        shadowRadius: 0,
-        elevation: 4,
+        ...shadows.md,
     },
     iconContainer: {
         width: 60,
         height: 60,
-        borderRadius: 16,
-        backgroundColor: "#f8f9fa",
+        borderRadius: spacing.base,
+        backgroundColor: colors.screenBackground,
         justifyContent: "center",
         alignItems: "center",
-        marginBottom: 16,
+        marginBottom: spacing.base,
     },
     accountIcon: {
         fontSize: 32,
     },
     accountName: {
-        fontSize: 18,
-        fontWeight: "600",
-        color: "#333",
+        ...typography.lg,
+        ...typography.semiBold,
+        color: colors.carbon[100],
         textAlign: "center",
-        marginBottom: 12,
+        marginBottom: spacing.md,
     },
     roleBadge: {
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 12,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.xs + 2,
+        borderRadius: spacing.md,
         minWidth: 80,
         alignItems: "center",
     },
     roleText: {
-        color: "#fff",
-        fontSize: 14,
-        fontWeight: "600",
+        color: colors.white,
+        ...typography.sm,
+        ...typography.semiBold,
     },
     emptyState: {
-        backgroundColor: "#fff",
-        borderRadius: 16,
-        padding: 40,
+        backgroundColor: colors.white,
+        borderRadius: spacing.base,
+        padding: spacing["3xl"],
         alignItems: "center",
         width: "100%",
-        marginTop: 40,
+        marginTop: spacing["3xl"],
     },
     emptyTitle: {
-        fontSize: 20,
-        fontWeight: "bold",
-        color: "#333",
-        marginBottom: 12,
+        ...typography.xl,
+        ...typography.bold,
+        color: colors.carbon[100],
+        marginBottom: spacing.md,
         textAlign: "center",
     },
     emptyText: {
-        fontSize: 16,
-        color: "#666",
+        ...typography.subtitle,
         textAlign: "center",
-        lineHeight: 22,
     },
     bottomPadding: {
-        height: 40,
+        height: spacing["3xl"],
     },
 });

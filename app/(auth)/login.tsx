@@ -8,6 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { logger } from "@/utils/logger";
+import { colors, spacing, typography, commonStyles } from "@/styles";
 
 export default function Login() {
     const { login } = useAuthContext();
@@ -164,111 +165,98 @@ export default function Login() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#fff",
+        backgroundColor: colors.white,
     },
     header: {
-        paddingHorizontal: 20,
-        paddingTop: 10,
-        paddingBottom: 20,
+        paddingHorizontal: spacing.lg,
+        paddingTop: spacing.xs,
+        paddingBottom: spacing.lg,
     },
     backButton: {
         width: 44,
         height: 44,
-        backgroundColor: "#333",
-        borderRadius: 12,
+        backgroundColor: colors.carbon[100],
+        borderRadius: spacing.md,
         justifyContent: "center",
         alignItems: "center",
     },
     content: {
         flex: 1,
-        paddingHorizontal: 24,
-        paddingTop: 40,
+        paddingHorizontal: spacing.xl,
+        paddingTop: spacing["3xl"],
     },
     title: {
-        fontSize: 28,
-        fontWeight: "bold",
-        color: "#333",
-        marginBottom: 60,
+        ...typography.heading,
+        marginBottom: spacing["5xl"],
         textAlign: "left",
     },
     inputContainer: {
         position: "relative",
-        marginBottom: 20,
+        marginBottom: spacing.lg,
     },
     input: {
-        borderWidth: 1,
-        borderColor: "#e0e0e0",
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 16,
-        fontSize: 16,
-        color: "#333",
-        backgroundColor: "#fff",
+        ...commonStyles.input,
+        paddingHorizontal: spacing.base,
+        paddingVertical: spacing.base,
     },
     passwordInput: {
         paddingRight: 50,
     },
     eyeButton: {
         position: "absolute",
-        right: 16,
-        top: 16,
-        padding: 4,
+        right: spacing.base,
+        top: spacing.base,
+        padding: spacing.xs,
     },
     passwordCriteria: {
-        fontSize: 14,
-        color: "#999",
-        marginBottom: 40,
-        marginTop: -10,
+        ...typography.sm,
+        color: colors.carbon[50],
+        marginBottom: spacing["3xl"],
+        marginTop: -spacing.xs,
     },
     loginButton: {
-        borderRadius: 12,
-        paddingVertical: 16,
-        paddingHorizontal: 32,
-        alignItems: "center",
-        marginBottom: 24,
+        ...commonStyles.button,
+        marginBottom: spacing.xl,
     },
     loginButtonDisabled: {
-        backgroundColor: "#e0e0e0",
+        ...commonStyles.buttonDisabled,
     },
     loginButtonActive: {
-        backgroundColor: "#6C5CE7",
+        backgroundColor: colors.primary[100],
     },
     loginButtonText: {
-        fontSize: 16,
-        fontWeight: "600",
+        ...typography.button,
     },
     loginButtonTextDisabled: {
-        color: "#999",
+        color: colors.carbon[50],
     },
     loginButtonTextActive: {
-        color: "#fff",
+        color: colors.white,
     },
     forgotPasswordLink: {
-        fontSize: 14,
-        color: "#6C5CE7",
+        ...typography.sm,
+        color: colors.primary[100],
         textAlign: "right",
-        marginBottom: 40,
+        marginBottom: spacing["3xl"],
     },
     registerContainer: {
         alignItems: "center",
-        paddingVertical: 12,
+        paddingVertical: spacing.md,
     },
     registerText: {
-        fontSize: 16,
-        color: "#333",
+        ...typography.md,
+        color: colors.carbon[100],
     },
     button: {
-        // width: 200,
-        // height: 44,
-        borderRadius: 12,
-        paddingVertical: 16,
-        paddingHorizontal: 32,
-        fontSize: 16,
+        borderRadius: spacing.md,
+        paddingVertical: spacing.base,
+        paddingHorizontal: spacing["2xl"],
+        ...typography.md,
         height: 50,
     },
     divider: {
         borderBottomWidth: 1,
-        borderBottomColor: "#e0e0e0",
-        marginVertical: 20,
+        borderBottomColor: colors.border,
+        marginVertical: spacing.lg,
     },
 });

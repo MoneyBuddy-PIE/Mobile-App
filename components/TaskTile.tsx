@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Task } from "@/types/Task";
-import { typography } from "@/styles/typography";
+import { typography, colors, spacing } from "@/styles";
 import Check from "@/components/Icons/Check";
 
 interface TaskTileProps {
@@ -57,21 +57,21 @@ export default function TaskTile({ task, onPress }: TaskTileProps) {
 
 const styles = StyleSheet.create({
     taskItem: {
-        backgroundColor: "#fff",
-        padding: 12,
-        marginVertical: 4,
-        borderRadius: 8,
+        backgroundColor: colors.white,
+        padding: spacing.md,
+        marginVertical: spacing.xs,
+        borderRadius: spacing.sm,
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
     },
     taskItemCompleted: {
-        backgroundColor: "#D1DEF1",
+        backgroundColor: colors.primary[20],
     },
     taskItemPreValidate: {
-        backgroundColor: "#FFF4E6",
+        backgroundColor: colors.secondary[20],
         borderWidth: 1,
-        borderColor: "#FFB84D",
+        borderColor: colors.secondary[100],
     },
     taskInfo: {
         flex: 1,
@@ -79,8 +79,8 @@ const styles = StyleSheet.create({
     taskHeader: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 8,
-        marginBottom: 8,
+        gap: spacing.sm,
+        marginBottom: spacing.sm,
     },
     taskCategorySmall: {
         paddingHorizontal: 5,
@@ -88,26 +88,26 @@ const styles = StyleSheet.create({
         borderRadius: 4,
     },
     taskCategorySmallRegular: {
-        backgroundColor: "#E1FFF6",
+        backgroundColor: colors.aquamarine[60],
     },
     taskCategorySmallPunctual: {
-        backgroundColor: "#FEA0BA66",
+        backgroundColor: colors.pink[40],
     },
     taskDescription: {
-        color: "#333",
+        color: colors.carbon[100],
     },
     taskDescriptionCompleted: {
         textDecorationLine: "line-through",
     },
     taskReward: {
-        backgroundColor: "#F3F0FD",
+        backgroundColor: colors.primary[10],
         paddingHorizontal: 5,
         paddingVertical: 3,
         borderRadius: 4,
     },
     preValidateBadge: {
-        backgroundColor: "#FFB84D",
-        color: "#FFFFFF",
+        backgroundColor: colors.secondary[100],
+        color: colors.white,
         paddingHorizontal: 5,
         paddingVertical: 3,
         borderRadius: 4,
@@ -118,14 +118,14 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "#CEC5F8",
+        backgroundColor: colors.primary[40],
     },
     taskStatusCompleted: {
-        backgroundColor: "#6C5CE7",
-        borderColor: "#6C5CE7",
+        backgroundColor: colors.primary[100],
+        borderColor: colors.primary[100],
     },
     taskStatusPreValidate: {
-        backgroundColor: "#FFB84D",
+        backgroundColor: colors.secondary[100],
     },
     preValidateIcon: {
         fontSize: 20,

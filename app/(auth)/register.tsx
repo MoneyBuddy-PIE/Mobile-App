@@ -7,6 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { authService } from "@/services/authService";
 import { TokenStorage } from "@/utils/storage";
+import { colors, spacing, typography, commonStyles } from "@/styles";
 
 export default function Register() {
     const [step, setStep] = useState(1);
@@ -266,131 +267,115 @@ export default function Register() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#fff",
+        backgroundColor: colors.white,
     },
     header: {
-        paddingHorizontal: 20,
-        paddingTop: 10,
-        paddingBottom: 20,
+        paddingHorizontal: spacing.lg,
+        paddingTop: spacing.xs,
+        paddingBottom: spacing.lg,
     },
     backButton: {
         width: 44,
         height: 44,
-        backgroundColor: "#333",
-        borderRadius: 12,
+        backgroundColor: colors.carbon[100],
+        borderRadius: spacing.md,
         justifyContent: "center",
         alignItems: "center",
     },
     content: {
         flex: 1,
-        paddingHorizontal: 24,
-        paddingTop: 20,
+        paddingHorizontal: spacing.xl,
+        paddingTop: spacing.lg,
     },
     titleContainer: {
-        marginBottom: 60,
+        marginBottom: spacing["5xl"],
     },
     title: {
-        fontSize: 28,
-        fontWeight: "bold",
-        color: "#333",
-        marginBottom: 16,
+        ...typography.heading,
+        marginBottom: spacing.base,
         textAlign: "left",
     },
     subtitle: {
-        fontSize: 16,
-        color: "#666",
-        lineHeight: 24,
+        ...typography.subtitle,
         textAlign: "left",
     },
     inputContainer: {
         position: "relative",
-        marginBottom: 20,
+        marginBottom: spacing.lg,
     },
     input: {
-        borderWidth: 1,
-        borderColor: "#e0e0e0",
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 16,
-        fontSize: 16,
-        color: "#333",
-        backgroundColor: "#fff",
+        ...commonStyles.input,
+        paddingHorizontal: spacing.base,
+        paddingVertical: spacing.base,
     },
     passwordInput: {
         paddingRight: 50,
     },
     eyeButton: {
         position: "absolute",
-        right: 16,
-        top: 16,
-        padding: 4,
+        right: spacing.base,
+        top: spacing.base,
+        padding: spacing.xs,
     },
     passwordCriteria: {
-        fontSize: 14,
-        color: "#999",
-        marginBottom: 20,
-        marginTop: -10,
+        ...typography.sm,
+        color: colors.carbon[50],
+        marginBottom: spacing.lg,
+        marginTop: -spacing.xs,
     },
     registerButton: {
-        borderRadius: 12,
-        paddingVertical: 16,
-        paddingHorizontal: 32,
-        alignItems: "center",
-        marginTop: 20,
+        ...commonStyles.button,
+        marginTop: spacing.lg,
     },
     registerButtonDisabled: {
-        backgroundColor: "#e0e0e0",
+        ...commonStyles.buttonDisabled,
     },
     registerButtonActive: {
-        backgroundColor: "#6C5CE7",
+        backgroundColor: colors.primary[100],
     },
     registerButtonText: {
-        fontSize: 16,
-        fontWeight: "600",
+        ...typography.button,
     },
     registerButtonTextDisabled: {
-        color: "#999",
+        color: colors.carbon[50],
     },
     registerButtonTextActive: {
-        color: "#fff",
+        color: colors.white,
     },
 
     // Styles pour l'étape PIN
     pinIconContainer: {
         alignItems: "center",
-        marginBottom: 40,
+        marginBottom: spacing["3xl"],
     },
     pinIcon: {
         fontSize: 60,
     },
     pinContainer: {
         alignItems: "center",
-        marginBottom: 40,
+        marginBottom: spacing["3xl"],
     },
     pinInput: {
-        borderWidth: 1,
-        borderColor: "#e0e0e0",
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 16,
+        ...commonStyles.input,
+        paddingHorizontal: spacing.base,
+        paddingVertical: spacing.base,
         fontSize: 24,
         width: 120,
         textAlign: "center",
         letterSpacing: 8,
-        marginBottom: 20,
-        backgroundColor: "#fff",
+        marginBottom: spacing.lg,
     },
     pinDots: {
         flexDirection: "row",
-        gap: 12,
+        gap: spacing.md,
     },
     pinDot: {
         width: 12,
         height: 12,
         borderRadius: 6,
-        backgroundColor: "#e0e0e0",
+        backgroundColor: colors.carbon[20],
     },
     pinDotFilled: {
-        backgroundColor: "#6C5CE7",
+        backgroundColor: colors.primary[100],
     },
 });
