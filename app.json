@@ -29,7 +29,8 @@
                 "foregroundImage": "./assets/adaptive-icon.png",
                 "backgroundColor": "#62F0BF"
             },
-            "edgeToEdgeEnabled": true
+            "edgeToEdgeEnabled": true,
+            "package": "com.moneybuddy"
         },
         "web": {
             "favicon": "./assets/favicon.png",
