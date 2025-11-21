@@ -171,6 +171,16 @@ export default function Profile() {
                                 <Ionicons name="chevron-forward" size={16} color="#999" />
                             </TouchableOpacity>
                         </Link>
+
+                        <Link href="/plans" asChild push>
+                            <TouchableOpacity style={styles.actionItem}>
+                                <View style={styles.actionIcon}>
+                                    <Ionicons name="card" size={20} color="#6C5CE7" />
+                                </View>
+                                <Text style={[styles.actionText, fontStylesSemiBold]}>Voir les plans</Text>
+                                <Ionicons name="chevron-forward" size={16} color="#999" />
+                            </TouchableOpacity>
+                        </Link>
                     </View>
                 </View>
 

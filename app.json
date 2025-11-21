@@ -1,51 +1,55 @@
 {
-  "expo": {
-    "name": "MoneyBuddy",
-    "slug": "moneybuddy",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "scheme": "myapp",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#62F0BF"
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "ios": {
-      "supportsTablet": true,
-      "usesAppleSignIn": true,
-      "bundleIdentifier": "com.toboggandev.moneybuddy",
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
-      }
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#62F0BF"
-      },
-      "edgeToEdgeEnabled": true
-    },
-    "web": {
-      "favicon": "./assets/favicon.png",
-      "bundler": "metro"
-    },
-    "plugins": [
-      "expo-router",
-      "expo-apple-authentication",
-      "expo-font"
-    ],
-    "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "1c32b5a7-b7e8-4f20-876b-dc1f68289886"
-      }
-    },
-    "owner": "toboggandev"
-  }
+    "expo": {
+        "name": "MoneyBuddy",
+        "slug": "moneybuddy",
+        "version": "1.0.0",
+        "orientation": "portrait",
+        "icon": "./assets/icon.png",
+        "userInterfaceStyle": "light",
+        "newArchEnabled": true,
+        "scheme": "myapp",
+        "splash": {
+            "image": "./assets/splash-icon.png",
+            "resizeMode": "contain",
+            "backgroundColor": "#62F0BF"
+        },
+        "assetBundlePatterns": ["**/*"],
+        "ios": {
+            "supportsTablet": true,
+            "usesAppleSignIn": true,
+            "bundleIdentifier": "com.toboggandev.moneybuddy",
+            "infoPlist": {
+                "ITSAppUsesNonExemptEncryption": false
+            }
+        },
+        "android": {
+            "adaptiveIcon": {
+                "foregroundImage": "./assets/adaptive-icon.png",
+                "backgroundColor": "#62F0BF"
+            },
+            "edgeToEdgeEnabled": true
+        },
+        "web": {
+            "favicon": "./assets/favicon.png",
+            "bundler": "metro"
+        },
+        "plugins": [
+            "expo-router",
+            "expo-apple-authentication",
+            "expo-font",
+            [
+                "@react-native-google-signin/google-signin",
+                {
+                    "iosUrlScheme": "com.googleusercontent.apps._some_id_here_"
+                }
+            ]
+        ],
+        "extra": {
+            "router": {},
+            "eas": {
+                "projectId": "1c32b5a7-b7e8-4f20-876b-dc1f68289886"
+            }
+        },
+        "owner": "toboggandev"
+    }
 }

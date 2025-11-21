@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import * as AppleAuthentication from "expo-apple-authentication";
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from "react-native";
 import { useFonts } from "expo-font";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -6,6 +7,7 @@ import { DMSans_700Bold, DMSans_400Regular } from "@expo-google-fonts/dm-sans";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { logger } from "@/utils/logger";
 
 export default function Login() {
     const { login } = useAuthContext();
@@ -54,6 +56,22 @@ export default function Login() {
             Alert.alert("Erreur", "Une erreur inattendue s'est produite");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleAppleSignIn = async () => {
+        try {
+            const credential = await AppleAuthentication.signInAsync({
+                requestedScopes: [AppleAuthentication.AppleAuthenticationScope.FULL_NAME, AppleAuthentication.AppleAuthenticationScope.EMAIL],
+            });
+            logger.log("Apple Sign-In Credential:", credential);
+            // signed in
+        } catch (e: any) {
+            if (e.code === "ERR_REQUEST_CANCELED") {
+                // handle that the user canceled the sign-in flow
+            } else {
+                // handle other errors
+            }
         }
     };
 
@@ -128,6 +146,16 @@ export default function Login() {
                         {loading ? "Connexion..." : "Se connecter"}
                     </Text>
                 </TouchableOpacity>
+                <View style={styles.divider}></View>
+                <View style={{ flex: 1, justifyContent: "flex-end", paddingBottom: 30 }}>
+                    <AppleAuthentication.AppleAuthenticationButton
+                        buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                        buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                        cornerRadius={12}
+                        style={styles.button}
+                        onPress={handleAppleSignIn}
+                    />
+                </View>
             </View>
         </SafeAreaView>
     );
@@ -228,5 +256,19 @@ const styles = StyleSheet.create({
     registerText: {
         fontSize: 16,
         color: "#333",
+    },
+    button: {
+        // width: 200,
+        // height: 44,
+        borderRadius: 12,
+        paddingVertical: 16,
+        paddingHorizontal: 32,
+        fontSize: 16,
+        height: 50,
+    },
+    divider: {
+        borderBottomWidth: 1,
+        borderBottomColor: "#e0e0e0",
+        marginVertical: 20,
     },
 });
