@@ -49,7 +49,7 @@
                 "@stripe/stripe-react-native",
                 {
                     "merchantIdentifier": "merchant.com.moneybuddy",
-                    "enableGooglePay": false
+                    "enableGooglePay": true
                 }
             ]
         ],
