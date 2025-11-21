@@ -13,7 +13,7 @@ import { logger } from "@/utils/logger";
 import { colors, spacing, typography, shadows } from "@/styles";
 
 export default function Accounts() {
-    const { logout, user: contextUser, refreshUserData } = useAuthContext();
+    const { user: contextUser, refreshUserData } = useAuthContext();
     const [user, setUser] = useState<Account | null>(contextUser);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     },
     accountCard: {
         backgroundColor: colors.white,
-        borderRadius: spacing.base,
+        borderRadius: spacing.xs,
         padding: spacing.xl,
         alignItems: "center",
         width: "47%",
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     iconContainer: {
         width: 60,
         height: 60,
-        borderRadius: spacing.base,
+        borderRadius: spacing.xs,
         backgroundColor: colors.screenBackground,
         justifyContent: "center",
         alignItems: "center",
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     roleBadge: {
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.xs + 2,
-        borderRadius: spacing.md,
+        borderRadius: spacing.xs,
         minWidth: 80,
         alignItems: "center",
     },
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     },
     emptyState: {
         backgroundColor: colors.white,
-        borderRadius: spacing.base,
+        borderRadius: spacing.xs,
         padding: spacing["3xl"],
         alignItems: "center",
         width: "100%",

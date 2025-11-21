@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
     },
     profileCard: {
         backgroundColor: "#fff",
-        borderRadius: 8,
+        borderRadius: 4,
         padding: 20,
         marginBottom: 30,
         shadowColor: "#BFD0EA",
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
     avatarContainer: {
         width: 60,
         height: 60,
-        borderRadius: 8,
+        borderRadius: 4,
         backgroundColor: "#f0f8ff",
         justifyContent: "center",
         alignItems: "center",
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     },
     moneyContainer: {
         backgroundColor: "#f8f9fa",
-        borderRadius: 8,
+        borderRadius: 4,
         padding: 16,
         alignItems: "center",
     },
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     },
     infoCard: {
         backgroundColor: "#fff",
-        borderRadius: 8,
+        borderRadius: 4,
         padding: 20,
         shadowColor: "#BFD0EA",
         shadowOffset: {
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
     },
     actionsContainer: {
         backgroundColor: "#fff",
-        borderRadius: 8,
+        borderRadius: 4,
         overflow: "hidden",
         shadowColor: "#BFD0EA",
         shadowOffset: {
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
     },
     logoutButton: {
         backgroundColor: "#fff",
-        borderRadius: 8,
+        borderRadius: 4,
         padding: 16,
         flexDirection: "row",
         alignItems: "center",
