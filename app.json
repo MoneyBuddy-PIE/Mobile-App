@@ -13,7 +13,9 @@
             "resizeMode": "contain",
             "backgroundColor": "#62F0BF"
         },
-        "assetBundlePatterns": ["**/*"],
+        "assetBundlePatterns": [
+            "**/*"
+        ],
         "ios": {
             "supportsTablet": true,
             "usesAppleSignIn": true,
@@ -41,6 +43,13 @@
                 "@react-native-google-signin/google-signin",
                 {
                     "iosUrlScheme": "com.googleusercontent.apps._some_id_here_"
+                }
+            ],
+            [
+                "@stripe/stripe-react-native",
+                {
+                    "merchantIdentifier": "merchant.com.moneybuddy",
+                    "enableGooglePay": false
                 }
             ]
         ],
