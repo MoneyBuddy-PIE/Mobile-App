@@ -51,6 +51,12 @@ export const BottomNavigation: React.FC = () => {
                     iconNameActive: "wallet",
                 },
                 {
+                    route: "/(app)/goals",
+                    label: "Objectifs",
+                    iconName: "trophy-outline",
+                    iconNameActive: "trophy",
+                },
+                {
                     route: "/(app)/tasks",
                     label: "Tâches",
                     iconName: "checkmark-circle-outline",

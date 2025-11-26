@@ -11,6 +11,7 @@ import { Transaction } from "@/types/Transaction";
 import { typography } from "@/styles/typography";
 import { Ionicons } from "@expo/vector-icons";
 import { logger } from "@/utils/logger";
+import { colors, commonStyles } from "@/styles";
 
 export default function Revenus() {
     const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
@@ -63,25 +64,16 @@ export default function Revenus() {
     }
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={commonStyles.container}>
             <ScrollView
                 style={styles.content}
                 showsVerticalScrollIndicator={false}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6C5CE7" />}
             >
-                {/* Header */}
-                <View style={styles.header}>
-                    <Text style={[styles.title, typography.title]}>Mes revenus</Text>
-                    <Text style={[styles.subtitle, typography.subtitle]}>Ton argent de poche et tes gains</Text>
-                </View>
-
                 {/* Solde actuel */}
                 <View style={[styles.balanceCard, styles.card]}>
                     <View style={styles.balanceHeader}>
                         <Text style={[styles.balanceLabel, typography.body]}>Mon argent de poche</Text>
-                        <View style={styles.balanceIcon}>
-                            <Text style={styles.balanceEmoji}>💰</Text>
-                        </View>
                     </View>
                     <Text style={[styles.balanceAmount, typography["5xl"], typography.bold]}>{parseFloat(subAccount?.money || "0").toFixed(2)}€</Text>
                 </View>
@@ -126,7 +118,7 @@ export default function Revenus() {
                         <Text style={[styles.tipsTitle, typography.subheading]}>Conseil du jour</Text>
                     </View>
                     <Text style={[styles.tipsText, typography.body]}>
-                        💡 Essaie d'économiser un petit peu de ton argent de poche chaque semaine. Même 50 centimes te permettront d'acheter quelque
+                        Essaie d'économiser un petit peu de ton argent de poche chaque semaine. Même 50 centimes te permettront d'acheter quelque
                         chose de plus gros plus tard !
                     </Text>
                 </View>
@@ -254,6 +246,7 @@ const styles = StyleSheet.create({
     },
     balanceAmount: {
         textAlign: "center",
+        color: colors.primary[100],
     },
 
     // Stats
