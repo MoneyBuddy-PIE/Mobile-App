@@ -6,7 +6,7 @@ import { chapterService } from "@/services/chapterService";
 import { Chapter, Course } from "@/types/Chapter";
 import { Ionicons } from "@expo/vector-icons";
 import { typography } from "@/styles/typography";
-import { CourseDetailModal } from "@/components/CourseDetailModal";
+import { CourseDetailModal } from "@/components/modal/CourseDetailModal";
 import { logger } from "@/utils/logger";
 
 const COURSE_IMAGES = [
