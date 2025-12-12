@@ -150,7 +150,7 @@ export const commonStyles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         ...shadows.md,
-        shadowColor: '#4E31CF'
+        shadowColor: '#4E31CF',
     },
     buttonSecondary: {
         backgroundColor: colors.aquamarine[100],

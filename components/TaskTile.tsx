@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
         borderRadius: spacing.sm,
     },
     taskItemCompleted: {
-        backgroundColor: '#D1DEF1',
+        backgroundColor: "#D1DEF1",
     },
     taskItemPreValidate: {},
     taskInfo: {

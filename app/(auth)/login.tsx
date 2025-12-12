@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
         marginBottom: spacing.xl,
     },
     loginButtonDisabled: {
-        shadowColor: 'transparent',
+        shadowColor: "transparent",
         ...commonStyles.buttonDisabled,
     },
     loginButtonActive: {
