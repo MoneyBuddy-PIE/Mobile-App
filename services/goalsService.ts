@@ -2,8 +2,12 @@ import { apiService } from './api';
 import { Goal, CreateGoalRequest } from '@/types/Goal';
 
 export const goalsService = {
-    async getGoals(): Promise<Goal[]> {
-        return apiService.get<Goal[]>('/goals');
+    async getGoals(childId?: string, goalStatus?: string): Promise<Goal[]> {
+        const params: Record<string, string> = {};
+        if (childId) params.childId = childId;
+        if (goalStatus) params.goalStatus = goalStatus;
+
+        return apiService.get<Goal[]>('/goals', params);
     },
 
     async getGoalById(goalId: string): Promise<Goal> {

@@ -1,23 +1,66 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, RefreshControl, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuthContext } from "@/contexts/AuthContext";
-import Feather from "@expo/vector-icons/Feather";
-import { SubAccount } from "@/types/Account";
-import { router } from "expo-router";
-import { tasksService } from "@/services/tasksService";
-import { Task } from "@/types/Task";
-import { logger } from "@/utils/logger";
-import { typography, colors, spacing, shadows } from "@/styles";
-import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
+import { router } from "expo-router";
+import Feather from "@expo/vector-icons/Feather";
+import { Ionicons } from "@expo/vector-icons";
 
+// Contexts
+import { useAuthContext } from "@/contexts/AuthContext";
+
+// Services
+import { tasksService } from "@/services/tasksService";
+import { transactionService } from "@/services/transactionService";
+import { goalsService } from "@/services/goalsService";
+
+// Types
+import { Task } from "@/types/Task";
+import { Transaction } from "@/types/Transaction";
+import { Goal } from "@/types/Goal";
+
+// Utils
+import { logger } from "@/utils/logger";
+
+// Styles
+import { typography, colors, spacing, shadows, commonStyles } from "@/styles";
+
+// Components
+import TaskTile from "@/components/TaskTile";
+
+// Icons
 import MoneyBill from "@/components/Icons/MoneyBill";
 import SearchAlt from "@/components/Icons/SearchAlt";
 import LightBulb from "@/components/Icons/LightBulb";
 import BoxCheck from "@/components/Icons/BoxCheck";
 import ThumbTack from "@/components/Icons/ThumbTack";
-import TaskTile from "@/components/TaskTile";
+import MoneyFly from "@/components/Icons/MoneyFly";
+import Pig from "@/components/Icons/Pig";
+import ListCheck from "@/components/Icons/ListCheck";
+
+// Constants
+const SUMMARY_CARD_COLORS = {
+    expenses: colors.primary[20],
+    savings: "#FEA0BA66",
+    tasks: "#97C9FF66",
+} as const;
+
+const TASK_ICON_BG_COLOR = "rgba(155, 255, 226, 0.3)";
+
+const COLORS = {
+    primary: "#6C5CE7",
+    secondary: "#846DED",
+    white: "#FFF",
+    background: "#EBF2FB",
+    border: "#BFD0EA",
+    text: {
+        primary: "#333",
+        secondary: "#666",
+        tertiary: "#828282",
+    },
+    info: "#52A5FF",
+    shadow: "#4E31CF",
+} as const;
 
 export default function Children() {
     const { user, refreshUserData } = useAuthContext();
@@ -29,36 +72,31 @@ export default function Children() {
     const [taskToValidate, setTaskToValidate] = useState<Task | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loadingTasks, setLoadingTasks] = useState(false);
-    const [showPreValidateTasks, setShowPreValidateTasks] = useState(false);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [goals, setGoals] = useState<Goal[]>([]);
 
+    // Computed values
     const childAccounts = user?.subAccounts?.filter((account) => account.role === "CHILD") || [];
     const selectedChild = childAccounts.find((child) => child.id === selectedChildId);
 
-    useFocusEffect(
-        React.useCallback(() => {
-            if (selectedChildId) {
-                loadChildTasks();
-            }
-        }, [selectedChildId]),
-    );
+    const moneyDebited = transactions.reduce((total, transaction) => {
+        return total + parseFloat(transaction.amount);
+    }, 0);
 
-    useEffect(() => {
-        loadData();
-    }, []);
+    const goalMoneySaved = goals.reduce((total, goal) => {
+        return total + goal.progression;
+    }, 0);
 
-    useEffect(() => {
-        if (childAccounts.length > 0 && !selectedChildId) {
-            setSelectedChildId(childAccounts[0].id);
-        }
-    }, [childAccounts, selectedChildId]);
+    const completedTasksCount = tasks.filter((task) => task.status === "COMPLETED").length;
+    const totalTasksCount = tasks.length;
 
-    useEffect(() => {
-        if (selectedChildId) {
-            loadChildTasks();
-        }
-    }, [selectedChildId]);
+    // Separate tasks by category
+    const regularTasks = tasks.filter((task) => task.category === "REGULAR" && task.status !== "PRE_VALIDATE");
+    const punctualTasks = tasks.filter((task) => task.category === "PUNCTUAL" && task.status !== "PRE_VALIDATE");
+    const preValidateTasks = tasks.filter((task) => task.status === "PRE_VALIDATE");
 
-    const loadData = async () => {
+    // Load functions
+    const loadData = useCallback(async () => {
         try {
             await refreshUserData();
         } catch (error) {
@@ -66,9 +104,9 @@ export default function Children() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [refreshUserData]);
 
-    const loadChildTasks = async () => {
+    const loadChildTasks = useCallback(async () => {
         if (!selectedChildId || !selectedChild) return;
 
         setLoadingTasks(true);
@@ -80,9 +118,69 @@ export default function Children() {
         } finally {
             setLoadingTasks(false);
         }
-    };
+    }, [selectedChildId, selectedChild]);
 
-    const onRefresh = async () => {
+    const loadChildTransactions = useCallback(async () => {
+        if (!selectedChildId) return;
+
+        try {
+            const childTransactions = await transactionService.getTransactionsBySubAccount(selectedChildId);
+
+            const now = new Date();
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+            const debitTransactions = childTransactions.filter((transaction) => {
+                if (transaction.type !== "DEBIT") return false;
+
+                const transactionDate = new Date(transaction.createdAt);
+                return transactionDate >= startOfMonth && transactionDate <= endOfMonth;
+            });
+
+            setTransactions(debitTransactions);
+        } catch (error) {
+            logger.error("Error loading child transactions:", error);
+        }
+    }, [selectedChildId]);
+
+    const loadChildGoals = useCallback(async () => {
+        if (!selectedChildId) return;
+        try {
+            const childGoals = await goalsService.getGoals(selectedChildId);
+            setGoals(childGoals);
+            logger.log("Loaded child goals:", childGoals);
+        } catch (error) {
+            logger.error("Error loading child goals:", error);
+        }
+    }, [selectedChildId]);
+
+    // Action handlers
+    const validateTask = useCallback(
+        async (taskId: string, done?: boolean) => {
+            try {
+                await tasksService.completeTask(taskId, done);
+                await loadChildTasks();
+            } catch (error) {
+                logger.error("Error validating task:", error);
+            }
+        },
+        [loadChildTasks],
+    );
+
+    const handleValidationChoice = useCallback(
+        async (choice: boolean) => {
+            if (!taskToValidate) return;
+            try {
+                await validateTask(taskToValidate.id, choice);
+            } finally {
+                setValidationModalVisible(false);
+                setTaskToValidate(null);
+            }
+        },
+        [taskToValidate, validateTask],
+    );
+
+    const onRefresh = useCallback(async () => {
         setRefreshing(true);
         try {
             await refreshUserData();
@@ -92,32 +190,297 @@ export default function Children() {
         } finally {
             setRefreshing(false);
         }
-    };
+    }, [refreshUserData, selectedChildId, loadChildTasks]);
 
-    const validateTask = async (taskId: string, done?: boolean) => {
-        try {
-            await tasksService.completeTask(taskId, done);
-            await loadChildTasks();
-        } catch (error) {
-            logger.error("Error validating task:", error);
+    // Effects
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
+    useEffect(() => {
+        if (childAccounts.length > 0 && !selectedChildId) {
+            setSelectedChildId(childAccounts[0].id);
         }
-    };
+    }, [childAccounts.length, selectedChildId]);
 
-    const handleValidationChoice = async (choice: boolean) => {
-        if (!taskToValidate) return;
-        try {
-            await validateTask(taskToValidate.id, choice);
-        } finally {
-            setValidationModalVisible(false);
-            setTaskToValidate(null);
+    useEffect(() => {
+        if (selectedChildId) {
+            loadChildTasks();
+            loadChildTransactions();
+            loadChildGoals();
         }
+    }, [selectedChildId]);
+
+    useFocusEffect(
+        useCallback(() => {
+            if (selectedChildId) {
+                loadChildTasks();
+            }
+        }, [selectedChildId, loadChildTasks]),
+    );
+
+    // Render functions
+    const renderHeader = () => (
+        <View style={styles.header}>
+            <TouchableOpacity style={styles.childSelector} onPress={() => setShowPicker(true)}>
+                <View style={styles.childIcon}>
+                    <Text style={styles.childIconText}>👶</Text>
+                </View>
+                <Text style={styles.childName}>{selectedChild?.name || "Sélectionner"}</Text>
+                <Feather name="chevron-down" size={24} color="black" />
+            </TouchableOpacity>
+        </View>
+    );
+
+    const renderBalanceSection = () => (
+        <View style={styles.balanceSection}>
+            <Text style={[styles.balanceLabel, typography.regular]}>Solde disponible</Text>
+            <Text style={[styles.balanceAmount, typography.title, typography["5xl"]]}>{selectedChild?.money || "0.00"}€</Text>
+        </View>
+    );
+
+    const renderActionButtons = () => (
+        <View style={styles.actionButtons}>
+            <View style={styles.actionButtonContainer}>
+                <TouchableOpacity
+                    style={styles.primaryActionButton}
+                    onPress={() =>
+                        router.push({
+                            pathname: "/(app)/children/add-money",
+                            params: {
+                                childId: selectedChildId,
+                                childName: selectedChild?.name || "",
+                            },
+                        })
+                    }
+                >
+                    <MoneyBill />
+                </TouchableOpacity>
+                <Text style={[typography.regular, styles.actionButtonText]}>Verser de l'argent</Text>
+            </View>
+            <View style={styles.actionButtonContainer}>
+                <TouchableOpacity style={styles.secondaryActionButton}>
+                    <SearchAlt />
+                </TouchableOpacity>
+                <Text style={[typography.regular, styles.actionButtonText]}>Paramétrer</Text>
+            </View>
+        </View>
+    );
+
+    const renderSummaryCard = (icon: React.ReactNode, title: string, value: string, subtitle: string, backgroundColor: string) => (
+        <View style={styles.summaryCard}>
+            <View style={styles.summaryCardHeader}>
+                <View
+                    style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 4,
+                        backgroundColor,
+                        justifyContent: "center",
+                        alignItems: "center",
+                    }}
+                >
+                    {icon}
+                </View>
+                <Text style={[typography.semiBold, typography.sm]}>{title}</Text>
+            </View>
+            <Text style={[typography.bold, typography["2xl"], { flex: 1 }]}>{value}</Text>
+            <TouchableOpacity
+                onPress={() =>
+                    router.push({
+                        pathname: "/(app)/children/goals",
+                        params: {
+                            childId: selectedChildId,
+                            childName: selectedChild?.name,
+                        },
+                    })
+                }
+            >
+                <Text style={[typography.regular, typography.sm, { color: colors.carbon[100] }]}>{subtitle}</Text>
+            </TouchableOpacity>
+        </View>
+    );
+
+    const renderSummarySection = () => {
+        const currentMonth =
+            new Date().toLocaleDateString("fr-FR", { month: "long" }).charAt(0).toUpperCase() +
+            new Date().toLocaleDateString("fr-FR", { month: "long" }).slice(1);
+
+        return (
+            <View style={styles.summaryContainer}>
+                <View style={styles.summaryCards}>
+                    {renderSummaryCard(
+                        <MoneyFly color={colors.primary[100]} />,
+                        "Dépenses",
+                        `${moneyDebited.toFixed(2)} €`,
+                        currentMonth,
+                        SUMMARY_CARD_COLORS.expenses,
+                    )}
+                    {renderSummaryCard(<Pig />, "Epargne", `${goalMoneySaved.toFixed(2)} €`, "Voir détails", SUMMARY_CARD_COLORS.savings)}
+                </View>
+                <View style={styles.summaryCards}>
+                    <View style={styles.summaryCard} />
+                    {renderSummaryCard(
+                        <ListCheck />,
+                        "Tâches",
+                        `${completedTasksCount}/${totalTasksCount}`,
+                        "Voir détails",
+                        SUMMARY_CARD_COLORS.tasks,
+                    )}
+                </View>
+            </View>
+        );
     };
 
-    // Séparer les tâches par catégorie
-    const regularTasks = tasks.filter((task) => task.category === "REGULAR" && task.status !== "PRE_VALIDATE");
-    const punctualTasks = tasks.filter((task) => task.category === "PUNCTUAL" && task.status !== "PRE_VALIDATE");
-    const preValidateTasks = tasks.filter((task) => task.status === "PRE_VALIDATE");
+    const renderEmptyMoneyInfo = () => (
+        <View style={styles.infoCard}>
+            <View style={styles.infoContent}>
+                <View style={styles.infoIcon}>
+                    <LightBulb />
+                </View>
+                <Text style={[styles.infoTitle, typography.bold, typography["md"]]}>Pas encore d'argent de poche</Text>
+            </View>
+            <Text style={styles.infoText}>Commencez à lui verser une petite somme à poche pour l'aider à apprendre à gérer un vrai budget.</Text>
+        </View>
+    );
 
+    const renderTaskCategory = (
+        icon: React.ReactNode,
+        title: string,
+        taskList: Task[],
+        taskType: "REGULAR" | "PUNCTUAL",
+        backgroundColor: string,
+    ) => {
+        if (taskList.length === 0) {
+            return (
+                <TouchableOpacity style={styles.taskCategoryHeader}>
+                    <View style={[styles.taskIconContainer, { backgroundColor }]}>{icon}</View>
+                    <Text style={[styles.taskCategoryTitle, typography.bold, typography.sm]}>
+                        {title} ({taskList.length})
+                    </Text>
+                    <TouchableOpacity
+                        style={styles.addButton}
+                        onPress={() =>
+                            router.push({
+                                pathname: "/(app)/children/create-task",
+                                params: { childId: selectedChildId, type: taskType },
+                            })
+                        }
+                    >
+                        <Ionicons name="add-outline" size={20} color="#828282" />
+                    </TouchableOpacity>
+                </TouchableOpacity>
+            );
+        }
+
+        return (
+            <>
+                {taskList.map((task) => (
+                    <TaskTile
+                        key={task.id}
+                        task={task}
+                        onPress={() => {
+                            task.status === "COMPLETED" ? null : validateTask(task.id);
+                        }}
+                    />
+                ))}
+            </>
+        );
+    };
+
+    const renderTasksSection = () => (
+        <View style={styles.tasksSection}>
+            <Text style={[styles.sectionTitle, typography.title, typography.xl]}>Ses tâches</Text>
+
+            {preValidateTasks.length > 0 && (
+                <View style={styles.taskCategory}>
+                    <Text style={[styles.taskCategoryTitle, typography.bold, typography.sm]}>
+                        Tâches en attente de validation ({preValidateTasks.length})
+                    </Text>
+                    {preValidateTasks.map((task) => (
+                        <TaskTile
+                            key={task.id}
+                            task={task}
+                            onPress={() => {
+                                setTaskToValidate(task);
+                                setValidationModalVisible(true);
+                            }}
+                        />
+                    ))}
+                </View>
+            )}
+
+            <View style={styles.taskCategory}>
+                {renderTaskCategory(<BoxCheck />, "Tâches régulières", regularTasks, "REGULAR", TASK_ICON_BG_COLOR)}
+            </View>
+
+            <View style={styles.taskCategory}>
+                {renderTaskCategory(<ThumbTack />, "Défis ponctuels", punctualTasks, "PUNCTUAL", TASK_ICON_BG_COLOR)}
+            </View>
+
+            {tasks.length === 0 && (
+                <View style={styles.infoCard}>
+                    <View style={styles.infoContent}>
+                        <Ionicons name="list-outline" size={24} color="#52A5FF" style={styles.infoIcon} />
+                        <Text style={[styles.infoTitle, typography.bold, typography.md]}>Aucune tâche pour l'instant</Text>
+                    </View>
+                    <Text style={styles.infoText}>
+                        Ajoutez une tâche pour aider votre enfant à gagner en autonomie (et peut-être quelques pièces 💰).
+                    </Text>
+                </View>
+            )}
+        </View>
+    );
+
+    const renderChildPicker = () => (
+        <Modal visible={showPicker} transparent={true} animationType="fade" onRequestClose={() => setShowPicker(false)}>
+            <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowPicker(false)}>
+                <View style={styles.modalContent}>
+                    <Text style={styles.modalTitle}>Sélectionner un enfant</Text>
+                    {childAccounts.map((child) => (
+                        <TouchableOpacity
+                            key={child.id}
+                            style={[styles.modalOption, selectedChildId === child.id && styles.modalOptionSelected]}
+                            onPress={() => {
+                                setSelectedChildId(child.id);
+                                setShowPicker(false);
+                            }}
+                        >
+                            <Text style={[styles.modalOptionText, selectedChildId === child.id && styles.modalOptionTextSelected]}>{child.name}</Text>
+                            {selectedChildId === child.id && <Text style={styles.checkmark}>✓</Text>}
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            </TouchableOpacity>
+        </Modal>
+    );
+
+    const renderValidationModal = () => (
+        <Modal visible={validationModalVisible} transparent={true} animationType="fade" onRequestClose={() => setValidationModalVisible(false)}>
+            <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setValidationModalVisible(false)}>
+                <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+                    <View style={styles.modalHeader}>
+                        <Text style={styles.modalTitle}>Valider la tâche</Text>
+                        <TouchableOpacity onPress={() => setValidationModalVisible(false)} style={styles.closeButton}>
+                            <Ionicons name="close" size={24} color="#666" />
+                        </TouchableOpacity>
+                    </View>
+                    <Text style={[styles.infoText, { marginBottom: 12 }]}>{taskToValidate?.description}</Text>
+
+                    <View style={styles.validationButtons}>
+                        <TouchableOpacity style={[styles.validationButton, styles.validationSecondary]} onPress={() => handleValidationChoice(false)}>
+                            <Text style={{ color: "#333", fontWeight: "600" }}>Refuser</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={[styles.validationButton, styles.validationPrimary]} onPress={() => handleValidationChoice(true)}>
+                            <Text style={{ color: "#fff", fontWeight: "600" }}>Valider</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </TouchableOpacity>
+        </Modal>
+    );
+
+    // Loading state
     if (loading) {
         return (
             <View style={[styles.container, styles.center]}>
@@ -141,183 +504,19 @@ export default function Children() {
 
     return (
         <SafeAreaView style={styles.container}>
+            {renderHeader()}
             <ScrollView
                 style={styles.contentScrollView}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#007AFF" />}
             >
-                {/* Header avec sélecteur d'enfant */}
-                <View style={styles.header}>
-                    <TouchableOpacity style={styles.childSelector} onPress={() => setShowPicker(true)}>
-                        <View style={styles.childIcon}>
-                            <Text style={styles.childIconText}>👶</Text>
-                        </View>
-                        <Text style={styles.childName}>{selectedChild?.name || "Sélectionner"}</Text>
-                        <Feather name="chevron-down" size={24} color="black" />
-                    </TouchableOpacity>
-                </View>
-
                 {selectedChild && (
                     <View style={styles.content}>
-                        {/* Solde */}
-                        <View style={styles.balanceSection}>
-                            <Text style={[styles.balanceLabel, typography.regular]}>Solde disponible</Text>
-                            <Text style={[styles.balanceAmount, typography.title, typography["5xl"]]}>{selectedChild.money || "0.00"}€</Text>
-                        </View>
-
-                        {/* Boutons actions */}
-                        <View style={styles.actionButtons}>
-                            <View style={styles.actionButtonContainer}>
-                                <TouchableOpacity
-                                    style={styles.primaryActionButton}
-                                    onPress={() =>
-                                        router.push({
-                                            pathname: "/(app)/children/add-money",
-                                            params: {
-                                                childId: selectedChildId,
-                                                childName: selectedChild.name,
-                                            },
-                                        })
-                                    }
-                                >
-                                    <MoneyBill />
-                                </TouchableOpacity>
-                                <Text style={[typography.regular, styles.actionButtonText]}>Verser de l'argent</Text>
-                            </View>
-                            <View style={styles.actionButtonContainer}>
-                                <TouchableOpacity style={styles.secondaryActionButton}>
-                                    <SearchAlt />
-                                </TouchableOpacity>
-                                <Text style={[typography.regular, styles.actionButtonText]}>Paramétrer</Text>
-                            </View>
-                        </View>
-
-                        {/* Message argent de poche */}
-                        {(!selectedChild.money || selectedChild.money === "0") && (
-                            <View style={styles.infoCard}>
-                                <View style={styles.infoContent}>
-                                    <View style={styles.infoIcon}>
-                                        <LightBulb />
-                                    </View>
-                                    <Text style={[styles.infoTitle, typography.bold, typography["md"]]}>Pas encore d'argent de poche</Text>
-                                </View>
-                                <Text style={styles.infoText}>
-                                    Commencez à lui verser une petite somme à poche pour l'aider à apprendre à gérer un vrai budget.
-                                </Text>
-                            </View>
-                        )}
-
-                        {/* Section Tâches */}
-                        <View style={styles.tasksSection}>
-                            <Text style={[styles.sectionTitle, typography.title, typography["xl"]]}>Ses tâches</Text>
-
-                            {loadingTasks ? (
-                                <ActivityIndicator size="small" color="#007AFF" />
-                            ) : (
-                                <>
-                                    {preValidateTasks.length > 0 && (
-                                        <View style={styles.taskCategory}>
-                                            <Text style={[styles.taskCategoryTitle, typography.bold, typography["sm"]]}>
-                                                Tâches en attente de validation ({preValidateTasks.length})
-                                            </Text>
-                                            {preValidateTasks.map((task) => (
-                                                <TaskTile
-                                                    key={task.id}
-                                                    task={task}
-                                                    onPress={() => {
-                                                        setTaskToValidate(task);
-                                                        setValidationModalVisible(true);
-                                                    }}
-                                                />
-                                            ))}
-                                        </View>
-                                    )}
-                                    {/* Tâches régulières */}
-                                    <View style={styles.taskCategory}>
-                                        {regularTasks.length === 0 ? (
-                                            <TouchableOpacity style={styles.taskCategoryHeader}>
-                                                <View style={styles.taskIconContainer}>
-                                                    <BoxCheck />
-                                                </View>
-                                                <Text style={[styles.taskCategoryTitle, typography.bold, typography["sm"]]}>
-                                                    Tâches régulières ({regularTasks.length})
-                                                </Text>
-                                                <TouchableOpacity
-                                                    style={styles.addButton}
-                                                    onPress={() =>
-                                                        router.push({
-                                                            pathname: "/(app)/children/create-task",
-                                                            params: { childId: selectedChildId, type: "REGULAR" },
-                                                        })
-                                                    }
-                                                >
-                                                    <Text style={styles.addButtonText}>+</Text>
-                                                </TouchableOpacity>
-                                            </TouchableOpacity>
-                                        ) : (
-                                            regularTasks.map((task) => (
-                                                <TaskTile
-                                                    key={task.id}
-                                                    task={task}
-                                                    onPress={() => {
-                                                        task.status === "COMPLETED" ? null : validateTask(task.id);
-                                                    }}
-                                                />
-                                            ))
-                                        )}
-                                    </View>
-
-                                    {/* Défis ponctuels */}
-                                    <View style={styles.taskCategory}>
-                                        {punctualTasks.length === 0 ? (
-                                            <TouchableOpacity style={styles.taskCategoryHeader}>
-                                                <View style={styles.taskIconContainer}>
-                                                    <ThumbTack />
-                                                </View>
-                                                <Text style={[styles.taskCategoryTitle, typography.bold, typography["sm"]]}>
-                                                    Défis ponctuels ({punctualTasks.length})
-                                                </Text>
-                                                <TouchableOpacity
-                                                    style={styles.addButton}
-                                                    onPress={() =>
-                                                        router.push({
-                                                            pathname: "/(app)/children/create-task",
-                                                            params: { childId: selectedChildId, type: "PUNCTUAL" },
-                                                        })
-                                                    }
-                                                >
-                                                    <Ionicons name="add-outline" size={20} color="#828282" />
-                                                </TouchableOpacity>
-                                            </TouchableOpacity>
-                                        ) : (
-                                            punctualTasks.map((task) => (
-                                                <TaskTile
-                                                    key={task.id}
-                                                    task={task}
-                                                    onPress={() => {
-                                                        task.status === "COMPLETED" ? null : validateTask(task.id);
-                                                    }}
-                                                />
-                                            ))
-                                        )}
-                                    </View>
-
-                                    {/* Message aucune tâche */}
-                                    {tasks.length === 0 && (
-                                        <View style={styles.infoCard}>
-                                            <View style={styles.infoContent}>
-                                                <Ionicons name="list-outline" size={24} color="#52A5FF" style={styles.infoIcon} />
-                                                <Text style={[styles.infoTitle, typography.bold, typography["md"]]}>Aucune tâche pour l'instant</Text>
-                                            </View>
-                                            <Text style={styles.infoText}>
-                                                Ajoutez une tâche pour aider votre enfant à gagner en autonomie (et peut-être quelques pièces 💰).
-                                            </Text>
-                                        </View>
-                                    )}
-                                </>
-                            )}
-                        </View>
+                        {renderBalanceSection()}
+                        {renderActionButtons()}
+                        {!selectedChild.money || selectedChild.money === "0" ? renderEmptyMoneyInfo() : renderSummarySection()}
+                        {renderTasksSection()}
                     </View>
                 )}
 
@@ -341,59 +540,8 @@ export default function Children() {
                 </View>
             )}
 
-            {/* Modal de sélection d'enfant */}
-            <Modal visible={showPicker} transparent={true} animationType="fade" onRequestClose={() => setShowPicker(false)}>
-                <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowPicker(false)}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Sélectionner un enfant</Text>
-                        {childAccounts.map((child) => (
-                            <TouchableOpacity
-                                key={child.id}
-                                style={[styles.modalOption, selectedChildId === child.id && styles.modalOptionSelected]}
-                                onPress={() => {
-                                    setSelectedChildId(child.id);
-                                    setShowPicker(false);
-                                }}
-                            >
-                                <Text style={[styles.modalOptionText, selectedChildId === child.id && styles.modalOptionTextSelected]}>
-                                    {child.name}
-                                </Text>
-                                {selectedChildId === child.id && <Text style={styles.checkmark}>✓</Text>}
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </TouchableOpacity>
-            </Modal>
-
-            {/* Modal de validation de tâche */}
-            <Modal visible={validationModalVisible} transparent={true} animationType="fade" onRequestClose={() => setValidationModalVisible(false)}>
-                <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setValidationModalVisible(false)}>
-                    <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Valider la tâche</Text>
-                            <TouchableOpacity onPress={() => setValidationModalVisible(false)} style={styles.closeButton}>
-                                <Ionicons name="close" size={24} color="#666" />
-                            </TouchableOpacity>
-                        </View>
-                        <Text style={[styles.infoText, { marginBottom: 12 }]}>{taskToValidate?.description}</Text>
-
-                        <View style={styles.validationButtons}>
-                            <TouchableOpacity
-                                style={[styles.validationButton, styles.validationSecondary]}
-                                onPress={() => handleValidationChoice(false)}
-                            >
-                                <Text style={{ color: "#333", fontWeight: "600" }}>Refuser</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.validationButton, styles.validationPrimary]}
-                                onPress={() => handleValidationChoice(true)}
-                            >
-                                <Text style={{ color: "#fff", fontWeight: "600" }}>Valider</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </TouchableOpacity>
-            </Modal>
+            {renderChildPicker()}
+            {renderValidationModal()}
         </SafeAreaView>
     );
 }
@@ -401,81 +549,75 @@ export default function Children() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#FFF",
+        backgroundColor: COLORS.white,
     },
     contentScrollView: {
         flex: 1,
-        backgroundColor: "#EBF2FB",
+        backgroundColor: COLORS.background,
     },
     scrollContent: {
         paddingBottom: 100,
     },
     content: {
         flex: 1,
-        paddingHorizontal: 20,
+        paddingHorizontal: spacing.lg,
     },
     center: {
         justifyContent: "center",
         alignItems: "center",
     },
     loadingText: {
-        marginTop: 12,
-        color: "#666",
+        marginTop: spacing.sm,
+        color: COLORS.text.secondary,
     },
     header: {
-        paddingTop: 20,
-        paddingBottom: 20,
-        backgroundColor: "#fff",
+        paddingTop: spacing.lg,
+        paddingBottom: spacing.lg,
+        backgroundColor: COLORS.white,
         borderBottomWidth: 1,
         borderBottomColor: "#e0e0e0",
-        marginBottom: 20,
+        // marginBottom: spacing.lg,
     },
     childSelector: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        padding: 12,
-        marginHorizontal: 20,
+        padding: spacing.sm,
+        marginHorizontal: spacing.lg,
     },
     childIcon: {
         width: 32,
         height: 32,
-        borderRadius: 8,
+        borderRadius: spacing.xs,
         backgroundColor: "#f0f0f0",
         justifyContent: "center",
         alignItems: "center",
-        marginRight: 16,
+        marginRight: spacing.base,
     },
     childIconText: {
         fontSize: 16,
     },
     childName: {
-        // flex: 1,
-        marginRight: 16,
+        marginRight: spacing.base,
         fontSize: 20,
-        fontWeight: 700,
-        color: "#333",
-    },
-    dropdownArrow: {
-        fontSize: 12,
-        color: "#666",
+        fontWeight: "700",
+        color: COLORS.text.primary,
     },
     balanceSection: {
         alignItems: "center",
-        marginBottom: 24,
+        marginVertical: spacing["2xl"],
     },
     balanceLabel: {
-        color: "#666",
-        marginBottom: 8,
+        color: COLORS.text.secondary,
+        marginBottom: spacing.xs,
     },
     balanceAmount: {
-        color: "#333",
+        color: COLORS.text.primary,
     },
-
     actionButtons: {
         flexDirection: "row",
-        gap: 16,
-        marginBottom: 24,
+        gap: spacing.base,
+        marginBottom: spacing["2xl"],
     },
     actionButtonContainer: {
         flex: 1,
@@ -483,75 +625,100 @@ const styles = StyleSheet.create({
     },
     primaryActionButton: {
         width: "100%",
-        backgroundColor: "#6C5CE7",
-        borderRadius: 8,
+        backgroundColor: COLORS.primary,
+        borderRadius: spacing.xs,
         alignItems: "center",
         justifyContent: "center",
-        marginBottom: 8,
-        paddingVertical: 12,
+        marginBottom: spacing.xs,
+        paddingVertical: spacing.sm,
     },
     secondaryActionButton: {
         width: "100%",
         backgroundColor: "transparent",
-        borderRadius: 8,
+        borderRadius: spacing.xs,
         alignItems: "center",
         justifyContent: "center",
-        marginBottom: 8,
-        paddingVertical: 12,
+        marginBottom: spacing.xs,
+        paddingVertical: spacing.sm,
         borderWidth: 1.5,
-        borderColor: "#BFD0EA",
+        borderColor: COLORS.border,
     },
     actionButtonText: {
         textAlign: "center",
         fontSize: 14,
-        color: "#333",
+        color: COLORS.text.primary,
     },
 
     infoCard: {
         backgroundColor: "rgba(191, 208, 234, 0.6)",
-        padding: 16,
-        borderRadius: 4,
-        marginBottom: 24,
+        padding: spacing.base,
+        borderRadius: spacing.xs,
+        marginBottom: spacing["2xl"],
     },
     infoContent: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 8,
-        marginBottom: 8,
+        gap: spacing.xs,
+        marginBottom: spacing.xs,
     },
     infoIcon: {
         width: 32,
         height: 32,
-        borderRadius: 4,
-        backgroundColor: "#FFFFFF",
+        borderRadius: spacing.xs,
+        backgroundColor: COLORS.white,
         justifyContent: "center",
         alignItems: "center",
     },
     infoTitle: {
-        color: "#333",
+        color: COLORS.text.primary,
     },
     infoText: {
-        color: "#666",
+        color: COLORS.text.secondary,
         lineHeight: 20,
     },
+    summaryContainer: {
+        flexDirection: "column",
+        gap: spacing.base,
+        marginBottom: spacing["3xl"],
+    },
+    summaryCards: {
+        flexDirection: "row",
+        gap: spacing.base,
+    },
+    summaryCard: {
+        flex: 1,
+        backgroundColor: COLORS.white,
+        borderRadius: spacing.xs,
+        paddingHorizontal: spacing.sm,
+        paddingTop: spacing.sm,
+        paddingBottom: spacing.base,
+        ...shadows.md,
+        flexDirection: "column",
+        gap: spacing.sm,
+    },
+    summaryCardHeader: {
+        flexDirection: "row",
+        gap: spacing.sm,
+        alignItems: "center",
+    },
     tasksSection: {
-        marginBottom: 20,
+        marginBottom: spacing.lg,
     },
     sectionTitle: {
-        color: "#333",
-        marginBottom: 16,
+        color: COLORS.text.primary,
+        marginBottom: spacing.base,
     },
     taskCategory: {
-        marginBottom: 12,
+        marginBottom: spacing.sm,
     },
     taskCategoryHeader: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#fff",
-        marginBottom: 8,
-        padding: 8,
-        borderRadius: 4,
-        shadowColor: "#BFD0EA",
+        backgroundColor: COLORS.white,
+        marginBottom: spacing.xs,
+        padding: spacing.xs,
+        borderRadius: spacing.xs,
+        shadowColor: COLORS.border,
         shadowOffset: {
             width: 0,
             height: 3.89,
@@ -563,27 +730,26 @@ const styles = StyleSheet.create({
     taskIconContainer: {
         width: 32,
         height: 32,
-        borderRadius: 4,
-        backgroundColor: "rgba(155, 255, 226, 0.3)",
+        borderRadius: spacing.xs,
         justifyContent: "center",
         alignItems: "center",
-        marginRight: 12,
+        marginRight: spacing.sm,
     },
     taskCategoryTitle: {
         flex: 1,
-        color: "#333",
+        color: COLORS.text.primary,
     },
     addButton: {
         width: 32,
         height: 32,
         backgroundColor: "#EAEAEA",
-        borderRadius: 4,
+        borderRadius: spacing.xs,
         justifyContent: "center",
         alignItems: "center",
     },
     addButtonText: {
         fontSize: 20,
-        color: "#666",
+        color: COLORS.text.secondary,
         fontWeight: "300",
     },
     emptyContainer: {
@@ -594,14 +760,14 @@ const styles = StyleSheet.create({
     },
     emptyIcon: {
         fontSize: 48,
-        marginBottom: 16,
+        marginBottom: spacing.base,
     },
     emptyTitle: {
-        marginBottom: 8,
+        marginBottom: spacing.xs,
         textAlign: "center",
     },
     emptyText: {
-        color: "#666",
+        color: COLORS.text.secondary,
         textAlign: "center",
         lineHeight: 22,
     },
@@ -612,51 +778,47 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     modalContent: {
-        backgroundColor: "#fff",
-        borderRadius: 16,
-        padding: 20,
-        margin: 20,
+        backgroundColor: COLORS.white,
+        borderRadius: spacing.base,
+        padding: spacing.lg,
+        margin: spacing.lg,
         minWidth: 280,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.25,
-        shadowRadius: 10,
-        elevation: 10,
+        ...shadows.lg,
     },
     modalHeader: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: 16,
+        marginBottom: spacing.base,
     },
     modalTitle: {
-        color: "#333",
+        color: COLORS.text.primary,
         fontSize: 18,
         fontWeight: "600",
     },
     closeButton: {
-        padding: 4,
+        padding: spacing.xs,
     },
     modalOption: {
-        padding: 16,
-        borderRadius: 8,
+        padding: spacing.base,
+        borderRadius: spacing.xs,
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: 4,
+        marginBottom: spacing.xs,
     },
     modalOptionSelected: {
-        backgroundColor: "#6C5CE7",
+        backgroundColor: COLORS.primary,
     },
     modalOptionText: {
-        color: "#333",
+        color: COLORS.text.primary,
     },
     modalOptionTextSelected: {
-        color: "#fff",
+        color: COLORS.white,
     },
     checkmark: {
         fontSize: 16,
-        color: "#fff",
+        color: COLORS.white,
         fontWeight: "bold",
     },
     bottomPadding: {
@@ -667,44 +829,32 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        paddingHorizontal: 20,
-        paddingBottom: 20,
-        paddingTop: 12,
-        backgroundColor: "#EBF2FB",
+        paddingHorizontal: spacing.lg,
+        paddingBottom: spacing.lg,
+        paddingTop: spacing.sm,
+        backgroundColor: COLORS.background,
     },
     addTaskButton: {
-        backgroundColor: "#846DED",
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        borderRadius: 8,
-        alignItems: "center",
-        shadowColor: "#4E31CF",
-        shadowOffset: {
-            width: 0,
-            height: 3.89,
-        },
-        shadowOpacity: 1,
-        shadowRadius: 0,
-        elevation: 4,
+        ...commonStyles.button,
     },
     addTaskButtonText: {
-        color: "#fff",
+        color: COLORS.white,
     },
     validationButtons: {
         flexDirection: "row",
-        gap: 12,
-        marginBottom: 12,
+        gap: spacing.sm,
+        marginBottom: spacing.sm,
     },
     validationButton: {
         flex: 1,
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        borderRadius: 8,
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.base,
+        borderRadius: spacing.xs,
         alignItems: "center",
         justifyContent: "center",
     },
     validationPrimary: {
-        backgroundColor: "#6C5CE7",
+        backgroundColor: COLORS.primary,
     },
     validationSecondary: {
         backgroundColor: "#EAEAEA",

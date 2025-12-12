@@ -6,6 +6,7 @@ export default function ChildrenLayout() {
             <Stack.Screen name="index" />
             <Stack.Screen name="create-task" />
             <Stack.Screen name="add-money" />
+            <Stack.Screen name="goals" />
         </Stack>
     );
 }

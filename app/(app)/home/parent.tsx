@@ -117,7 +117,6 @@ export default function ParentHome() {
                 );
                 const flattenedCourses = coursesData.flat();
                 setCourses(flattenedCourses);
-                logger.log("Courses loaded:", flattenedCourses);
             } catch (error) {
                 console.error("Error loading chapters:", error);
             }
