@@ -145,15 +145,8 @@ export default function Create() {
                                     <Ionicons name={option.icon as any} size={24} color={option.color} />
                                 </View>
                                 <View style={styles.roleInfo}>
-                                    <Text style={[styles.roleLabel, selectedRole === option.value && styles.roleLabelSelected]}>
-                                        {option.label}
-                                    </Text>
-                                    <Text
-                                        style={[
-                                            styles.roleDescription,
-                                            selectedRole === option.value && styles.roleDescriptionSelected,
-                                        ]}
-                                    >
+                                    <Text style={[styles.roleLabel, selectedRole === option.value && styles.roleLabelSelected]}>{option.label}</Text>
+                                    <Text style={[styles.roleDescription, selectedRole === option.value && styles.roleDescriptionSelected]}>
                                         {option.description}
                                     </Text>
                                 </View>
@@ -229,7 +222,7 @@ export default function Create() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.white
+        backgroundColor: colors.white,
     },
     header: {
         flexDirection: "row",

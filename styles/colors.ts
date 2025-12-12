@@ -56,7 +56,7 @@ export const colors = {
         40: '#FEA0BA',
     },
     screenBackground: '#EBF2FB',
-    inputBackground: '#F5F5F5',
+    inputBackground: '#FFFFFF',
     white: '#FFFFFF',
     black: '#000000',
     border: '#E0E0E0',

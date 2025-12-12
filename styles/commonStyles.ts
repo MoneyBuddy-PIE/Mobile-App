@@ -149,7 +149,8 @@ export const commonStyles = StyleSheet.create({
         padding: spacing.base,
         alignItems: 'center',
         justifyContent: 'center',
-        ...shadows.sm,
+        ...shadows.md,
+        shadowColor: '#4E31CF'
     },
     buttonSecondary: {
         backgroundColor: colors.aquamarine[100],

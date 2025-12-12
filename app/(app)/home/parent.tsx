@@ -1,19 +1,29 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, RefreshControl } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, RefreshControl, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useFonts } from "expo-font";
-import { DMSans_700Bold, DMSans_400Regular, DMSans_600SemiBold } from "@expo-google-fonts/dm-sans";
-import { Link, router } from "expo-router";
 import { UserStorage } from "@/utils/storage";
 import { SubAccount } from "@/types/Account";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { tasksService } from "@/services/tasksService";
+import { chapterService } from "@/services/chapterService";
 import { colors, spacing, typography, shadows } from "@/styles";
+import { ValidateTasksModal } from "@/components/modal/ValidateTasksModal";
+import Bells from "@/components/Icons/Bells";
+import CheckMark from "@/components/Icons/CheckMark";
+import MoneyBill from "@/components/Icons/MoneyBill";
+import ListCheck from "@/components/Icons/ListCheck";
+import { Task } from "@/types/Task";
+import { Chapter } from "@/types/Chapter";
+import { Course } from "@/types/Chapter";
+import ChildCard from "@/components/ChildCard";
+import { logger } from "@/utils/logger";
 
-interface ChildSummary {
+export interface ChildSummary {
     child: SubAccount;
     tasksCount: number;
     completedTasksCount: number;
+    preValidateTasksCount: number;
+    preValidateTasks?: Task[];
     loading: boolean;
 }
 
@@ -23,16 +33,9 @@ export default function ParentHome() {
     const [childrenSummary, setChildrenSummary] = useState<ChildSummary[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-
-    const [fontsLoaded] = useFonts({
-        DMSans_700Bold,
-        DMSans_400Regular,
-        DMSans_600SemiBold,
-    });
-
-    const fontStylesTitle = fontsLoaded ? { fontFamily: "DMSans_700Bold" } : {};
-    const fontStylesRegular = fontsLoaded ? { fontFamily: "DMSans_400Regular" } : {};
-    const fontStylesSemiBold = fontsLoaded ? { fontFamily: "DMSans_600SemiBold" } : {};
+    const [modalVisible, setModalVisible] = useState(false);
+    const [chapters, setChapters] = useState<Chapter[]>([]);
+    const [courses, setCourses] = useState<Course[]>([]);
 
     const childAccounts = useMemo(() => user?.subAccounts?.filter((account) => account.role === "CHILD") || [], [user?.subAccounts]);
 
@@ -55,6 +58,7 @@ export default function ParentHome() {
             child,
             tasksCount: 0,
             completedTasksCount: 0,
+            preValidateTasksCount: 0,
             loading: true,
         }));
         setChildrenSummary(initialSummaries);
@@ -65,7 +69,7 @@ export default function ParentHome() {
             try {
                 const tasks = await tasksService.getTasksByChild(child.id, "PARENT");
                 const completedTasks = tasks.filter((task) => task.status === "COMPLETED");
-
+                const preValidateTasks = tasks.filter((task) => task.status === "PRE_VALIDATE");
                 setChildrenSummary((prev) =>
                     prev.map((summary, index) =>
                         index === i
@@ -73,6 +77,8 @@ export default function ParentHome() {
                                   ...summary,
                                   tasksCount: tasks.length,
                                   completedTasksCount: completedTasks.length,
+                                  preValidateTasksCount: preValidateTasks.length,
+                                  preValidateTasks: preValidateTasks,
                                   loading: false,
                               }
                             : summary,
@@ -96,6 +102,29 @@ export default function ParentHome() {
             setChildrenSummary([]);
         }
     }, [childAccounts.length, loadChildrenData]);
+
+    useEffect(() => {
+        const fetchChapters = async () => {
+            try {
+                const chaptersData = await chapterService.getChapters();
+
+                setChapters(chaptersData.content);
+                const coursesData = await Promise.all(
+                    chaptersData.content.map(async (chapter) => {
+                        const chapterCourses = await chapterService.getChapterCourses(chapter.id);
+                        return chapterCourses;
+                    }),
+                );
+                const flattenedCourses = coursesData.flat();
+                setCourses(flattenedCourses);
+                logger.log("Courses loaded:", flattenedCourses);
+            } catch (error) {
+                console.error("Error loading chapters:", error);
+            }
+        };
+
+        fetchChapters();
+    }, []);
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
@@ -131,165 +160,145 @@ export default function ParentHome() {
         }, 0);
     };
 
-    const renderChildCard = (summary: ChildSummary) => {
-        const { child, tasksCount, completedTasksCount, loading: childLoading } = summary;
-        const money = parseFloat(child.money || "0");
-        const completionRate = tasksCount > 0 ? Math.round((completedTasksCount / tasksCount) * 100) : 0;
-
-        return (
-            <TouchableOpacity key={child.id} style={styles.childCard} onPress={() => router.push("/(app)/children")}>
-                <View style={styles.childHeader}>
-                    <View style={styles.childIconContainer}>
-                        <Text style={styles.childIcon}>👶</Text>
-                    </View>
-                    <View style={styles.childInfo}>
-                        <Text style={[styles.childName, fontStylesSemiBold]}>{child.name}</Text>
-                        <Text style={[styles.childMoney, fontStylesRegular]}>{money.toFixed(2)}€</Text>
-                    </View>
-                </View>
-
-                <View style={styles.childStats}>
-                    <View style={styles.stat}>
-                        {childLoading ? (
-                            <ActivityIndicator size="small" color="#6C5CE7" />
-                        ) : (
-                            <>
-                                <Text style={[styles.statValue, fontStylesSemiBold]}>
-                                    {completedTasksCount}/{tasksCount}
-                                </Text>
-                                <Text style={[styles.statLabel, fontStylesRegular]}>Tâches</Text>
-                            </>
-                        )}
-                    </View>
-                    {tasksCount > 0 && (
-                        <View style={styles.progressContainer}>
-                            <View style={styles.progressBar}>
-                                <View style={[styles.progressFill, { width: `${completionRate}%` }]} />
-                            </View>
-                            <Text style={[styles.progressText, fontStylesRegular]}>{completionRate}%</Text>
-                        </View>
-                    )}
-                </View>
-            </TouchableOpacity>
-        );
+    const getTotalPreValidateTasks = () => {
+        return childrenSummary.reduce((total, summary) => {
+            return total + summary.preValidateTasksCount;
+        }, 0);
     };
 
     if (loading) {
         return (
             <View style={[styles.container, styles.center]}>
                 <ActivityIndicator size="large" color={colors.primary[100]} />
-                <Text style={[styles.loadingText, fontStylesRegular]}>Chargement...</Text>
+                <Text style={[styles.loadingText, typography.regular]}>Chargement...</Text>
             </View>
         );
     }
 
     return (
-        <SafeAreaView style={styles.container}>
-            <ScrollView
-                style={styles.content}
-                showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary[100]} />}
-            >
+        <ScrollView
+            style={styles.content}
+            showsVerticalScrollIndicator={false}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary[100]} />}
+        >
+            <View style={{ backgroundColor: colors.screenBackground }}>
                 {/* Header */}
                 <View style={styles.header}>
-                    <Text style={[styles.greeting, fontStylesRegular]}>{getGreeting()}</Text>
-                    <Text style={[styles.nameText, fontStylesTitle]}>{subAccount?.name || "Parent"} !</Text>
-                    <Text style={[styles.roleText, fontStylesRegular]}>Tableau de bord familial</Text>
+                    <Text style={[styles.nameText, typography.bold]}>
+                        {getGreeting()}, {subAccount?.name || "Parent"} !
+                    </Text>
+                    <TouchableOpacity style={styles.notifsIcon}>
+                        <Bells />
+                    </TouchableOpacity>
                 </View>
 
-                {/* Stats générales */}
-                <View style={styles.generalStats}>
-                    <View style={styles.statCard}>
-                        <Text style={styles.statIcon}>👨‍👩‍👧‍👦</Text>
-                        <Text style={[styles.statNumber, fontStylesTitle]}>{childAccounts.length}</Text>
-                        <Text style={[styles.statText, fontStylesRegular]}>{childAccounts.length > 1 ? "Enfants" : "Enfant"}</Text>
+                {/* Infos */}
+                <View style={styles.infosContainer}>
+                    <Text style={styles.infosTitle}>Vous avez ...</Text>
+                    <View style={styles.infoCardsContainer}>
+                        {/* Taches à valider */}
+                        <View style={styles.infosCard}>
+                            <View style={styles.infoCardHeader}>
+                                <View style={[styles.infoCardHeaderIcon, styles.preValidateTasksCardIcon]}>
+                                    <CheckMark width={20} height={20} />
+                                </View>
+                            </View>
+                            <View style={{ flexDirection: "column", gap: spacing.xs }}>
+                                <Text style={styles.infoCardHeaderTitle}>{getTotalPreValidateTasks()}</Text>
+                                <Text style={styles.infoCardSubtitle}>Tâches en attente de validation</Text>
+                            </View>
+                            <TouchableOpacity style={styles.preValidateTasksCardButton} onPress={() => setModalVisible(true)}>
+                                <Text>Voir les tâches</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <View style={{ flex: 1, display: "flex", flexDirection: "column", gap: spacing.base }}>
+                            <View style={styles.infosCard}>
+                                <View style={styles.infoCardHeader}>
+                                    <View style={[styles.infoCardHeaderIcon, styles.moneyCardIcon]}>
+                                        <MoneyBill color={colors.primary[100]} width={20} height={20} />
+                                    </View>
+                                    <Text style={styles.infoCardHeaderTitle}>{getTotalMoney().toFixed(2)} €</Text>
+                                </View>
+                                <Text style={styles.infoCardSubtitle}>A verser samedi</Text>
+                            </View>
+                            <View style={styles.infosCard}>
+                                <View style={styles.infoCardHeader}>
+                                    <View style={[styles.infoCardHeaderIcon, styles.completedTasksCardIcon]}>
+                                        <ListCheck width={20} height={20} />
+                                    </View>
+                                    <Text style={styles.infoCardHeaderTitle}>
+                                        {getTotalCompletedTasks()}/{getTotalTasks()}
+                                    </Text>
+                                </View>
+                                <Text style={styles.infoCardSubtitle}>Tâches terminées</Text>
+                            </View>
+                        </View>
                     </View>
+                </View>
 
-                    <View style={styles.statCard}>
-                        <Text style={styles.statIcon}>💰</Text>
-                        <Text style={[styles.statNumber, fontStylesTitle]}>{getTotalMoney().toFixed(0)}€</Text>
-                        <Text style={[styles.statText, fontStylesRegular]}>Argent de poche</Text>
+                {/* Message */}
+                <View style={styles.messageContainer}>
+                    <View style={{ flexDirection: "row", gap: spacing.md }}>
+                        <Image source={require("@/assets/images/home/money-bag.png")} style={styles.messageImage} />
+                        <View style={{ flex: 1, flexShrink: 1, gap: spacing.xs }}>
+                            <Text style={styles.messageText}>Créez un rituel clair d'argent de poche ! 💸</Text>
+                            <Text style={styles.messageSubtext}>
+                                Un versement régulier aide votre enfant à planifier et comprendre la valeur de l'argent.
+                            </Text>
+                        </View>
                     </View>
-
-                    <View style={styles.statCard}>
-                        <Text style={styles.statIcon}>✅</Text>
-                        <Text style={[styles.statNumber, fontStylesTitle]}>
-                            {getTotalCompletedTasks()}/{getTotalTasks()}
+                    <View style={{ flexDirection: "row", gap: spacing.md, marginTop: spacing.base }}>
+                        <Text style={{ color: colors.carbon[80], ...typography.bold, paddingVertical: spacing.md, paddingHorizontal: spacing.base }}>
+                            Ignorer
                         </Text>
-                        <Text style={[styles.statText, fontStylesRegular]}>Tâches faites</Text>
+                        <TouchableOpacity
+                            style={{
+                                backgroundColor: colors.primary[100],
+                                paddingVertical: spacing.md,
+                                paddingHorizontal: spacing.base,
+                                borderRadius: 4,
+                                flex: 1,
+                                justifyContent: "center",
+                                alignItems: "center",
+                            }}
+                        >
+                            <Text style={{ color: colors.white, ...typography.bold }}>Configurer le versement</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
 
-                {/* Section Enfants */}
-                {childAccounts.length > 0 ? (
-                    <View style={styles.section}>
-                        <View style={styles.sectionHeader}>
-                            <Text style={[styles.sectionTitle, fontStylesTitle]}>Mes enfants</Text>
-                            <Link href="/(app)/children" asChild>
-                                <TouchableOpacity style={styles.seeAllButton}>
-                                    <Text style={[styles.seeAllText, fontStylesSemiBold]}>Tout voir</Text>
-                                </TouchableOpacity>
-                            </Link>
-                        </View>
+                {/* Children Cards */}
+                <View style={styles.childrenCardsContainer}>
+                    <Text style={[styles.infosTitle, { paddingHorizontal: spacing.xl }]}>Mes enfants</Text>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={{ marginTop: spacing.base, paddingHorizontal: spacing.xl }}
+                        contentContainerStyle={{ gap: spacing.base, paddingRight: spacing.xl, paddingVertical: spacing.xs }}
+                    >
+                        {childrenSummary.map((childSummary) => (
+                            <ChildCard key={childSummary.child.id} childSummary={childSummary} />
+                        ))}
+                    </ScrollView>
+                </View>
 
-                        <View style={styles.childrenContainer}>{childrenSummary.map(renderChildCard)}</View>
-                    </View>
-                ) : (
-                    <View style={styles.section}>
-                        <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyIcon}>👶</Text>
-                            <Text style={[styles.emptyTitle, fontStylesTitle]}>Aucun enfant</Text>
-                            <Text style={[styles.emptyText, fontStylesRegular]}>Créez un compte enfant pour commencer l'aventure !</Text>
-                            <Link href="/accounts/create" asChild>
-                                <TouchableOpacity style={styles.createButton}>
-                                    <Text style={[styles.createButtonText, fontStylesSemiBold]}>Créer un compte enfant</Text>
-                                </TouchableOpacity>
-                            </Link>
-                        </View>
-                    </View>
-                )}
-
-                {/* Actions rapides */}
-                <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, fontStylesTitle]}>Actions rapides</Text>
-                    <View style={styles.actionGrid}>
-                        <Link href="/(app)/courses" asChild>
-                            <TouchableOpacity style={styles.actionCard}>
-                                <Text style={styles.actionIcon}>📚</Text>
-                                <Text style={[styles.actionText, fontStylesSemiBold]}>Mes cours</Text>
-                                <Text style={[styles.actionDescription, fontStylesRegular]}>Apprendre pour mieux enseigner</Text>
-                            </TouchableOpacity>
-                        </Link>
-
-                        <Link href="/(app)/children" asChild>
-                            <TouchableOpacity style={styles.actionCard}>
-                                <Text style={styles.actionIcon}>💳</Text>
-                                <Text style={[styles.actionText, fontStylesSemiBold]}>Gérer l'argent</Text>
-                                <Text style={[styles.actionDescription, fontStylesRegular]}>Verser de l'argent de poche</Text>
-                            </TouchableOpacity>
-                        </Link>
-
-                        <Link href="/(app)/children" asChild>
-                            <TouchableOpacity style={styles.actionCard}>
-                                <Text style={styles.actionIcon}>📝</Text>
-                                <Text style={[styles.actionText, fontStylesSemiBold]}>Créer des tâches</Text>
-                                <Text style={[styles.actionDescription, fontStylesRegular]}>Ajouter des missions</Text>
-                            </TouchableOpacity>
-                        </Link>
-
-                        <Link href="/(app)/profile" asChild>
-                            <TouchableOpacity style={styles.actionCard}>
-                                <Text style={styles.actionIcon}>⚙️</Text>
-                                <Text style={[styles.actionText, fontStylesSemiBold]}>Paramètres</Text>
-                                <Text style={[styles.actionDescription, fontStylesRegular]}>Gérer les comptes</Text>
-                            </TouchableOpacity>
-                        </Link>
+                {/* Cours */}
+                <View style={styles.coursesContainer}>
+                    <Text style={styles.infosTitle}>Continuez votre progression !</Text>
+                    <View style={styles.courseCard}>
+                        <View></View>
                     </View>
                 </View>
 
-                <View style={styles.bottomPadding} />
-            </ScrollView>
-        </SafeAreaView>
+                <ValidateTasksModal
+                    visible={modalVisible}
+                    tasks={childrenSummary.flatMap((child) => child.preValidateTasks || [])}
+                    children={childAccounts}
+                    onClose={() => setModalVisible(false)}
+                    onValidateTasks={() => setModalVisible(false)}
+                />
+            </View>
+        </ScrollView>
     );
 }
 
@@ -300,7 +309,8 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
-        paddingHorizontal: spacing.lg,
+        backgroundColor: colors.white,
+        paddingTop: 58,
     },
     center: {
         justifyContent: "center",
@@ -311,218 +321,132 @@ const styles = StyleSheet.create({
         ...typography.md,
         color: colors.carbon[60],
     },
+    // Header
     header: {
-        paddingTop: spacing["3xl"],
-        paddingBottom: spacing.lg + 10,
-    },
-    greeting: {
-        ...typography.greeting,
-        marginBottom: spacing.xs,
+        backgroundColor: colors.white,
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.xl,
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "center",
+        borderBottomWidth: 1,
+        borderBottomColor: colors.shadow,
     },
     nameText: {
         ...typography.title,
-        marginBottom: spacing.xs,
-    },
-    roleText: {
-        ...typography.md,
-        color: colors.primary[100],
-        ...typography.semiBold,
-    },
-    generalStats: {
-        flexDirection: "row",
-        gap: spacing.md,
-        marginBottom: spacing.lg + 10,
-    },
-    statCard: {
         flex: 1,
-        backgroundColor: colors.white,
-        borderRadius: spacing.sm,
-        padding: spacing.lg,
-        alignItems: "center",
-        ...shadows.md,
     },
-    statIcon: {
-        fontSize: 28,
-        marginBottom: spacing.sm,
-    },
-    statNumber: {
-        ...typography["2xl"],
-        ...typography.bold,
-        color: colors.carbon[100],
-        marginBottom: spacing.xs,
-    },
-    statText: {
-        ...typography.xs,
-        color: colors.carbon[60],
-        textAlign: "center",
-    },
-    section: {
-        marginBottom: spacing.lg + 10,
-    },
-    sectionHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: spacing.base,
-    },
-    sectionTitle: {
-        ...typography.subheading,
-    },
-    seeAllButton: {
-        padding: spacing.sm,
-    },
-    seeAllText: {
-        ...typography.sm,
-        color: colors.primary[100],
-        ...typography.semiBold,
-    },
-    childrenContainer: {
-        gap: spacing.md,
-    },
-    childCard: {
-        backgroundColor: colors.white,
-        borderRadius: spacing.sm,
-        padding: spacing.base,
-        ...shadows.md,
-    },
-    childHeader: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: spacing.md,
-    },
-    childIconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: spacing.sm,
-        backgroundColor: colors.primary[10],
+    notifsIcon: {
+        width: 36,
+        height: 36,
+        borderRadius: 4,
+        borderWidth: 1,
+        borderColor: colors.shadow,
         justifyContent: "center",
         alignItems: "center",
-        marginRight: spacing.md,
     },
-    childIcon: {
-        fontSize: 20,
+    // Infos
+    infosContainer: {
+        paddingTop: spacing.base,
+        paddingHorizontal: spacing.xl,
+        backgroundColor: colors.screenBackground,
     },
-    childInfo: {
-        flex: 1,
-    },
-    childName: {
-        ...typography.md,
-        ...typography.semiBold,
-        color: colors.carbon[100],
-        marginBottom: 2,
-    },
-    childMoney: {
-        ...typography.sm,
-        color: colors.primary[100],
-        ...typography.semiBold,
-    },
-    childStats: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-    },
-    stat: {
-        alignItems: "center",
-    },
-    statValue: {
-        ...typography.md,
-        ...typography.bold,
-        color: colors.carbon[100],
-        marginBottom: 2,
-    },
-    statLabel: {
-        ...typography.xs,
-        color: colors.carbon[60],
-    },
-    progressContainer: {
-        flex: 1,
-        flexDirection: "row",
-        alignItems: "center",
-        marginLeft: spacing.base,
-        gap: spacing.sm,
-    },
-    progressBar: {
-        flex: 1,
-        height: 6,
-        backgroundColor: colors.carbon[20],
-        borderRadius: 3,
-        overflow: "hidden",
-    },
-    progressFill: {
-        height: "100%",
-        backgroundColor: colors.jadegreen[100],
-        borderRadius: 3,
-    },
-    progressText: {
-        ...typography.xs,
-        color: colors.carbon[60],
-        minWidth: 30,
-    },
-    emptyContainer: {
-        backgroundColor: colors.white,
-        borderRadius: spacing.sm,
-        padding: spacing["3xl"],
-        alignItems: "center",
-        ...shadows.md,
-    },
-    emptyIcon: {
-        fontSize: 48,
-        marginBottom: spacing.base,
-    },
-    emptyTitle: {
+    infosTitle: {
         ...typography.xl,
         ...typography.bold,
         color: colors.carbon[100],
-        marginBottom: spacing.sm,
     },
-    emptyText: {
-        ...typography.subtitle,
-        textAlign: "center",
-        marginBottom: spacing.lg,
-    },
-    createButton: {
-        backgroundColor: colors.primary[100],
-        paddingHorizontal: spacing.xl,
-        paddingVertical: spacing.md,
-        borderRadius: spacing.sm,
-    },
-    createButtonText: {
-        color: colors.white,
-        ...typography.sm,
-        ...typography.semiBold,
-    },
-    actionGrid: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        gap: spacing.md,
+    infoCardsContainer: {
         marginTop: spacing.base,
+        display: "flex",
+        flexDirection: "row",
+        gap: spacing.base,
     },
-    actionCard: {
+    infosCard: {
         backgroundColor: colors.white,
-        borderRadius: spacing.sm,
-        padding: spacing.lg,
-        width: "47%",
-        alignItems: "center",
+        flex: 1,
+        padding: spacing.md,
+        borderRadius: 4,
+        flexDirection: "column",
+        gap: spacing.md,
         ...shadows.md,
     },
-    actionIcon: {
-        fontSize: 32,
-        marginBottom: spacing.md,
+    infoCardHeader: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: spacing.sm,
     },
-    actionText: {
+    infoCardHeaderIcon: {
+        width: 32,
+        height: 32,
+        borderRadius: 4,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    preValidateTasksCardIcon: {
+        backgroundColor: "#E1FFF6",
+    },
+    moneyCardIcon: {
+        backgroundColor: colors.primary[20],
+    },
+    completedTasksCardIcon: {
+        backgroundColor: "#97C9FF66",
+    },
+    infoCardHeaderTitle: {
+        ...typography.bold,
+        ...typography["2xl"],
+        color: colors.carbon[100],
+    },
+    infoCardSubtitle: {
         ...typography.sm,
         ...typography.semiBold,
         color: colors.carbon[100],
-        textAlign: "center",
-        marginBottom: spacing.xs,
     },
-    actionDescription: {
-        ...typography.xs,
-        color: colors.carbon[60],
-        textAlign: "center",
-        lineHeight: 16,
+    preValidateTasksCardButton: {
+        backgroundColor: colors.screenBackground,
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.base,
+        borderRadius: 4,
+        alignItems: "center",
+        justifyContent: "center",
+        ...typography.body,
+        color: colors.carbon[80],
     },
-    bottomPadding: {
-        height: spacing.lg,
+    // message
+    messageContainer: {
+        marginVertical: spacing["3xl"],
+        marginHorizontal: spacing.xl,
+        padding: spacing.md,
+        backgroundColor: "#BFD0EA99",
+        borderRadius: 8,
+        flexDirection: "column",
+    },
+    messageImage: {
+        flexShrink: 0,
+    },
+    messageText: {
+        ...typography.bold,
+        ...typography.md,
+        flexShrink: 1,
+    },
+    messageSubtext: {
+        ...typography.sm,
+        color: colors.carbon[80],
+        flexShrink: 1,
+    },
+    // Children Cards
+    childrenCardsContainer: {
+        paddingBottom: spacing["3xl"],
+    },
+    // Cours
+    coursesContainer: {
+        paddingBottom: spacing["3xl"],
+        paddingHorizontal: spacing.xl,
+    },
+    courseCard: {
+        paddingTop: spacing.base,
+        marginTop: spacing.base,
+        backgroundColor: colors.white,
+        borderRadius: spacing.sm,
     },
 });

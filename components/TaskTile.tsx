@@ -3,16 +3,18 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Task } from "@/types/Task";
 import { typography, colors, spacing } from "@/styles";
 import Check from "@/components/Icons/Check";
+import Minus from "./Icons/Minus";
 
 interface TaskTileProps {
     task: Task;
+    showName?: boolean;
+    childName?: string;
     onPress?: () => void;
 }
 
-export default function TaskTile({ task, onPress }: TaskTileProps) {
+export default function TaskTile({ task, showName, childName, onPress }: TaskTileProps) {
     const Container = onPress ? TouchableOpacity : View;
     const containerProps = onPress ? { onPress, activeOpacity: 0.7 } : {};
-
     return (
         <Container
             style={[
@@ -22,35 +24,37 @@ export default function TaskTile({ task, onPress }: TaskTileProps) {
             ]}
             {...containerProps}
         >
-            <View style={styles.taskInfo}>
-                <View style={styles.taskHeader}>
-                    <Text
-                        style={[
-                            styles.taskCategorySmall,
-                            typography.bold,
-                            typography["xs"],
-                            task.category === "REGULAR" ? styles.taskCategorySmallRegular : styles.taskCategorySmallPunctual,
-                        ]}
-                    >
-                        {task.category}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md, flex: 1 }}>
+                <View style={styles.taskInfo}>
+                    <View style={styles.taskHeader}>
+                        <Text
+                            style={[
+                                styles.taskCategorySmall,
+                                typography.bold,
+                                typography["xs"],
+                                task.category === "REGULAR" ? styles.taskCategorySmallRegular : styles.taskCategorySmallPunctual,
+                            ]}
+                        >
+                            {task.category}
+                        </Text>
+                        <Text style={[styles.taskReward, typography.bold, typography["xs"]]}>+ {task.reward}€</Text>
+                    </View>
+                    <Text style={[styles.taskDescription, task.status === "COMPLETED" && styles.taskDescriptionCompleted, typography["sm"]]}>
+                        {task.description}
                     </Text>
-                    <Text style={[styles.taskReward, typography.bold, typography["xs"]]}>+ {task.reward}€</Text>
-                    {task.status === "PRE_VALIDATE" && <Text style={[styles.preValidateBadge, typography.bold, typography["xs"]]}>En attente</Text>}
                 </View>
-                <Text style={[styles.taskDescription, task.status === "COMPLETED" && styles.taskDescriptionCompleted, typography["sm"]]}>
-                    {task.description}
-                </Text>
+                <View
+                    style={[
+                        styles.taskStatus,
+                        task.status === "COMPLETED" && styles.taskStatusCompleted,
+                        task.status === "PRE_VALIDATE" && styles.taskStatusPreValidate,
+                    ]}
+                >
+                    {task.status === "COMPLETED" && <Check />}
+                    {task.status === "PRE_VALIDATE" && <Minus />}
+                </View>
             </View>
-            <View
-                style={[
-                    styles.taskStatus,
-                    task.status === "COMPLETED" && styles.taskStatusCompleted,
-                    task.status === "PRE_VALIDATE" && styles.taskStatusPreValidate,
-                ]}
-            >
-                {task.status === "COMPLETED" && <Check />}
-                {task.status === "PRE_VALIDATE" && <Text style={styles.preValidateIcon}>⏳</Text>}
-            </View>
+            {showName && childName && <Text style={[styles.childNameBadge, typography.bold, typography["xs"]]}>{childName}</Text>}
         </Container>
     );
 }
@@ -61,18 +65,11 @@ const styles = StyleSheet.create({
         padding: spacing.md,
         marginVertical: spacing.xs,
         borderRadius: spacing.sm,
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
     },
     taskItemCompleted: {
-        backgroundColor: colors.primary[20],
+        backgroundColor: '#D1DEF1',
     },
-    taskItemPreValidate: {
-        backgroundColor: colors.secondary[20],
-        borderWidth: 1,
-        borderColor: colors.secondary[100],
-    },
+    taskItemPreValidate: {},
     taskInfo: {
         flex: 1,
     },
@@ -112,6 +109,15 @@ const styles = StyleSheet.create({
         paddingVertical: 3,
         borderRadius: 4,
     },
+    childNameBadge: {
+        backgroundColor: colors.screenBackground,
+        color: colors.carbon[100],
+        paddingHorizontal: 5,
+        paddingVertical: 3,
+        borderRadius: 4,
+        marginTop: spacing.sm,
+        alignSelf: "flex-start",
+    },
     taskStatus: {
         width: 40,
         height: 40,
@@ -125,7 +131,7 @@ const styles = StyleSheet.create({
         borderColor: colors.primary[100],
     },
     taskStatusPreValidate: {
-        backgroundColor: colors.secondary[100],
+        backgroundColor: colors.primary[100],
     },
     preValidateIcon: {
         fontSize: 20,

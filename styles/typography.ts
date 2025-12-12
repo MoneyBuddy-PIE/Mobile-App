@@ -30,7 +30,7 @@ export const typography = StyleSheet.create({
     '5xl': { fontSize: 48 },
 
     // Couleurs courantes
-    primary: { color: '#333' },
+    primary: { color: '#2F2F2F' },
     secondary: { color: '#666' },
     accent: { color: '#6C5CE7' },
     muted: { color: '#999' },
@@ -58,7 +58,7 @@ export const typography = StyleSheet.create({
     },
     title: {
         fontFamily: 'DMSans_700Bold',
-        fontSize: 32,
+        fontSize: 24,
         color: '#333',
     },
     subtitle: {
@@ -79,8 +79,8 @@ export const typography = StyleSheet.create({
     },
     body: {
         fontFamily: 'DMSans_400Regular',
-        fontSize: 16,
-        color: '#333',
+        fontSize: 14,
+        color: '#2F2F2F',
     },
     caption: {
         fontFamily: 'DMSans_400Regular',
