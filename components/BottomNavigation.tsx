@@ -5,6 +5,15 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { UserStorage } from "@/utils/storage";
 import { SubAccount } from "@/types/Account";
+import { HomeIcon } from "./Icons/HomeIcon";
+import { RevenusIcon } from "./Icons/RevenusIcon";
+import { TasksIcon } from "./Icons/TasksIcon";
+import { CoursesIcon } from "./Icons/CoursesIcon";
+import { ProfileIcon } from "./Icons/ProfileIcon";
+import { ParentHomeIcon } from "./Icons/ParentHomeIcon";
+import { ChildrenIcon } from "./Icons/ChildrenIcon";
+import { ParentCoursesIcon } from "./Icons/ParentCoursesIcon";
+import { ParentProfileIcon } from "./Icons/ParentProfileIcon";
 
 interface NavItem {
     route: string;
@@ -31,12 +40,10 @@ export const BottomNavigation: React.FC = () => {
         }
     };
 
-    // Définir les routes en fonction du rôle du sous-compte
     const getNavItems = (): NavItem[] => {
         const homeRoute = subAccount?.role === "CHILD" ? "/(app)/home/child" : "/(app)/home/parent";
 
         if (subAccount?.role === "CHILD") {
-            // Navigation pour les enfants
             return [
                 {
                     route: homeRoute,
@@ -51,16 +58,16 @@ export const BottomNavigation: React.FC = () => {
                     iconNameActive: "wallet",
                 },
                 {
-                    route: "/(app)/goals",
-                    label: "Objectifs",
-                    iconName: "trophy-outline",
-                    iconNameActive: "trophy",
-                },
-                {
                     route: "/(app)/tasks",
                     label: "Tâches",
                     iconName: "checkmark-circle-outline",
                     iconNameActive: "checkmark-circle",
+                },
+                {
+                    route: "/(app)/courses",
+                    label: "Cours",
+                    iconName: "book-outline",
+                    iconNameActive: "book",
                 },
                 {
                     route: "/(app)/profile",
@@ -70,7 +77,6 @@ export const BottomNavigation: React.FC = () => {
                 },
             ];
         } else {
-            // Navigation pour les parents
             return [
                 {
                     route: homeRoute,
@@ -107,6 +113,69 @@ export const BottomNavigation: React.FC = () => {
         return pathname === route || pathname === cleanPath || pathname.startsWith(cleanPath + "/");
     };
 
+    const isChildAccount = subAccount?.role === "CHILD";
+
+    const getChildIcon = (route: string) => {
+        const iconProps = { width: 32, height: 32, color: isActive(route) ? "#16AA75" : "#2f2f2f" };
+
+        switch (route) {
+            case "/(app)/home/child":
+                return <HomeIcon {...iconProps} />;
+            case "/(app)/revenus":
+                return <RevenusIcon {...iconProps} />;
+            case "/(app)/tasks":
+                return <TasksIcon {...iconProps} />;
+            case "/(app)/courses":
+                return <CoursesIcon {...iconProps} />;
+            case "/(app)/profile":
+                return <ProfileIcon {...iconProps} />;
+            default:
+                return <HomeIcon {...iconProps} />;
+        }
+    };
+
+    const getParentIcon = (route: string, active: boolean) => {
+        const iconProps = { width: 24, height: 24, color: active ? "#846DED" : "#666" };
+
+        switch (route) {
+            case "/(app)/home/parent":
+                return <ParentHomeIcon {...iconProps} />;
+            case "/(app)/children":
+                return <ChildrenIcon {...iconProps} />;
+            case "/(app)/courses":
+                return <ParentCoursesIcon {...iconProps} />;
+            case "/(app)/profile":
+                return <ParentProfileIcon {...iconProps} />;
+            default:
+                return <ParentHomeIcon {...iconProps} />;
+        }
+    };
+
+    if (isChildAccount) {
+        return (
+            <View style={[styles.childContainer, { paddingBottom: insets.bottom || 20 }]}>
+                {navItems.map((item) => {
+                    const active = isActive(item.route);
+
+                    return (
+                        <Link key={item.route} href={item.route} asChild replace style={styles.childNavItem}>
+                            <Pressable>
+                                {({ pressed }) => (
+                                    <View style={styles.childIconWrapper}>
+                                        <View style={[styles.childIcon, pressed && styles.pressedCircle]}>
+                                            {getChildIcon(item.route)}
+                                        </View>
+                                        <View style={[ styles.childCircle, active && styles.childCircleActive ]}></View>
+                                    </View>
+                                )}
+                            </Pressable>
+                        </Link>
+                    );
+                })}
+            </View>
+        );
+    }
+
     return (
         <View style={[styles.container, { paddingBottom: insets.bottom || 20 }]}>
             {navItems.map((item) => {
@@ -117,12 +186,7 @@ export const BottomNavigation: React.FC = () => {
                         <Pressable>
                             {({ pressed }) => (
                                 <>
-                                    <Ionicons
-                                        name={active ? item.iconNameActive : item.iconName}
-                                        size={24}
-                                        color={active ? "#6C5CE7" : "#666"}
-                                        style={[pressed && styles.pressedIcon]}
-                                    />
+                                    <View style={[pressed && styles.pressedIcon]}>{getParentIcon(item.route, active)}</View>
                                     <Text style={[styles.label, active && styles.activeLabel, pressed && styles.pressedLabel]}>{item.label}</Text>
                                 </>
                             )}
@@ -178,5 +242,52 @@ const styles = StyleSheet.create({
     },
     pressedLabel: {
         opacity: 0.7,
+    },
+
+    childContainer: {
+        flexDirection: "row",
+        backgroundColor: "#fff",
+        borderTopWidth: 1,
+        borderTopColor: "#e0e0e0",
+        paddingTop: 16,
+        paddingHorizontal: 8,
+        justifyContent: "space-evenly",
+        alignItems: "center",
+        ...Platform.select({
+            ios: {},
+            android: {
+                elevation: 8,
+            },
+        }),
+    },
+    childNavItem: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: 4,
+    },
+    childIconWrapper: {
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    childIcon: {
+    },
+    childCircleActive: {
+        marginTop: 6,
+        width: 6,
+        height: 6,
+        borderRadius: 1000,
+        backgroundColor: "#16AA75",
+    },
+    childCircle: {
+        marginTop: 6,
+        width: 6,
+        height: 6,
+        borderRadius: 1000,
+        backgroundColor: "transparent",
+    },
+    pressedCircle: {
+        opacity: 0.8,
+        transform: [{ scale: 0.95 }],
     },
 });
