@@ -37,12 +37,14 @@ import ThumbTack from "@/components/Icons/ThumbTack";
 import MoneyFly from "@/components/Icons/MoneyFly";
 import Pig from "@/components/Icons/Pig";
 import ListCheck from "@/components/Icons/ListCheck";
+import CheckMark from "@/components/Icons/CheckMark";
 
 // Constants
 const SUMMARY_CARD_COLORS = {
     expenses: colors.primary[20],
     savings: "#FEA0BA66",
     tasks: "#97C9FF66",
+    revenus: "#E1FFF6",
 } as const;
 
 const TASK_ICON_BG_COLOR = "rgba(155, 255, 226, 0.3)";
@@ -72,14 +74,15 @@ export default function Children() {
     const [taskToValidate, setTaskToValidate] = useState<Task | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loadingTasks, setLoadingTasks] = useState(false);
-    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [debitTransactions, setDebitTransactions] = useState<Transaction[]>([]);
+    const [creditTransactions, setCreditTransactions] = useState<Transaction[]>([]);
     const [goals, setGoals] = useState<Goal[]>([]);
 
     // Computed values
     const childAccounts = user?.subAccounts?.filter((account) => account.role === "CHILD") || [];
     const selectedChild = childAccounts.find((child) => child.id === selectedChildId);
 
-    const moneyDebited = transactions.reduce((total, transaction) => {
+    const moneyDebited = debitTransactions.reduce((total, transaction) => {
         return total + parseFloat(transaction.amount);
     }, 0);
 
@@ -87,12 +90,16 @@ export default function Children() {
         return total + goal.progression;
     }, 0);
 
+    const moneyCredited = creditTransactions.reduce((total, transaction) => {
+        return total + parseFloat(transaction.amount);
+    }, 0);
+
     const completedTasksCount = tasks.filter((task) => task.status === "COMPLETED").length;
     const totalTasksCount = tasks.length;
 
     // Separate tasks by category
-    const regularTasks = tasks.filter((task) => task.category === "REGULAR" && task.status !== "PRE_VALIDATE");
-    const punctualTasks = tasks.filter((task) => task.category === "PUNCTUAL" && task.status !== "PRE_VALIDATE");
+    const regularTasks = tasks.filter((task) => task.category === "REGULAR" && task.status !== "PRE_VALIDATE" && task.status !== "COMPLETED");
+    const punctualTasks = tasks.filter((task) => task.category === "PUNCTUAL" && task.status !== "PRE_VALIDATE" && task.status !== "COMPLETED");
     const preValidateTasks = tasks.filter((task) => task.status === "PRE_VALIDATE");
 
     // Load functions
@@ -137,7 +144,15 @@ export default function Children() {
                 return transactionDate >= startOfMonth && transactionDate <= endOfMonth;
             });
 
-            setTransactions(debitTransactions);
+            const creditTransactions = childTransactions.filter((transaction) => {
+                if (transaction.type !== "CREDIT") return false;
+
+                const transactionDate = new Date(transaction.createdAt);
+                return transactionDate >= startOfMonth && transactionDate <= endOfMonth;
+            });
+
+            setCreditTransactions(creditTransactions);
+            setDebitTransactions(debitTransactions);
         } catch (error) {
             logger.error("Error loading child transactions:", error);
         }
@@ -319,7 +334,7 @@ export default function Children() {
                     {renderSummaryCard(<Pig />, "Epargne", `${goalMoneySaved.toFixed(2)} €`, "Voir détails", SUMMARY_CARD_COLORS.savings)}
                 </View>
                 <View style={styles.summaryCards}>
-                    <View style={styles.summaryCard} />
+                    {renderSummaryCard(<CheckMark />, "Revenus", `${moneyCredited.toFixed(2)} €`, currentMonth, SUMMARY_CARD_COLORS.revenus)}
                     {renderSummaryCard(
                         <ListCheck />,
                         "Tâches",
@@ -353,7 +368,7 @@ export default function Children() {
     ) => {
         if (taskList.length === 0) {
             return (
-                <TouchableOpacity style={styles.taskCategoryHeader}>
+                <View style={styles.taskCategoryHeader}>
                     <View style={[styles.taskIconContainer, { backgroundColor }]}>{icon}</View>
                     <Text style={[styles.taskCategoryTitle, typography.bold, typography.sm]}>
                         {title} ({taskList.length})
@@ -369,7 +384,7 @@ export default function Children() {
                     >
                         <Ionicons name="add-outline" size={20} color="#828282" />
                     </TouchableOpacity>
-                </TouchableOpacity>
+                </View>
             );
         }
 
@@ -716,7 +731,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         backgroundColor: COLORS.white,
         marginBottom: spacing.xs,
-        padding: spacing.xs,
+        padding: spacing.sm,
         borderRadius: spacing.xs,
         shadowColor: COLORS.border,
         shadowOffset: {
