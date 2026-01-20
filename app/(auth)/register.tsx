@@ -7,7 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { authService } from "@/services/authService";
 import { TokenStorage } from "@/utils/storage";
-import { colors, spacing, typography, commonStyles } from "@/styles";
+import { colors, spacing, typography, commonStyles, shadows } from "@/styles";
 
 export default function Register() {
     const [step, setStep] = useState(1);
@@ -108,7 +108,7 @@ export default function Register() {
                 {/* Header avec bouton retour */}
                 <View style={styles.header}>
                     <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
-                        <Ionicons name="arrow-back" size={20} color="#fff" />
+                        <Ionicons name="arrow-back" size={24} color="#fff" />
                     </TouchableOpacity>
                 </View>
 
@@ -275,10 +275,10 @@ const styles = StyleSheet.create({
         paddingBottom: spacing.lg,
     },
     backButton: {
-        width: 44,
-        height: 44,
+        width: 48,
+        height: 48,
         backgroundColor: colors.carbon[100],
-        borderRadius: spacing.md,
+        borderRadius: spacing.sm,
         justifyContent: "center",
         alignItems: "center",
     },
@@ -288,16 +288,16 @@ const styles = StyleSheet.create({
         paddingTop: spacing.lg,
     },
     titleContainer: {
-        marginBottom: spacing["5xl"],
+        marginBottom: spacing["3xl"],
     },
     title: {
         ...typography.heading,
-        marginBottom: spacing.base,
-        textAlign: "left",
+        marginBottom: spacing.sm,
+        textAlign: "center",
     },
     subtitle: {
         ...typography.subtitle,
-        textAlign: "left",
+        textAlign: "center",
     },
     inputContainer: {
         position: "relative",
@@ -329,6 +329,7 @@ const styles = StyleSheet.create({
     },
     registerButtonDisabled: {
         ...commonStyles.buttonDisabled,
+        ...shadows.none
     },
     registerButtonActive: {
         backgroundColor: colors.primary[100],
