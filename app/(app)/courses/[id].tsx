@@ -38,7 +38,7 @@ export default function ChapterDetail() {
         try {
             const chapterData = await chapterService.getChapterById(chapterId);
             setChapter(chapterData);
-            const coursesData = chapterData.courses;
+            const coursesData = await chapterService.getChapterCourses(chapterId);
             setCourses(coursesData);
         } catch (error) {
             logger.error("Error loading chapter:", error);
@@ -63,12 +63,11 @@ export default function ChapterDetail() {
     };
 
     const handleStartCourse = (course: Course) => {
-        // Navigation vers la page de lecture du cours
+        console.log("Starting course:", course.id);
         router.push({
             pathname: "/(app)/courses/course/[courseId]",
             params: {
-                courseId: course.title,
-                courseData: JSON.stringify(course),
+                courseId: course.id,
             },
         });
         handleCloseModal();

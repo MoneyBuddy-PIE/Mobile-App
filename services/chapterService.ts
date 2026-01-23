@@ -1,5 +1,5 @@
 import { apiService } from './api';
-import { Chapter, ChapterResponse, Course } from '@/types/Chapter';
+import { Chapter, ChapterResponse, Course, CourseResponse } from '@/types/Chapter';
 
 export interface ChapterParams {
     page?: number;
@@ -25,7 +25,12 @@ export const chapterService = {
     },
 
     async getChapterCourses(chapterId: string): Promise<Course[]> {
-        return apiService.get<Course[]>(`/courses/chapter/${chapterId}`);
+        const response = await apiService.get<CourseResponse>(`/courses/chapter/${chapterId}`);
+        return response.content || [];
+    },
+
+    async getCourse(courseId: string): Promise<Course> {
+        return apiService.get<Course>(`/courses/${courseId}`);
     },
 
     async getChaptersByRole(role: string): Promise<Chapter[]> {
@@ -37,5 +42,9 @@ export const chapterService = {
     async getAllChapters(): Promise<Chapter[]> {
         const response = await this.getChapters({ size: 1000 });
         return response.content;
+    },
+
+    async completeCourse(courseId: string): Promise<void> {
+        return apiService.put(`/progress/course/${courseId}`);
     },
 };

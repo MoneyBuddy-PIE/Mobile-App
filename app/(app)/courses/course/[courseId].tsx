@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from "react-native";
+import React, { useState, useEffect, useMemo } from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Markdown from "react-native-markdown-display";
 import { Course, Section, Quiz } from "@/types/Chapter";
 import { typography } from "@/styles/typography";
+import { chapterService } from "@/services/chapterService";
+import { logger } from "@/utils/logger";
 
 interface CourseStep {
     type: "section" | "quiz";
@@ -16,8 +18,10 @@ interface CourseStep {
 
 export default function CourseReader() {
     const params = useLocalSearchParams();
-    const courseData = JSON.parse(params.courseData as string) as Course;
+    const courseId = params.courseId as string;
 
+    const [course, setCourse] = useState<Course | null>(null);
+    const [loading, setLoading] = useState(true);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
     const [showResult, setShowResult] = useState(false);
@@ -25,25 +29,56 @@ export default function CourseReader() {
     const [quizScore, setQuizScore] = useState(0);
     const [totalQuizQuestions, setTotalQuizQuestions] = useState(0);
 
-    const steps: CourseStep[] = [];
-    courseData.sections.forEach((section, index) => {
-        steps.push({
-            type: "section",
-            sectionIndex: index,
-            section,
-        });
+    useEffect(() => {
+        loadCourse();
+    }, [courseId]);
 
-        if (section.quiz && section.quiz.length > 0) {
-            section.quiz.forEach((_, quizIndex) => {
-                steps.push({
-                    type: "quiz",
-                    sectionIndex: index,
-                    section,
-                    quizIndex,
-                });
-            });
+    const loadCourse = async () => {
+        try {
+            const courseData = await chapterService.getCourse(courseId);
+            console.log("Loaded course data:", courseData);
+            setCourse(courseData);
+        } catch (error) {
+            logger.error("Error loading course:", error);
+            Alert.alert("Erreur", "Impossible de charger le cours", [{ text: "Retour", onPress: () => router.back() }]);
+        } finally {
+            setLoading(false);
         }
-    });
+    };
+
+    const steps: CourseStep[] = useMemo(() => {
+        if (!course || !course.sections) return [];
+        const result: CourseStep[] = [];
+        // L'API retourne sections comme un objet, on le convertit en tableau
+        const sectionsArray: Section[] = Array.isArray(course.sections)
+            ? course.sections
+            : Object.values(course.sections) as Section[];
+        sectionsArray.forEach((section, index) => {
+            // L'API retourne aussi quiz comme un objet, on le convertit en tableau
+            const quizArray: Quiz[] = section.quiz
+                ? (Array.isArray(section.quiz) ? section.quiz : Object.values(section.quiz) as Quiz[])
+                : [];
+            const normalizedSection: Section = { ...section, quiz: quizArray };
+
+            result.push({
+                type: "section",
+                sectionIndex: index,
+                section: normalizedSection,
+            });
+
+            if (quizArray.length > 0) {
+                quizArray.forEach((_, quizIndex) => {
+                    result.push({
+                        type: "quiz",
+                        sectionIndex: index,
+                        section: normalizedSection,
+                        quizIndex,
+                    });
+                });
+            }
+        });
+        return result;
+    }, [course]);
 
     const currentStep = steps[currentStepIndex];
     const isFirstStep = currentStepIndex === 0;
@@ -56,12 +91,18 @@ export default function CourseReader() {
         }
     };
 
-    const handleNext = () => {
+    const handleNext = async () => {
         if (!isLastStep) {
             setCurrentStepIndex(currentStepIndex + 1);
             resetQuizState();
         } else {
-            Alert.alert("Félicitations !", "Vous avez terminé ce cours !", [{ text: "Retour", onPress: () => router.back() }]);
+            try {
+                await chapterService.completeCourse(courseId);
+                Alert.alert("Félicitations !", "Vous avez terminé ce cours !", [{ text: "Retour", onPress: () => router.back() }]);
+            } catch (error) {
+                logger.error("Error completing course:", error);
+                Alert.alert("Félicitations !", "Vous avez terminé ce cours !", [{ text: "Retour", onPress: () => router.back() }]);
+            }
         }
     };
 
@@ -72,11 +113,11 @@ export default function CourseReader() {
     };
 
     useEffect(() => {
-        if (currentStep.type === "quiz" && currentStep.quizIndex === 0) {
+        if (currentStep?.type === "quiz" && currentStep.quizIndex === 0) {
             setQuizScore(0);
             setTotalQuizQuestions(currentStep.section.quiz?.length || 0);
         }
-    }, [currentStepIndex]);
+    }, [currentStepIndex, currentStep]);
 
     const handleAnswerSelect = (answerIndex: number) => {
         if (!showResult) {
@@ -194,6 +235,26 @@ export default function CourseReader() {
         return currentStep.type === "quiz" && !showResult && selectedAnswer === null;
     };
 
+    if (loading) {
+        return (
+            <SafeAreaView style={[styles.container, styles.center]}>
+                <ActivityIndicator size="large" color="#6C5CE7" />
+                <Text style={styles.loadingText}>Chargement du cours...</Text>
+            </SafeAreaView>
+        );
+    }
+
+    if (!course || !currentStep) {
+        return (
+            <SafeAreaView style={[styles.container, styles.center]}>
+                <Text style={styles.errorText}>Cours non trouvé</Text>
+                <TouchableOpacity style={styles.errorBackButton} onPress={() => router.back()}>
+                    <Text style={styles.errorBackButtonText}>Retour</Text>
+                </TouchableOpacity>
+            </SafeAreaView>
+        );
+    }
+
     return (
         <SafeAreaView style={styles.container}>
             {/* Header */}
@@ -252,6 +313,31 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#EBF2FB",
+    },
+    center: {
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    loadingText: {
+        marginTop: 12,
+        fontSize: 16,
+        color: "#666",
+    },
+    errorText: {
+        fontSize: 18,
+        color: "#f44336",
+        marginBottom: 20,
+    },
+    errorBackButton: {
+        backgroundColor: "#6C5CE7",
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 8,
+    },
+    errorBackButtonText: {
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "600",
     },
     header: {
         flexDirection: "row",

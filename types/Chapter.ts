@@ -18,12 +18,13 @@ export interface Resource {
 }
 
 export interface Course {
+    id: string;
     title: string;
-    description: string;
+    description?: string;
     order: number;
     readTime: number;
-    sections: Section[];
-    resources: Resource[];
+    sections?: Section[];
+    resources?: Resource[];
     locked: boolean;
 }
 
@@ -45,6 +46,20 @@ export interface ChapterResponse {
     totalElements: number;
     size: number;
     content: Chapter[];
+    number: number;
+    sort: SortInfo[];
+    pageable: PageableInfo;
+    numberOfElements: number;
+    first: boolean;
+    last: boolean;
+    empty: boolean;
+}
+
+export interface CourseResponse {
+    totalPages: number;
+    totalElements: number;
+    size: number;
+    content: Course[];
     number: number;
     sort: SortInfo[];
     pageable: PageableInfo;
