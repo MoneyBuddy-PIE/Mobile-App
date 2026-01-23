@@ -68,7 +68,7 @@ export default function ParentHome() {
         for (let i = 0; i < childAccounts.length; i++) {
             const child = childAccounts[i];
             try {
-                const tasks = await tasksService.getTasksByChild(child.id, "PARENT");
+                const tasks = await tasksService.getTasksByChild(child.id);
                 const completedTasks = tasks.filter((task) => task.status === "COMPLETED");
                 const preValidateTasks = tasks.filter((task) => task.status === "PRE_VALIDATE");
                 setChildrenSummary((prev) =>

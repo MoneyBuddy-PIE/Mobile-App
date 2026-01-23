@@ -19,10 +19,18 @@ export default function Tasks() {
     const loadData = useCallback(async () => {
         try {
             const accountData = await UserStorage.getSubAccount();
+            console.log("SubAccount data:", accountData);
             setSubAccount(accountData);
 
             if (accountData) {
-                const childTasks = await tasksService.getTasksByChild(accountData.id, "CHILD");
+                console.log("Fetching tasks for childId:", accountData.id);
+
+                // Debug: fetch all tasks first
+                const allTasks = await tasksService.getAllTasks();
+                console.log("All tasks from API:", allTasks);
+
+                const childTasks = await tasksService.getTasksByChild(accountData.id);
+                console.log("Loaded tasks:", childTasks);
                 setTasks(childTasks);
             }
         } catch (error) {
@@ -76,8 +84,8 @@ export default function Tasks() {
 
     const completedTasks = tasks.filter((task) => task.status === "COMPLETED");
     const pendingTasks = tasks.filter((task) => task.status === "PENDING" || task.status === "PRE_VALIDATE" || task.status === "REFUSED");
-    const regularTasks = pendingTasks.filter((task) => task.category === "REGULAR");
-    const punctualTasks = pendingTasks.filter((task) => task.category === "PUNCTUAL");
+    const recurringTasks = pendingTasks.filter((task) => task.type === "WEEKLY" || task.type === "MONTHLY");
+    const punctualTasks = pendingTasks.filter((task) => task.type === "PONCTUAL");
 
     return (
         <SafeAreaView style={styles.container}>
@@ -118,11 +126,11 @@ export default function Tasks() {
                 {/* Tâches à faire */}
                 {pendingTasks.length > 0 && (
                     <>
-                        {/* Tâches régulières */}
-                        {regularTasks.length > 0 && (
+                        {/* Tâches récurrentes */}
+                        {recurringTasks.length > 0 && (
                             <View style={styles.section}>
-                                <Text style={[styles.sectionTitle, typography.heading]}>Tâches régulières ({regularTasks.length})</Text>
-                                {regularTasks.map((task) => (
+                                <Text style={[styles.sectionTitle, typography.heading]}>Tâches récurrentes ({recurringTasks.length})</Text>
+                                {recurringTasks.map((task) => (
                                     <TaskTile key={task.id} task={task} onPress={() => handleCompleteTask(task)} />
                                 ))}
                             </View>

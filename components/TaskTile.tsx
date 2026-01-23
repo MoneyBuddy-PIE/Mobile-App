@@ -12,9 +12,28 @@ interface TaskTileProps {
     onPress?: () => void;
 }
 
+const TYPE_LABELS: Record<string, string> = {
+    PONCTUAL: "Ponctuel",
+    WEEKLY: "Hebdo",
+    MONTHLY: "Mensuel",
+};
+
 export default function TaskTile({ task, showName, childName, onPress }: TaskTileProps) {
     const Container = onPress ? TouchableOpacity : View;
     const containerProps = onPress ? { onPress, activeOpacity: 0.7 } : {};
+
+    const getRewardDisplay = () => {
+        if (task.moneyReward > 0) {
+            return `+ ${task.moneyReward}€`;
+        }
+        if (task.coinReward > 0) {
+            return `+ ${task.coinReward} pts`;
+        }
+        return null;
+    };
+
+    const rewardDisplay = getRewardDisplay();
+
     return (
         <Container
             style={[
@@ -32,12 +51,14 @@ export default function TaskTile({ task, showName, childName, onPress }: TaskTil
                                 styles.taskCategorySmall,
                                 typography.bold,
                                 typography["xs"],
-                                task.category === "REGULAR" ? styles.taskCategorySmallRegular : styles.taskCategorySmallPunctual,
+                                task.type === "PONCTUAL" ? styles.taskCategorySmallPunctual : styles.taskCategorySmallRegular,
                             ]}
                         >
-                            {task.category}
+                            {TYPE_LABELS[task.type] || task.type}
                         </Text>
-                        <Text style={[styles.taskReward, typography.bold, typography["xs"]]}>+ {task.reward}€</Text>
+                        {rewardDisplay && (
+                            <Text style={[styles.taskReward, typography.bold, typography["xs"]]}>{rewardDisplay}</Text>
+                        )}
                     </View>
                     <Text style={[styles.taskDescription, task.status === "COMPLETED" && styles.taskDescriptionCompleted, typography["sm"]]}>
                         {task.description}

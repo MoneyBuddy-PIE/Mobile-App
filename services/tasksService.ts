@@ -4,8 +4,24 @@ import { Task, CreateTaskRequest } from '@/types/Task';
 
 export const tasksService = {
     // Récupérer toutes les tâches
-    async getAllTasks(source: string): Promise<Task[]> {
-        return apiService.get<Task[]>('/tasks?source=' + source);
+    async getAllTasks(): Promise<Task[]> {
+        return apiService.get<Task[]>('/tasks');
+    },
+
+    // Récupérer les tâches d'un enfant spécifique
+    async getTasksByChild(
+        childId: string,
+        status?: 'PENDING' | 'PRE_VALIDATE' | 'COMPLETED' | 'REFUSED',
+        type?: 'PONCTUAL' | 'WEEKLY' | 'MONTHLY'
+    ): Promise<Task[]> {
+        const params = new URLSearchParams({ childId });
+        if (status) params.append('status', status);
+        if (type) params.append('type', type);
+        const url = `/tasks?${params.toString()}`;
+        console.log('Fetching tasks from:', url);
+        const result = await apiService.get<Task[]>(url);
+        console.log('API response:', result);
+        return result;
     },
 
     // Créer une nouvelle tâche
@@ -36,11 +52,5 @@ export const tasksService = {
     // Pré-valider une tâche
     async preValidateTask(id: string): Promise<void> {
         return apiService.put(`/tasks/prevalidation/${id}`, { preValidated: true });
-    },
-
-    // Récupérer les tâches d'un enfant spécifique
-    async getTasksByChild(childId: string, role: string): Promise<Task[]> {
-        const allTasks = await this.getAllTasks(role);
-        return allTasks.filter((task) => task.subaccountIdChild === childId);
     },
 };

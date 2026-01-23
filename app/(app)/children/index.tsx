@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, RefreshControl, Modal } from "react-native";
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, RefreshControl, Modal, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
@@ -97,9 +97,11 @@ export default function Children() {
     const completedTasksCount = tasks.filter((task) => task.status === "COMPLETED").length;
     const totalTasksCount = tasks.length;
 
-    // Separate tasks by category
-    const regularTasks = tasks.filter((task) => task.category === "REGULAR" && task.status !== "PRE_VALIDATE" && task.status !== "COMPLETED");
-    const punctualTasks = tasks.filter((task) => task.category === "PUNCTUAL" && task.status !== "PRE_VALIDATE" && task.status !== "COMPLETED");
+    // Separate tasks by type
+    const recurringTasks = tasks.filter(
+        (task) => (task.type === "WEEKLY" || task.type === "MONTHLY") && task.status !== "PRE_VALIDATE" && task.status !== "COMPLETED",
+    );
+    const punctualTasks = tasks.filter((task) => task.type === "PONCTUAL" && task.status !== "PRE_VALIDATE" && task.status !== "COMPLETED");
     const preValidateTasks = tasks.filter((task) => task.status === "PRE_VALIDATE");
 
     // Load functions
@@ -118,7 +120,7 @@ export default function Children() {
 
         setLoadingTasks(true);
         try {
-            const childTasks = await tasksService.getTasksByChild(selectedChildId, "PARENT");
+            const childTasks = await tasksService.getTasksByChild(selectedChildId);
             setTasks(childTasks);
         } catch (error) {
             logger.error("Error loading child tasks:", error);
@@ -187,12 +189,30 @@ export default function Children() {
             if (!taskToValidate) return;
             try {
                 await validateTask(taskToValidate.id, choice);
-            } finally {
                 setValidationModalVisible(false);
                 setTaskToValidate(null);
+
+                if (choice) {
+                    Alert.alert(
+                        "Tâche validée ! ✅",
+                        `La récompense a été ajoutée au compte de ${selectedChild?.name}.`,
+                        [{ text: "Super !" }]
+                    );
+                } else {
+                    Alert.alert(
+                        "Tâche refusée",
+                        "La tâche a été refusée et devra être refaite.",
+                        [{ text: "OK" }]
+                    );
+                }
+            } catch (error) {
+                setValidationModalVisible(false);
+                setTaskToValidate(null);
+                Alert.alert("Erreur", "Impossible de valider la tâche");
+                logger.error("Error in handleValidationChoice:", error);
             }
         },
-        [taskToValidate, validateTask],
+        [taskToValidate, validateTask, selectedChild?.name],
     );
 
     const onRefresh = useCallback(async () => {
@@ -363,7 +383,7 @@ export default function Children() {
         icon: React.ReactNode,
         title: string,
         taskList: Task[],
-        taskType: "REGULAR" | "PUNCTUAL",
+        taskType: "PONCTUAL" | "WEEKLY" | "MONTHLY",
         backgroundColor: string,
     ) => {
         if (taskList.length === 0) {
@@ -426,11 +446,11 @@ export default function Children() {
             )}
 
             <View style={styles.taskCategory}>
-                {renderTaskCategory(<BoxCheck />, "Tâches régulières", regularTasks, "REGULAR", TASK_ICON_BG_COLOR)}
+                {renderTaskCategory(<BoxCheck />, "Tâches récurrentes", recurringTasks, "WEEKLY", TASK_ICON_BG_COLOR)}
             </View>
 
             <View style={styles.taskCategory}>
-                {renderTaskCategory(<ThumbTack />, "Défis ponctuels", punctualTasks, "PUNCTUAL", TASK_ICON_BG_COLOR)}
+                {renderTaskCategory(<ThumbTack />, "Défis ponctuels", punctualTasks, "PONCTUAL", TASK_ICON_BG_COLOR)}
             </View>
 
             {tasks.length === 0 && (
