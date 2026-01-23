@@ -108,7 +108,7 @@ export default function ParentHome() {
         const fetchChapters = async () => {
             try {
                 // Récupérer les chapitres pour le rôle PARENT
-                const parentChapters = await chapterService.getChaptersByRole("PARENT");
+                const parentChapters = await chapterService.getAllChapters();
                 setChapters(parentChapters);
 
                 if (parentChapters.length > 0) {
@@ -280,20 +280,21 @@ export default function ParentHome() {
                 </View>
 
                 {/* Children Cards */}
-                <View style={styles.childrenCardsContainer}>
-                    <Text style={[styles.infosTitle, { paddingHorizontal: spacing.xl }]}>Mes enfants</Text>
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        style={{ marginTop: spacing.base, paddingHorizontal: spacing.xl }}
-                        contentContainerStyle={{ gap: spacing.base, paddingRight: spacing.xl, paddingVertical: spacing.xs }}
-                    >
-                        {childrenSummary.map((childSummary) => (
-                            <ChildCard key={childSummary.child.id} childSummary={childSummary} />
-                        ))}
-                    </ScrollView>
-                </View>
-
+                {childrenSummary.length > 0 && (
+                    <View style={styles.childrenCardsContainer}>
+                        <Text style={[styles.infosTitle, { paddingHorizontal: spacing.xl }]}>Mes enfants</Text>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            style={{ marginTop: spacing.base, paddingHorizontal: spacing.xl }}
+                            contentContainerStyle={{ gap: spacing.base, paddingRight: spacing.xl, paddingVertical: spacing.xs }}
+                        >
+                            {childrenSummary.map((childSummary) => (
+                                <ChildCard key={childSummary.child.id} childSummary={childSummary} />
+                            ))}
+                        </ScrollView>
+                    </View>
+                )}
                 {/* Cours */}
                 <View style={styles.coursesContainer}>
                     <Text style={styles.infosTitle}>Continuez votre progression !</Text>
@@ -462,7 +463,7 @@ const styles = StyleSheet.create({
     },
     // Cours
     coursesContainer: {
-        paddingBottom: spacing["3xl"],
+        paddingBottom: 200,
         paddingHorizontal: spacing.xl,
     },
     courseCardWrapper: {
