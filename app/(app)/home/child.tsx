@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, RefreshControl, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, RefreshControl, Alert, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, router } from "expo-router";
 import { UserStorage } from "@/utils/storage";
@@ -9,12 +9,18 @@ import { Task } from "@/types/Task";
 import { typography, colors, spacing, shadows } from "@/styles";
 import { Ionicons } from "@expo/vector-icons";
 import { logger } from "@/utils/logger";
+import { BottomSheet } from "@/components/BottomSheet";
+import { CoinIcon } from "@/components/Icons/CoinIcon";
+import { LightningIcon } from "@/components/Icons/LightningIcon";
+import MoneyBill from "@/components/Icons/MoneyBill";
+
 
 export default function ChildHome() {
     const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [detailsVisible, setDetailsVisible] = useState(false);
 
     const loadData = useCallback(async () => {
         try {
@@ -80,23 +86,113 @@ export default function ChildHome() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView
-                style={styles.content}
+            {/* <ScrollView
+                
                 showsVerticalScrollIndicator={false}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary[100]} />}
-            >
-                {/* Header */}
+            > */}
+                <View style={styles.content}>
+                    <View>
+                        <View style={styles.topBar}>
+                            <View style={styles.topBarPin}>
+                                <CoinIcon width={24} height={24} />
+                                <Text style={typography.heading}>{currentBalance.toFixed(2)}€</Text>
+                            </View>
+                            <View style={styles.topBarPin}>
+                                <LightningIcon width={24} height={24} color="#FFD700" />
+                                <Text style={typography.heading}>{currentBalance}/5</Text>
+                            </View>
+                        </View>
+
+                        {/* TO DO INTEGRER DRAGON */}
+                        <View style={styles.DragonRive}></View>
+
+                        <View style={styles.AllEarningsContainer}>
+                            <View>
+                                <View style={styles.AllEarningsHeader}>
+                                    <View style={styles.AllEarningsIcon}>
+                                        <MoneyBill width={20} height={20} color="#16aa75" />
+                                    </View>
+                                    <Text style={typography.subheading}>Tu as accumulé</Text>
+                                </View>
+                                <Text style={styles.AllEarningsAmount}>{totalEarned.toFixed(2)}€</Text>
+                            </View>
+                            <Image source={require("@/assets/images/home/chest-filled.png")} style={styles.messageImage} />
+                        </View>
+                    </View>
+
+                    <View style={styles.bottomSheetContainer}>
+                        <BottomSheet
+                            visible={true}
+                            onClose={() => {}}
+                            variant="persistent"
+                            height="35%"
+                            enableSwipeDown={false}
+                        >
+
+                            <View style={styles.bottomSheetContent}>
+                                <Text style={typography.heading}>Ce mois-ci</Text>
+                                <View style={styles.bottomSheetLine}>
+                                    <View style={styles.bottomSheetBox}>
+                                        <View>
+                                            <View style={styles.AllEarningsIcon}>
+                                                <MoneyBill width={20} height={20} color="#16aa75" />
+                                            </View>
+                                            <Text style={typography.subheading}>Tu as accumulé</Text>
+                                        </View>
+                                        <Text style={styles.AllEarningsAmount}>{totalEarned.toFixed(2)}€</Text>
+                                    </View>
+                                    <View style={styles.bottomSheetBox}>
+                                        <View>
+                                            <View style={styles.AllEarningsIcon}>
+                                                <MoneyBill width={20} height={20} color="#16aa75" />
+                                            </View>
+                                            <Text style={typography.subheading}>Tu as accumulé</Text>
+                                        </View>
+                                        <Text style={styles.AllEarningsAmount}>{totalEarned.toFixed(2)}€</Text>
+                                    </View>
+                                </View>
+                                <View style={styles.bottomSheetLine}>
+                                    <View style={styles.bottomSheetBox}>
+                                        <View>
+                                            <View style={styles.AllEarningsIcon}>
+                                                <MoneyBill width={20} height={20} color="#16aa75" />
+                                            </View>
+                                            <Text style={typography.subheading}>Tu as accumulé</Text>
+                                        </View>
+                                        <Text style={styles.AllEarningsAmount}>{totalEarned.toFixed(2)}€</Text>
+                                    </View>
+                                    <View style={styles.bottomSheetBox}>
+                                        <View>
+                                            <View style={styles.AllEarningsIcon}>
+                                                <MoneyBill width={20} height={20} color="#16aa75" />
+                                            </View>
+                                            <Text style={typography.subheading}>Tu as accumulé</Text>
+                                        </View>
+                                        <Text style={styles.AllEarningsAmount}>{totalEarned.toFixed(2)}€</Text>
+                                    </View>
+                                </View>
+                            </View>
+                            <View style={styles.bottomSheetContent}>
+                                <Text style={typography.heading}>Mes tâches</Text>
+                                <View></View>
+                            </View>
+                        </BottomSheet>
+                    </View>
+                </View>
+                
+                {/* Header
                 <View style={styles.header}>
                     <Text style={[styles.greeting, typography.greeting]}>{getGreeting()}</Text>
                     <Text style={[styles.childName, typography.title]}>{subAccount?.name || "Mon petit"} !</Text>
                     <Text style={[styles.motivationText, typography.subtitle]}>
-                        {pendingTasks.length > 0
-                            ? `Tu as ${pendingTasks.length} tâche${pendingTasks.length > 1 ? "s" : ""} à faire aujourd'hui`
-                            : "Bravo ! Tu as tout terminé ! 🎉"}
+                    {pendingTasks.length > 0
+                    ? `Tu as ${pendingTasks.length} tâche${pendingTasks.length > 1 ? "s" : ""} à faire aujourd'hui`
+                    : "Bravo ! Tu as tout terminé ! 🎉"}
                     </Text>
-                </View>
+                </View> */}
 
-                {/* Solde et stats */}
+                {/* Solde et stats
                 <View style={styles.statsContainer}>
                     <View style={[styles.balanceCard, styles.card]}>
                         <Text style={styles.balanceIcon}>💰</Text>
@@ -114,9 +210,9 @@ export default function ChildHome() {
                             <Text style={[styles.miniStatLabel, typography.caption]}>Gagné</Text>
                         </View>
                     </View>
-                </View>
+                </View> */}
 
-                {/* Progression */}
+                {/* Progression
                 {tasks.length > 0 && (
                     <View style={styles.section}>
                         <Text style={[styles.sectionTitle, typography.heading]}>Ma progression</Text>
@@ -135,82 +231,159 @@ export default function ChildHome() {
                             </View>
                         </View>
                     </View>
-                )}
+                )} */}
 
-                {/* Mes tâches à faire */}
+
+                {/* Mes tâches à faire
                 {pendingTasks.length > 0 && (
                     <View style={styles.section}>
-                        <Text style={[styles.sectionTitle, typography.heading]}>Mes tâches à faire</Text>
-                        {pendingTasks.slice(0, 3).map((task) => (
-                            <TouchableOpacity
-                                key={task.id}
-                                style={[styles.taskCard, styles.card]}
-                                onPress={() => handleCompleteTask(task.id)}
-                                activeOpacity={0.7}
+                    <Text style={[styles.sectionTitle, typography.heading]}>Mes tâches à faire</Text>
+                    {pendingTasks.slice(0, 3).map((task) => (
+                        <TouchableOpacity
+                        key={task.id}
+                        style={[styles.taskCard, styles.card]}
+                        onPress={() => handleCompleteTask(task.id)}
+                        activeOpacity={0.7}
+                        >
+                        <View style={styles.taskInfo}>
+                        <Text style={[styles.taskDescription, typography.subheading]}>{task.description}</Text>
+                        <View style={styles.taskMeta}>
+                        <View
+                        style={[
+                            styles.categoryBadge,
+                            task.category === "REGULAR" ? styles.regularCategory : styles.punctualCategory,
+                            ]}
                             >
-                                <View style={styles.taskInfo}>
-                                    <Text style={[styles.taskDescription, typography.subheading]}>{task.description}</Text>
-                                    <View style={styles.taskMeta}>
-                                        <View
-                                            style={[
-                                                styles.categoryBadge,
-                                                task.category === "REGULAR" ? styles.regularCategory : styles.punctualCategory,
-                                            ]}
-                                        >
-                                            <Text style={[styles.taskCategory, typography.caption]}>
-                                                {task.category === "REGULAR" ? "Régulière" : "Ponctuelle"}
-                                            </Text>
-                                        </View>
-                                        <Text style={[styles.taskReward, typography.caption]}>+{task.reward}€</Text>
-                                    </View>
-                                </View>
-                                <View style={styles.taskAction}>
+                            <Text style={[styles.taskCategory, typography.caption]}>
+                            {task.category === "REGULAR" ? "Régulière" : "Ponctuelle"}
+                            </Text>
+                            </View>
+                            <Text style={[styles.taskReward, typography.caption]}>+{task.reward}€</Text>
+                            </View>
+                            </View>
+                            <View style={styles.taskAction}>
                                     <View style={[styles.actionButton, task.status === "COMPLETED" && styles.actionButtonCompleted]}>
                                         {task.status === "COMPLETED" && <Ionicons name="checkmark-outline" size={24} color="#FFF" />}
                                     </View>
                                 </View>
-                            </TouchableOpacity>
+                                </TouchableOpacity>
                         ))}
-
+                        
                         {pendingTasks.length > 3 && (
                             <TouchableOpacity style={styles.viewMoreButton} onPress={() => router.replace("/tasks")}>
-                                <Text style={[styles.viewMoreText, typography.body]}>Voir {pendingTasks.length - 3} autres tâches</Text>
-                                <Ionicons name="chevron-forward" size={16} color="#6C5CE7" />
+                            <Text style={[styles.viewMoreText, typography.body]}>Voir {pendingTasks.length - 3} autres tâches</Text>
+                            <Ionicons name="chevron-forward" size={16} color="#6C5CE7" />
                             </TouchableOpacity>
-                        )}
-                    </View>
-                )}
+                            )}
+                            </View>
+                            )} */}
 
-                {/* Message motivant */}
+                {/* Message motivant
                 <View style={[styles.motivationCard, styles.card]}>
                     <Text style={styles.motivationIcon}>{pendingTasks.length === 0 ? "🎉" : potentialEarnings > 0 ? "💪" : "🌟"}</Text>
                     <Text style={[styles.motivationTitle, typography.subheading]}>
-                        {pendingTasks.length === 0 ? "Excellent travail !" : potentialEarnings > 0 ? "Continue comme ça !" : "Tu es formidable !"}
+                    {pendingTasks.length === 0 ? "Excellent travail !" : potentialEarnings > 0 ? "Continue comme ça !" : "Tu es formidable !"}
                     </Text>
                     <Text style={[styles.motivationDescription, typography.body]}>
                         {pendingTasks.length === 0
-                            ? "Tu as terminé toutes tes tâches ! Tu peux être fier de toi."
+                        ? "Tu as terminé toutes tes tâches ! Tu peux être fier de toi."
                             : potentialEarnings > 0
                               ? `Tu peux encore gagner ${potentialEarnings.toFixed(2)}€ en finissant tes tâches.`
                               : "Demande à tes parents de t'ajouter des tâches pour gagner de l'argent de poche !"}
                     </Text>
-                </View>
+                </View> */}
 
-                <View style={styles.bottomPadding} />
-            </ScrollView>
+                {/* <View style={styles.bottomPadding} /> */}
+            {/* </ScrollView> */}
         </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
-        backgroundColor: colors.screenBackground,
+        backgroundColor: "#97C9FF",
+        marginBottom: -30,
     },
     content: {
-        flex: 1,
-        paddingHorizontal: spacing.lg,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        height: "100%",
     },
+    topBar: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        paddingHorizontal: 24,
+        paddingVertical: 20,
+    },
+    topBarPin: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#FFF",
+        borderRadius: 8,
+        padding: 8,
+        gap: 8,
+    },
+    DragonRive: {
+        height: 500,
+    },
+    AllEarningsContainer: {
+        padding: 12,
+        marginHorizontal: 24,
+        borderRadius: 8,
+        backgroundColor: "#FFF",
+        borderColor: "#EBF2FB",
+        borderWidth: 2,
+        display: "flex",
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 24,
+    },
+    AllEarningsHeader: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 4,
+        gap: 8,
+    },
+    AllEarningsIcon: {
+        padding: 6,
+        borderRadius: 4,
+        backgroundColor: "#9bffe2",
+    },
+    AllEarningsAmount: {
+        fontFamily: 'DMSans_700Bold',
+        fontSize: 40,
+        color: '#2F2F2F',
+    },
+    bottomSheetContainer: {
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "flex-start",
+        gap: 24,
+    },
+    bottomSheetContent: {
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "flex-start",
+        gap: 16,
+    },
+    bottomSheetLine: {
+        width: "100%",
+        flexDirection: "row",
+        gap: 16,
+    },
+    bottomSheetBox: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+        padding: 12,
+        borderRadius: 4,
+        // box-shadow: 0 3.887px 0 0 #BFD0EA;
+    },
+    
+    
+    
     center: {
         justifyContent: "center",
         alignItems: "center",
