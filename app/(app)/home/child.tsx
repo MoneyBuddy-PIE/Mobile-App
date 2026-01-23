@@ -5,7 +5,11 @@ import { Link, router } from "expo-router";
 import { UserStorage } from "@/utils/storage";
 import { SubAccount } from "@/types/Account";
 import { tasksService } from "@/services/tasksService";
+import { transactionService } from "@/services/transactionService";
+import { goalsService } from "@/services/goalsService";
 import { Task } from "@/types/Task";
+import { Transaction } from "@/types/Transaction";
+import { Goal } from "@/types/Goal";
 import { typography, colors, spacing, shadows } from "@/styles";
 import { Ionicons } from "@expo/vector-icons";
 import { logger } from "@/utils/logger";
@@ -13,7 +17,6 @@ import { BottomSheet } from "@/components/BottomSheet";
 import { CoinIcon } from "@/components/Icons/CoinIcon";
 import { LightningIcon } from "@/components/Icons/LightningIcon";
 import MoneyBill from "@/components/Icons/MoneyBill";
-import CheckMark from "@/components/Icons/CheckMark";
 import ListCheck from "@/components/Icons/ListCheck";
 import MoneyFly from "@/components/Icons/MoneyFly";
 import Pig from "@/components/Icons/Pig";
@@ -22,6 +25,8 @@ import Pig from "@/components/Icons/Pig";
 export default function ChildHome() {
     const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [goals, setGoals] = useState<Goal[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [detailsVisible, setDetailsVisible] = useState(false);
@@ -34,6 +39,22 @@ export default function ChildHome() {
             if (accountData) {
                 const childTasks = await tasksService.getTasksByChild(accountData.id, "CHILD");
                 setTasks(childTasks);
+
+                try {
+                    const childTransactions = await transactionService.getTransactionsBySubAccount(accountData.id);
+                    setTransactions(childTransactions);
+                } catch (error) {
+                    logger.error("Error loading child transactions:", error);
+                    setTransactions([]);
+                }
+
+                try {
+                    const childGoals = await goalsService.getGoals(accountData.id);
+                    setGoals(childGoals);
+                } catch (error) {
+                    logger.error("Error loading child goals:", error);
+                    setGoals([]);
+                }
             }
         } catch (error) {
             console.error("Error loading child home data:", error);
@@ -80,6 +101,26 @@ export default function ChildHome() {
     const totalEarned = completedTasks.reduce((sum, task) => sum + parseFloat(task.reward || "0"), 0);
     const potentialEarnings = pendingTasks.reduce((sum, task) => sum + parseFloat(task.reward || "0"), 0);
     const completionRate = tasks.length > 0 ? Math.round((completedTasks.length / tasks.length) * 100) : 0;
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    const monthlyTransactions = transactions.filter((transaction) => {
+        const transactionDate = new Date(transaction.createdAt);
+        return transactionDate >= startOfMonth && transactionDate <= endOfMonth;
+    });
+
+    const moneyDebited = monthlyTransactions.reduce((total, transaction) => {
+        if (transaction.type !== "DEBIT") return total;
+        return total + parseFloat(transaction.amount);
+    }, 0);
+
+    const moneyCredited = monthlyTransactions.reduce((total, transaction) => {
+        if (transaction.type !== "CREDIT") return total;
+        return total + parseFloat(transaction.amount);
+    }, 0);
+
+    const goalMoneySaved = goals.reduce((total, goal) => total + goal.progression, 0);
 
     const getGreeting = () => {
         const hour = new Date().getHours();
@@ -145,18 +186,18 @@ export default function ChildHome() {
                                             <View style={[styles.infoCardHeaderIcon, styles.moneyCardIcon]}>
                                                 <MoneyFly width={20} height={20} color={colors.primary[100]} />
                                             </View>
-                                            <Text style={styles.infoCardHeaderTitle}>{totalEarned.toFixed(2)}€</Text>
+                                            <Text style={styles.infoCardHeaderTitle}>{moneyDebited.toFixed(2)}€</Text>
                                         </View>
-                                        <Text style={styles.infoCardSubtitle}>Tu as accumulé</Text>
+                                        <Text style={styles.infoCardSubtitle}>Dépenses</Text>
                                     </View>
                                     <View style={styles.bottomSheetBox}>
                                         <View style={styles.infoCardHeader}>
                                             <View style={[styles.infoCardHeaderIcon, styles.timeCardIcon]}>
                                                 <MoneyBill width={20} height={20} color={colors.jadegreen[100]} />
                                             </View>
-                                            <Text style={styles.infoCardHeaderTitle}>{totalEarned.toFixed(2)}€</Text>
+                                            <Text style={styles.infoCardHeaderTitle}>{moneyCredited.toFixed(2)}€</Text>
                                         </View>
-                                        <Text style={styles.infoCardSubtitle}>Tu as accumulé</Text>
+                                        <Text style={styles.infoCardSubtitle}>Revenus</Text>
                                     </View>
                                 </View>
                                 <View style={styles.bottomSheetLine}>
@@ -165,18 +206,20 @@ export default function ChildHome() {
                                             <View style={[styles.infoCardHeaderIcon, styles.pigCardIcon]}>
                                                 <Pig width={20} height={20} color={colors.pink[100]} />
                                             </View>
-                                            <Text style={styles.infoCardHeaderTitle}>{totalEarned.toFixed(2)}€</Text>
+                                            <Text style={styles.infoCardHeaderTitle}>{goalMoneySaved.toFixed(2)}€</Text>
                                         </View>
-                                        <Text style={styles.infoCardSubtitle}>Tu as accumulé</Text>
+                                        <Text style={styles.infoCardSubtitle}>Épargne</Text>
                                     </View>
                                     <View style={styles.bottomSheetBox}>
                                         <View style={styles.infoCardHeader}>
                                             <View style={[styles.infoCardHeaderIcon, styles.listCardIcon]}>
                                                 <ListCheck width={20} height={20} color={colors.blue[100]} />
                                             </View>
-                                            <Text style={styles.infoCardHeaderTitle}>{totalEarned.toFixed(2)}€</Text>
+                                            <Text style={styles.infoCardHeaderTitle}>
+                                                {tasks.length > 0 ? `${completedTasks.length}/${tasks.length}` : "0"}
+                                            </Text>
                                         </View>
-                                        <Text style={styles.infoCardSubtitle}>Tu as accumulé</Text>
+                                        <Text style={styles.infoCardSubtitle}>Tâches terminées</Text>
                                     </View>
                                 </View>
                             </View>
