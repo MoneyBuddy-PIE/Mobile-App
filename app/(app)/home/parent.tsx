@@ -16,6 +16,7 @@ import { Task } from "@/types/Task";
 import { Chapter } from "@/types/Chapter";
 import { Course } from "@/types/Chapter";
 import ChildCard from "@/components/ChildCard";
+import CourseCard from "@/components/CourseCard";
 import { logger } from "@/utils/logger";
 
 export interface ChildSummary {
@@ -35,7 +36,7 @@ export default function ParentHome() {
     const [refreshing, setRefreshing] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [chapters, setChapters] = useState<Chapter[]>([]);
-    const [courses, setCourses] = useState<Course[]>([]);
+    const [currentCourse, setCurrentCourse] = useState<Course | null>(null);
 
     const childAccounts = useMemo(() => user?.subAccounts?.filter((account) => account.role === "CHILD") || [], [user?.subAccounts]);
 
@@ -106,17 +107,29 @@ export default function ParentHome() {
     useEffect(() => {
         const fetchChapters = async () => {
             try {
-                const chaptersData = await chapterService.getChapters();
+                // Récupérer les chapitres pour le rôle PARENT
+                const parentChapters = await chapterService.getAllChapters();
+                setChapters(parentChapters);
 
-                setChapters(chaptersData.content);
-                const coursesData = await Promise.all(
-                    chaptersData.content.map(async (chapter) => {
-                        const chapterCourses = await chapterService.getChapterCourses(chapter.id);
-                        return chapterCourses;
-                    }),
-                );
-                const flattenedCourses = coursesData.flat();
-                setCourses(flattenedCourses);
+                if (parentChapters.length > 0) {
+                    // Récupérer les cours de tous les chapitres
+                    const coursesData = await Promise.all(
+                        parentChapters.map(async (chapter) => {
+                            const chapterCourses = await chapterService.getChapterCourses(chapter.id);
+                            return chapterCourses;
+                        }),
+                    );
+                    const flattenedCourses = coursesData.flat();
+
+                    // Sélectionner le premier cours non verrouillé
+                    const firstUnlockedCourse = flattenedCourses.find((course) => !course.locked);
+                    if (firstUnlockedCourse) {
+                        setCurrentCourse(firstUnlockedCourse);
+                    } else if (flattenedCourses.length > 0) {
+                        // Si tous sont verrouillés, prendre le premier
+                        setCurrentCourse(flattenedCourses[0]);
+                    }
+                }
             } catch (error) {
                 console.error("Error loading chapters:", error);
             }
@@ -267,26 +280,37 @@ export default function ParentHome() {
                 </View>
 
                 {/* Children Cards */}
-                <View style={styles.childrenCardsContainer}>
-                    <Text style={[styles.infosTitle, { paddingHorizontal: spacing.xl }]}>Mes enfants</Text>
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        style={{ marginTop: spacing.base, paddingHorizontal: spacing.xl }}
-                        contentContainerStyle={{ gap: spacing.base, paddingRight: spacing.xl, paddingVertical: spacing.xs }}
-                    >
-                        {childrenSummary.map((childSummary) => (
-                            <ChildCard key={childSummary.child.id} childSummary={childSummary} />
-                        ))}
-                    </ScrollView>
-                </View>
-
+                {childrenSummary.length > 0 && (
+                    <View style={styles.childrenCardsContainer}>
+                        <Text style={[styles.infosTitle, { paddingHorizontal: spacing.xl }]}>Mes enfants</Text>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            style={{ marginTop: spacing.base, paddingHorizontal: spacing.xl }}
+                            contentContainerStyle={{ gap: spacing.base, paddingRight: spacing.xl, paddingVertical: spacing.xs }}
+                        >
+                            {childrenSummary.map((childSummary) => (
+                                <ChildCard key={childSummary.child.id} childSummary={childSummary} />
+                            ))}
+                        </ScrollView>
+                    </View>
+                )}
                 {/* Cours */}
                 <View style={styles.coursesContainer}>
                     <Text style={styles.infosTitle}>Continuez votre progression !</Text>
-                    <View style={styles.courseCard}>
-                        <View></View>
-                    </View>
+                    {currentCourse && (
+                        <View style={styles.courseCardWrapper}>
+                            <CourseCard
+                                course={currentCourse}
+                                progress={25}
+                                onPress={() => {
+                                    // TODO: Navigate to course detail
+                                    // TODO: Implement course progress tracking
+                                    console.log("Open course:", currentCourse.title);
+                                }}
+                            />
+                        </View>
+                    )}
                 </View>
 
                 <ValidateTasksModal
@@ -439,13 +463,10 @@ const styles = StyleSheet.create({
     },
     // Cours
     coursesContainer: {
-        paddingBottom: spacing["3xl"],
+        paddingBottom: 200,
         paddingHorizontal: spacing.xl,
     },
-    courseCard: {
-        paddingTop: spacing.base,
+    courseCardWrapper: {
         marginTop: spacing.base,
-        backgroundColor: colors.white,
-        borderRadius: spacing.sm,
     },
 });

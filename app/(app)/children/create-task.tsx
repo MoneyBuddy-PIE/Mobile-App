@@ -5,6 +5,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { tasksService } from "@/services/tasksService";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, typography, shadows } from "@/styles";
+import Cross from "@/components/Icons/Cross";
 
 const PREDEFINED_AMOUNTS = ["0.50", "1", "1.50"];
 
@@ -81,7 +82,7 @@ export default function CreateTask() {
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>Qui pourra confirmer la finalisation de cette tâche ?</Text>
                             <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                                <Text style={styles.closeButtonText}>✕</Text>
+                                <Cross width={24} height={24} />
                             </TouchableOpacity>
                         </View>
 
@@ -125,15 +126,15 @@ export default function CreateTask() {
             <View style={styles.header}>
                 <Text style={styles.title}>Ajouter une tâche</Text>
                 <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
-                    <Text style={styles.closeButtonText}>✕</Text>
+                    <Cross width={24} height={24} />
                 </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
                 {/* Nom de la tâche */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionLabel}>Nom de la tâche</Text>
-                    <View style={styles.inputContainer}>
+                    <Text style={styles.sectionLabel}>C’est quoi la tâche ?</Text>
+                    <View style={[styles.inputContainer, taskName.trim() ? { borderColor: colors.jadegreen[100] } : { borderColor: colors.border }]}>
                         <TextInput
                             style={styles.textInput}
                             placeholder="Ex: Sortir les poubelles"
@@ -141,7 +142,7 @@ export default function CreateTask() {
                             onChangeText={setTaskName}
                             autoCapitalize="sentences"
                         />
-                        {taskName.trim() && <Ionicons name="checkmark-outline" size={18} color="#16AA75" />}
+                        {taskName.trim() && <Ionicons name="checkmark-outline" size={18} color={colors.jadegreen[100]} />}
                     </View>
                 </View>
 
@@ -218,7 +219,7 @@ export default function CreateTask() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.screenBackground,
+        backgroundColor: colors.white,
     },
     modalContainer: {
         flex: 1,
@@ -231,9 +232,8 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingHorizontal: spacing.lg,
-        paddingTop: spacing.xs,
-        paddingBottom: spacing.lg,
+        paddingHorizontal: spacing.xl,
+        paddingVertical: spacing.lg,
         borderBottomWidth: 1,
         borderBottomColor: colors.border,
     },
@@ -243,28 +243,22 @@ const styles = StyleSheet.create({
         color: colors.carbon[100],
     },
     closeButton: {
-        width: 32,
-        height: 32,
+        width: 48,
+        height: 48,
         backgroundColor: colors.carbon[100],
         borderRadius: spacing.sm,
         justifyContent: "center",
         alignItems: "center",
     },
-    closeButtonText: {
-        color: colors.white,
-        ...typography.md,
-        ...typography.bold,
-    },
     content: {
         flex: 1,
-        paddingHorizontal: spacing.lg,
+        paddingHorizontal: spacing.xl,
     },
     section: {
         marginTop: spacing.xl,
     },
     sectionLabel: {
-        ...typography.md,
-        ...typography.semiBold,
+        ...typography.sm,
         color: colors.carbon[100],
         marginBottom: spacing.md,
     },
@@ -282,6 +276,7 @@ const styles = StyleSheet.create({
         ...typography.md,
         color: colors.carbon[100],
         paddingVertical: spacing.base,
+        borderRadius: spacing.sm,
     },
     amountContainer: {
         flexDirection: "row",
@@ -292,8 +287,8 @@ const styles = StyleSheet.create({
         backgroundColor: colors.carbon[10],
         padding: spacing.sm,
         borderRadius: spacing.sm,
-        borderWidth: 2,
-        borderColor: "transparent",
+        borderWidth: 1.5,
+        borderColor: colors.carbon[20],
     },
     amountButtonSelected: {
         backgroundColor: colors.primary[20],
@@ -385,10 +380,9 @@ const styles = StyleSheet.create({
     },
     modalTitle: {
         flex: 1,
-        ...typography.lg,
-        ...typography.semiBold,
+        ...typography.xl,
+        ...typography.bold,
         color: colors.carbon[100],
-        marginRight: spacing.md,
     },
     modalContent: {
         flex: 1,

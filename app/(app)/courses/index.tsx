@@ -50,7 +50,7 @@ export default function Courses() {
             setSubAccount(accountData);
 
             if (accountData) {
-                const chaptersData = await chapterService.getChaptersByRole(accountData.role);
+                const chaptersData = await chapterService.getAllChapters();
                 setChapters(chaptersData);
             }
         } catch (error) {
