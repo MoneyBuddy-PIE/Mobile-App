@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Pressable, Platform } from "react-native";
-import { usePathname, Link } from "expo-router";
+import { usePathname, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { UserStorage } from "@/utils/storage";
@@ -15,6 +15,7 @@ interface NavItem {
 
 export const BottomNavigation: React.FC = () => {
     const pathname = usePathname();
+    const router = useRouter();
     const insets = useSafeAreaInsets();
     const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
 
@@ -112,22 +113,26 @@ export const BottomNavigation: React.FC = () => {
             {navItems.map((item) => {
                 const active = isActive(item.route);
 
+                const handlePress = () => {
+                    if (!active) {
+                        router.replace(item.route);
+                    }
+                };
+
                 return (
-                    <Link key={item.route} href={item.route} asChild replace style={styles.navItem}>
-                        <Pressable>
-                            {({ pressed }) => (
-                                <>
-                                    <Ionicons
-                                        name={active ? item.iconNameActive : item.iconName}
-                                        size={24}
-                                        color={active ? "#6C5CE7" : "#666"}
-                                        style={[pressed && styles.pressedIcon]}
-                                    />
-                                    <Text style={[styles.label, active && styles.activeLabel, pressed && styles.pressedLabel]}>{item.label}</Text>
-                                </>
-                            )}
-                        </Pressable>
-                    </Link>
+                    <Pressable key={item.route} onPress={handlePress} style={styles.navItem}>
+                        {({ pressed }) => (
+                            <>
+                                <Ionicons
+                                    name={active ? item.iconNameActive : item.iconName}
+                                    size={24}
+                                    color={active ? "#6C5CE7" : "#666"}
+                                    style={[pressed && !active && styles.pressedIcon]}
+                                />
+                                <Text style={[styles.label, active && styles.activeLabel, pressed && !active && styles.pressedLabel]}>{item.label}</Text>
+                            </>
+                        )}
+                    </Pressable>
                 );
             })}
         </View>
