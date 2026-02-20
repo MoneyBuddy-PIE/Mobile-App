@@ -19,6 +19,7 @@ export const authService = {
 
     async logout(): Promise<void> {
         try {
+            await apiService.put('/auth/device/desactivate').catch(() => {});
             await clear();
             router.replace('/(auth)/login');
         } catch (error) {
@@ -29,6 +30,7 @@ export const authService = {
 
     async silentLogout(): Promise<void> {
         try {
+            await apiService.put('/auth/device/desactivate').catch(() => {});
             await clear();
         } catch (error) {
             console.error('Silent logout error:', error);
