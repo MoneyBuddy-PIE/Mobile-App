@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
     },
     registerButtonDisabled: {
         ...commonStyles.buttonDisabled,
-        ...shadows.none
+        ...shadows.none,
     },
     registerButtonActive: {
         backgroundColor: colors.primary[100],

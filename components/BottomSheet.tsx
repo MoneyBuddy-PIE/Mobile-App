@@ -99,7 +99,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
                 }
                 panY.current = 0;
             },
-        })
+        }),
     ).current;
 
     const handleBackdropPress = () => {

@@ -21,7 +21,6 @@ import ListCheck from "@/components/Icons/ListCheck";
 import MoneyFly from "@/components/Icons/MoneyFly";
 import Pig from "@/components/Icons/Pig";
 
-
 export default function ChildHome() {
     const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -136,100 +135,89 @@ export default function ChildHome() {
                 showsVerticalScrollIndicator={false}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary[100]} />}
             > */}
-                <View style={styles.content}>
-                    <View>
-                        <View style={styles.topBar}>
-                            <View style={styles.topBarPin}>
-                                <CoinIcon width={24} height={24} />
-                                <Text style={typography.heading}>{currentBalance.toFixed(2)}€</Text>
-                            </View>
-                            <View style={styles.topBarPin}>
-                                <LightningIcon width={24} height={24} color="#FFD700" />
-                                <Text style={typography.heading}>{currentBalance}/5</Text>
-                            </View>
+            <View style={styles.content}>
+                <View>
+                    <View style={styles.topBar}>
+                        <View style={styles.topBarPin}>
+                            <CoinIcon width={24} height={24} />
+                            <Text style={typography.heading}>{currentBalance.toFixed(2)}€</Text>
                         </View>
-
-                        <Image
-                            source={require("@/assets/images/child/dragonchild.png")}
-                            style={styles.DragonRive}
-                            resizeMode="contain"
-                        />
-
-                        <View style={styles.AllEarningsContainer}>
-                            <View>
-                                <View style={styles.AllEarningsHeader}>
-                                    <View style={styles.AllEarningsIcon}>
-                                        <MoneyBill width={20} height={20} color="#16aa75" />
-                                    </View>
-                                    <Text style={typography.subheading}>Tu as accumulé</Text>
-                                </View>
-                                <Text style={styles.AllEarningsAmount}>{totalEarned.toFixed(2)}€</Text>
-                            </View>
-                            <Image source={require("@/assets/images/home/chest-filled.png")} style={styles.messageImage} />
+                        <View style={styles.topBarPin}>
+                            <LightningIcon width={24} height={24} color="#FFD700" />
+                            <Text style={typography.heading}>{currentBalance}/5</Text>
                         </View>
                     </View>
 
-                    <View style={styles.bottomSheetContainer}>
-                        <BottomSheet
-                            visible={true}
-                            onClose={() => {}}
-                            variant="persistent"
-                            height="35%"
-                            enableSwipeDown={false}
-                        >
+                    <Image source={require("@/assets/images/child/dragonchild.png")} style={styles.DragonRive} resizeMode="contain" />
 
-                            <View style={styles.bottomSheetContent}>
-                                <Text style={typography.heading}>Ce mois-ci</Text>
-                                <View style={styles.bottomSheetLine}>
-                                    <View style={styles.bottomSheetBox}>
-                                        <View style={styles.infoCardHeader}>
-                                            <View style={[styles.infoCardHeaderIcon, styles.moneyCardIcon]}>
-                                                <MoneyFly width={20} height={20} color={colors.primary[100]} />
-                                            </View>
-                                            <Text style={styles.infoCardHeaderTitle}>{moneyDebited.toFixed(2)}€</Text>
-                                        </View>
-                                        <Text style={styles.infoCardSubtitle}>Dépenses</Text>
-                                    </View>
-                                    <View style={styles.bottomSheetBox}>
-                                        <View style={styles.infoCardHeader}>
-                                            <View style={[styles.infoCardHeaderIcon, styles.timeCardIcon]}>
-                                                <MoneyBill width={20} height={20} color={colors.jadegreen[100]} />
-                                            </View>
-                                            <Text style={styles.infoCardHeaderTitle}>{moneyCredited.toFixed(2)}€</Text>
-                                        </View>
-                                        <Text style={styles.infoCardSubtitle}>Revenus</Text>
-                                    </View>
+                    <View style={styles.AllEarningsContainer}>
+                        <View>
+                            <View style={styles.AllEarningsHeader}>
+                                <View style={styles.AllEarningsIcon}>
+                                    <MoneyBill width={20} height={20} color="#16aa75" />
                                 </View>
-                                <View style={styles.bottomSheetLine}>
-                                    <View style={styles.bottomSheetBox}>
-                                        <View style={styles.infoCardHeader}>
-                                            <View style={[styles.infoCardHeaderIcon, styles.pigCardIcon]}>
-                                                <Pig width={20} height={20} color={colors.pink[100]} />
-                                            </View>
-                                            <Text style={styles.infoCardHeaderTitle}>{goalMoneySaved.toFixed(2)}€</Text>
-                                        </View>
-                                        <Text style={styles.infoCardSubtitle}>Épargne</Text>
-                                    </View>
-                                    <View style={styles.bottomSheetBox}>
-                                        <View style={styles.infoCardHeader}>
-                                            <View style={[styles.infoCardHeaderIcon, styles.listCardIcon]}>
-                                                <ListCheck width={20} height={20} color={colors.blue[100]} />
-                                            </View>
-                                            <Text style={styles.infoCardHeaderTitle}>
-                                                {tasks.length > 0 ? `${completedTasks.length}/${tasks.length}` : "0"}
-                                            </Text>
-                                        </View>
-                                        <Text style={styles.infoCardSubtitle}>Tâches terminées</Text>
-                                    </View>
-                                </View>
+                                <Text style={typography.subheading}>Tu as accumulé</Text>
                             </View>
-                            <View style={styles.bottomSheetContent}>
-                                <Text style={typography.heading}>Mes tâches</Text>
-                                <View></View>
-                            </View>
-                        </BottomSheet>
+                            <Text style={styles.AllEarningsAmount}>{totalEarned.toFixed(2)}€</Text>
+                        </View>
+                        <Image source={require("@/assets/images/home/chest-filled.png")} style={styles.messageImage} />
                     </View>
                 </View>
+
+                <View style={styles.bottomSheetContainer}>
+                    <BottomSheet visible={true} onClose={() => {}} variant="persistent" height="35%" enableSwipeDown={false}>
+                        <View style={styles.bottomSheetContent}>
+                            <Text style={typography.heading}>Ce mois-ci</Text>
+                            <View style={styles.bottomSheetLine}>
+                                <View style={styles.bottomSheetBox}>
+                                    <View style={styles.infoCardHeader}>
+                                        <View style={[styles.infoCardHeaderIcon, styles.moneyCardIcon]}>
+                                            <MoneyFly width={20} height={20} color={colors.primary[100]} />
+                                        </View>
+                                        <Text style={styles.infoCardHeaderTitle}>{moneyDebited.toFixed(2)}€</Text>
+                                    </View>
+                                    <Text style={styles.infoCardSubtitle}>Dépenses</Text>
+                                </View>
+                                <View style={styles.bottomSheetBox}>
+                                    <View style={styles.infoCardHeader}>
+                                        <View style={[styles.infoCardHeaderIcon, styles.timeCardIcon]}>
+                                            <MoneyBill width={20} height={20} color={colors.jadegreen[100]} />
+                                        </View>
+                                        <Text style={styles.infoCardHeaderTitle}>{moneyCredited.toFixed(2)}€</Text>
+                                    </View>
+                                    <Text style={styles.infoCardSubtitle}>Revenus</Text>
+                                </View>
+                            </View>
+                            <View style={styles.bottomSheetLine}>
+                                <View style={styles.bottomSheetBox}>
+                                    <View style={styles.infoCardHeader}>
+                                        <View style={[styles.infoCardHeaderIcon, styles.pigCardIcon]}>
+                                            <Pig width={20} height={20} color={colors.pink[100]} />
+                                        </View>
+                                        <Text style={styles.infoCardHeaderTitle}>{goalMoneySaved.toFixed(2)}€</Text>
+                                    </View>
+                                    <Text style={styles.infoCardSubtitle}>Épargne</Text>
+                                </View>
+                                <View style={styles.bottomSheetBox}>
+                                    <View style={styles.infoCardHeader}>
+                                        <View style={[styles.infoCardHeaderIcon, styles.listCardIcon]}>
+                                            <ListCheck width={20} height={20} color={colors.blue[100]} />
+                                        </View>
+                                        <Text style={styles.infoCardHeaderTitle}>
+                                            {tasks.length > 0 ? `${completedTasks.length}/${tasks.length}` : "0"}
+                                        </Text>
+                                    </View>
+                                    <Text style={styles.infoCardSubtitle}>Tâches terminées</Text>
+                                </View>
+                            </View>
+                        </View>
+                        <View style={styles.bottomSheetContent}>
+                            <Text style={typography.heading}>Mes tâches</Text>
+                            <View></View>
+                        </View>
+                    </BottomSheet>
+                </View>
+            </View>
         </SafeAreaView>
     );
 }
@@ -297,9 +285,9 @@ const styles = StyleSheet.create({
         backgroundColor: "#9bffe2",
     },
     AllEarningsAmount: {
-        fontFamily: 'DMSans_700Bold',
+        fontFamily: "DMSans_700Bold",
         fontSize: 40,
-        color: '#2F2F2F',
+        color: "#2F2F2F",
     },
     bottomSheetContainer: {
         display: "flex",
@@ -362,9 +350,7 @@ const styles = StyleSheet.create({
         ...typography.semiBold,
         color: colors.carbon[100],
     },
-    
-    
-    
+
     center: {
         justifyContent: "center",
         alignItems: "center",

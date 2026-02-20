@@ -245,7 +245,10 @@ export default function CreateTask() {
                                                 onPress={() => toggleWeekDay(day.key)}
                                             >
                                                 <Text
-                                                    style={[styles.weekDayButtonText, selectedWeekDays.includes(day.key) && styles.weekDayButtonTextSelected]}
+                                                    style={[
+                                                        styles.weekDayButtonText,
+                                                        selectedWeekDays.includes(day.key) && styles.weekDayButtonTextSelected,
+                                                    ]}
                                                 >
                                                     {day.label}
                                                 </Text>
@@ -434,11 +437,19 @@ export default function CreateTask() {
                                 onPress={() => handleCoinAmountSelect(amount)}
                             >
                                 <Text
-                                    style={[styles.coinButtonText, rewardType === "coins" && selectedCoinAmount === amount && styles.coinButtonTextSelected]}
+                                    style={[
+                                        styles.coinButtonText,
+                                        rewardType === "coins" && selectedCoinAmount === amount && styles.coinButtonTextSelected,
+                                    ]}
                                 >
                                     {amount}
                                 </Text>
-                                <View style={[styles.coinIcon, rewardType === "coins" && selectedCoinAmount === amount ? null : styles.coinIconInactive]} />
+                                <View
+                                    style={[
+                                        styles.coinIcon,
+                                        rewardType === "coins" && selectedCoinAmount === amount ? null : styles.coinIconInactive,
+                                    ]}
+                                />
                             </TouchableOpacity>
                         ))}
                         <TouchableOpacity

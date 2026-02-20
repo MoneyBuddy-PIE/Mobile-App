@@ -56,9 +56,7 @@ export default function TaskTile({ task, showName, childName, onPress }: TaskTil
                         >
                             {TYPE_LABELS[task.type] || task.type}
                         </Text>
-                        {rewardDisplay && (
-                            <Text style={[styles.taskReward, typography.bold, typography["xs"]]}>{rewardDisplay}</Text>
-                        )}
+                        {rewardDisplay && <Text style={[styles.taskReward, typography.bold, typography["xs"]]}>{rewardDisplay}</Text>}
                     </View>
                     <Text style={[styles.taskDescription, task.status === "COMPLETED" && styles.taskDescriptionCompleted, typography["sm"]]}>
                         {task.description}

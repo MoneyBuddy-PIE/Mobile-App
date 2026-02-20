@@ -168,9 +168,7 @@ export const BottomNavigation: React.FC = () => {
                         <Pressable key={item.route} onPress={handlePress} style={styles.childNavItem}>
                             {({ pressed }) => (
                                 <View style={styles.childIconWrapper}>
-                                    <View style={[styles.childIcon, pressed && styles.pressedCircle]}>
-                                        {getChildIcon(item.route)}
-                                    </View>
+                                    <View style={[styles.childIcon, pressed && styles.pressedCircle]}>{getChildIcon(item.route)}</View>
                                     <View style={[styles.childCircle, active && styles.childCircleActive]}></View>
                                 </View>
                             )}
@@ -202,7 +200,9 @@ export const BottomNavigation: React.FC = () => {
                                     color={active ? "#6C5CE7" : "#666"}
                                     style={[pressed && !active && styles.pressedIcon]}
                                 />
-                                <Text style={[styles.label, active && styles.activeLabel, pressed && !active && styles.pressedLabel]}>{item.label}</Text>
+                                <Text style={[styles.label, active && styles.activeLabel, pressed && !active && styles.pressedLabel]}>
+                                    {item.label}
+                                </Text>
                             </>
                         )}
                     </Pressable>
@@ -284,8 +284,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
     },
-    childIcon: {
-    },
+    childIcon: {},
     childCircleActive: {
         marginTop: 6,
         width: 6,

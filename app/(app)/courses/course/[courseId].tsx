@@ -50,14 +50,10 @@ export default function CourseReader() {
         if (!course || !course.sections) return [];
         const result: CourseStep[] = [];
         // L'API retourne sections comme un objet, on le convertit en tableau
-        const sectionsArray: Section[] = Array.isArray(course.sections)
-            ? course.sections
-            : Object.values(course.sections) as Section[];
+        const sectionsArray: Section[] = Array.isArray(course.sections) ? course.sections : (Object.values(course.sections) as Section[]);
         sectionsArray.forEach((section, index) => {
             // L'API retourne aussi quiz comme un objet, on le convertit en tableau
-            const quizArray: Quiz[] = section.quiz
-                ? (Array.isArray(section.quiz) ? section.quiz : Object.values(section.quiz) as Quiz[])
-                : [];
+            const quizArray: Quiz[] = section.quiz ? (Array.isArray(section.quiz) ? section.quiz : (Object.values(section.quiz) as Quiz[])) : [];
             const normalizedSection: Section = { ...section, quiz: quizArray };
 
             result.push({

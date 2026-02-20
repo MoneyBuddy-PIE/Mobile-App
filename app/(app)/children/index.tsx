@@ -193,17 +193,9 @@ export default function Children() {
                 setTaskToValidate(null);
 
                 if (choice) {
-                    Alert.alert(
-                        "Tâche validée ! ✅",
-                        `La récompense a été ajoutée au compte de ${selectedChild?.name}.`,
-                        [{ text: "Super !" }]
-                    );
+                    Alert.alert("Tâche validée ! ✅", `La récompense a été ajoutée au compte de ${selectedChild?.name}.`, [{ text: "Super !" }]);
                 } else {
-                    Alert.alert(
-                        "Tâche refusée",
-                        "La tâche a été refusée et devra être refaite.",
-                        [{ text: "OK" }]
-                    );
+                    Alert.alert("Tâche refusée", "La tâche a été refusée et devra être refaite.", [{ text: "OK" }]);
                 }
             } catch (error) {
                 setValidationModalVisible(false);
