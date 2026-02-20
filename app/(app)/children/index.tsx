@@ -179,6 +179,7 @@ export default function Children() {
                 await loadChildTasks();
             } catch (error) {
                 logger.error("Error validating task:", error);
+                throw error;
             }
         },
         [loadChildTasks],
@@ -406,9 +407,14 @@ export default function Children() {
                     <TaskTile
                         key={task.id}
                         task={task}
-                        onPress={() => {
-                            task.status === "COMPLETED" ? null : validateTask(task.id);
-                        }}
+                        onPress={
+                            task.status !== "COMPLETED" && !task.preValidate
+                                ? () => {
+                                      setTaskToValidate(task);
+                                      setValidationModalVisible(true);
+                                  }
+                                : undefined
+                        }
                     />
                 ))}
             </>

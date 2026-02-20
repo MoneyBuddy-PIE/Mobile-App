@@ -1,11 +1,11 @@
-import React, { useEffect, useRef } from "react";
-import { View, Text, StyleSheet, Modal, Dimensions, TouchableOpacity, Animated, PanResponder, StatusBar, ScrollView } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { View, Text, StyleSheet, Modal, Dimensions, TouchableOpacity, Animated, PanResponder, StatusBar, ScrollView, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { typography } from "@/styles/typography";
 import { Task } from "@/types/Task";
 import { SubAccount } from "@/types/Account";
 import TaskTile from "../TaskTile";
-import { colors } from "@/styles";
+import { colors, spacing } from "@/styles";
 
 const { height: screenHeight } = Dimensions.get("window");
 const MODAL_HEIGHT = screenHeight * 0.75;
@@ -17,9 +17,10 @@ interface ValidateTasksModalProps {
     visible: boolean;
     onClose: () => void;
     onValidateTasks: (tasks: Task[]) => void;
+    onValidateTask?: (task: Task, done: boolean) => Promise<void>;
 }
 
-export const ValidateTasksModal: React.FC<ValidateTasksModalProps> = ({ tasks, children, visible, onClose, onValidateTasks }) => {
+export const ValidateTasksModal: React.FC<ValidateTasksModalProps> = ({ tasks, children, visible, onClose, onValidateTasks, onValidateTask }) => {
     const translateY = useRef(new Animated.Value(MODAL_HEIGHT)).current;
     const opacity = useRef(new Animated.Value(0)).current;
 
@@ -132,7 +133,31 @@ export const ValidateTasksModal: React.FC<ValidateTasksModalProps> = ({ tasks, c
                                     À vous de jouer : validez ses tâches complétées ! ✅
                                 </Text>
                                 {tasks.map((task) => (
-                                    <TaskTile key={task.id} task={task} showName childName={getChildName(task.subaccountIdChild)} />
+                                    <View key={task.id}>
+                                        <TaskTile task={task} showName childName={getChildName(task.subaccountIdChild)} />
+                                        {onValidateTask && (
+                                            <View style={styles.validationButtons}>
+                                                <TouchableOpacity
+                                                    style={[styles.validationButton, styles.validationSecondary]}
+                                                    onPress={async () => {
+                                                        await onValidateTask(task, false);
+                                                        Alert.alert("Tâche refusée", "La tâche a été refusée et devra être refaite.", [{ text: "OK" }]);
+                                                    }}
+                                                >
+                                                    <Text style={styles.validationSecondaryText}>Refuser</Text>
+                                                </TouchableOpacity>
+                                                <TouchableOpacity
+                                                    style={[styles.validationButton, styles.validationPrimary]}
+                                                    onPress={async () => {
+                                                        await onValidateTask(task, true);
+                                                        Alert.alert("Tâche validée ! ✅", `La récompense a été ajoutée au compte de ${getChildName(task.subaccountIdChild)}.`, [{ text: "Super !" }]);
+                                                    }}
+                                                >
+                                                    <Text style={styles.validationPrimaryText}>Valider</Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                        )}
+                                    </View>
                                 ))}
                             </>
                         )}
@@ -178,5 +203,33 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
         // paddingTop: 32,
         paddingBottom: 24,
+    },
+    validationButtons: {
+        flexDirection: "row",
+        gap: spacing.sm,
+        marginBottom: spacing.sm,
+        marginTop: spacing.xs,
+    },
+    validationButton: {
+        flex: 1,
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.base,
+        borderRadius: spacing.xs,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    validationPrimary: {
+        backgroundColor: colors.primary[100],
+    },
+    validationPrimaryText: {
+        color: colors.white,
+        fontWeight: "600",
+    },
+    validationSecondary: {
+        backgroundColor: "#EAEAEA",
+    },
+    validationSecondaryText: {
+        color: "#333",
+        fontWeight: "600",
     },
 });

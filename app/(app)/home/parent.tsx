@@ -319,6 +319,10 @@ export default function ParentHome() {
                     children={childAccounts}
                     onClose={() => setModalVisible(false)}
                     onValidateTasks={() => setModalVisible(false)}
+                    onValidateTask={async (task, done) => {
+                        await tasksService.completeTask(task.id, done);
+                        await loadChildrenData();
+                    }}
                 />
             </View>
         </ScrollView>
