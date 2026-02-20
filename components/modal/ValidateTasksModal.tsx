@@ -141,7 +141,9 @@ export const ValidateTasksModal: React.FC<ValidateTasksModalProps> = ({ tasks, c
                                                     style={[styles.validationButton, styles.validationSecondary]}
                                                     onPress={async () => {
                                                         await onValidateTask(task, false);
-                                                        Alert.alert("Tâche refusée", "La tâche a été refusée et devra être refaite.", [{ text: "OK" }]);
+                                                        Alert.alert("Tâche refusée", "La tâche a été refusée et devra être refaite.", [
+                                                            { text: "OK" },
+                                                        ]);
                                                     }}
                                                 >
                                                     <Text style={styles.validationSecondaryText}>Refuser</Text>
@@ -150,7 +152,11 @@ export const ValidateTasksModal: React.FC<ValidateTasksModalProps> = ({ tasks, c
                                                     style={[styles.validationButton, styles.validationPrimary]}
                                                     onPress={async () => {
                                                         await onValidateTask(task, true);
-                                                        Alert.alert("Tâche validée ! ✅", `La récompense a été ajoutée au compte de ${getChildName(task.subaccountIdChild)}.`, [{ text: "Super !" }]);
+                                                        Alert.alert(
+                                                            "Tâche validée ! ✅",
+                                                            `La récompense a été ajoutée au compte de ${getChildName(task.subaccountIdChild)}.`,
+                                                            [{ text: "Super !" }],
+                                                        );
                                                     }}
                                                 >
                                                     <Text style={styles.validationPrimaryText}>Valider</Text>

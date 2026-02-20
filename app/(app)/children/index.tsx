@@ -98,10 +98,12 @@ export default function Children() {
     const totalTasksCount = tasks.length;
 
     // Separate tasks by type
-    const recurringTasks = tasks.filter(
-        (task) => (task.type === "WEEKLY" || task.type === "MONTHLY") && task.status !== "PRE_VALIDATE" && task.status !== "COMPLETED",
-    );
-    const punctualTasks = tasks.filter((task) => task.type === "PONCTUAL" && task.status !== "PRE_VALIDATE" && task.status !== "COMPLETED");
+    const recurringTasks = tasks
+        .filter((task) => (task.type === "WEEKLY" || task.type === "MONTHLY") && task.status !== "PRE_VALIDATE")
+        .sort((a, b) => (a.status === "COMPLETED" ? 1 : 0) - (b.status === "COMPLETED" ? 1 : 0));
+    const punctualTasks = tasks
+        .filter((task) => task.type === "PONCTUAL" && task.status !== "PRE_VALIDATE")
+        .sort((a, b) => (a.status === "COMPLETED" ? 1 : 0) - (b.status === "COMPLETED" ? 1 : 0));
     const preValidateTasks = tasks.filter((task) => task.status === "PRE_VALIDATE");
 
     // Load functions
