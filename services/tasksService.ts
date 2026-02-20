@@ -48,6 +48,6 @@ export const tasksService = {
 
     // Pré-valider une tâche
     async preValidateTask(id: string): Promise<void> {
-        return apiService.put(`/tasks/prevalidation/${id}`, { preValidated: true });
+        return apiService.put(`/tasks/prevalidation/${id}`);
     },
 };
