@@ -8,7 +8,6 @@ import { Task } from "@/types/Task";
 import { typography, colors, spacing, shadows } from "@/styles";
 import { Ionicons } from "@expo/vector-icons";
 import TaskTile from "@/components/TaskTile";
-import { logger } from "@/utils/logger";
 
 export default function Tasks() {
     const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
@@ -19,18 +18,10 @@ export default function Tasks() {
     const loadData = useCallback(async () => {
         try {
             const accountData = await UserStorage.getSubAccount();
-            console.log("SubAccount data:", accountData);
             setSubAccount(accountData);
 
             if (accountData) {
-                console.log("Fetching tasks for childId:", accountData.id);
-
-                // Debug: fetch all tasks first
-                const allTasks = await tasksService.getAllTasks();
-                console.log("All tasks from API:", allTasks);
-
                 const childTasks = await tasksService.getTasksByChild(accountData.id);
-                console.log("Loaded tasks:", childTasks);
                 setTasks(childTasks);
             }
         } catch (error) {

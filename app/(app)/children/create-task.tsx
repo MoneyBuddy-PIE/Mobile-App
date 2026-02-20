@@ -44,6 +44,10 @@ export default function CreateTask() {
     const [taskType, setTaskType] = useState<TaskType>("PONCTUAL");
     const [selectedWeekDays, setSelectedWeekDays] = useState<WeekDay[]>([]);
     const [monthlyDay, setMonthlyDay] = useState(1);
+    const [dateLimit, setDateLimit] = useState<Date | null>(null);
+    const [dateLimitDay, setDateLimitDay] = useState("");
+    const [dateLimitMonth, setDateLimitMonth] = useState("");
+    const [dateLimitYear, setDateLimitYear] = useState("");
 
     // Validation mode
     const [validationModalVisible, setValidationModalVisible] = useState(false);
@@ -120,8 +124,22 @@ export default function CreateTask() {
         setSelectedWeekDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]));
     };
 
+    const parseDateLimit = (): Date | null => {
+        const day = parseInt(dateLimitDay);
+        const month = parseInt(dateLimitMonth);
+        const year = parseInt(dateLimitYear);
+        if (!day || !month || !year || year < 2024) return null;
+        const date = new Date(year, month - 1, day);
+        if (isNaN(date.getTime()) || date <= new Date()) return null;
+        return date;
+    };
+
     const getFrequencyLabel = (): string => {
-        if (taskType === "PONCTUAL") return "Une seule fois";
+        if (taskType === "PONCTUAL") {
+            const date = parseDateLimit();
+            if (date) return `Une seule fois — avant le ${date.toLocaleDateString("fr-FR")}`;
+            return "Une seule fois";
+        }
         if (taskType === "WEEKLY") {
             if (selectedWeekDays.length === 0) return "Toutes les semaines";
             if (selectedWeekDays.length === 1) {
@@ -143,7 +161,7 @@ export default function CreateTask() {
     };
 
     const isFrequencyValid = (): boolean => {
-        if (taskType === "PONCTUAL") return true;
+        if (taskType === "PONCTUAL") return parseDateLimit() !== null;
         if (taskType === "WEEKLY") return selectedWeekDays.length > 0;
         if (taskType === "MONTHLY") return monthlyDay > 0 && monthlyDay <= 31;
         return false;
@@ -173,7 +191,7 @@ export default function CreateTask() {
                 subAccountId: childId,
                 coinReward: getCoinReward(),
                 moneyReward: getMoneyReward(),
-                dateLimit: new Date().toISOString(),
+                dateLimit: (parseDateLimit() ?? new Date()).toISOString(),
                 weeklyDays: taskType === "WEEKLY" ? selectedWeekDays : [],
                 monthlyDay: taskType === "MONTHLY" ? monthlyDay : 0,
                 prevalidation: validationMode === "PARENTS_ONLY",
@@ -219,6 +237,41 @@ export default function CreateTask() {
                                     {taskType === "PONCTUAL" && <View style={styles.radioCircleInner} />}
                                 </View>
                             </TouchableOpacity>
+
+                            {/* Date limite pour PONCTUAL */}
+                            {taskType === "PONCTUAL" && (
+                                <View style={styles.weekDaysContainer}>
+                                    <Text style={styles.weekDaysHint}>Date limite pour compléter la tâche :</Text>
+                                    <View style={styles.dateLimitRow}>
+                                        <TextInput
+                                            style={styles.dateLimitInput}
+                                            placeholder="JJ"
+                                            value={dateLimitDay}
+                                            onChangeText={(t) => setDateLimitDay(t.replace(/\D/g, "").slice(0, 2))}
+                                            keyboardType="number-pad"
+                                            maxLength={2}
+                                        />
+                                        <Text style={styles.dateLimitSeparator}>/</Text>
+                                        <TextInput
+                                            style={styles.dateLimitInput}
+                                            placeholder="MM"
+                                            value={dateLimitMonth}
+                                            onChangeText={(t) => setDateLimitMonth(t.replace(/\D/g, "").slice(0, 2))}
+                                            keyboardType="number-pad"
+                                            maxLength={2}
+                                        />
+                                        <Text style={styles.dateLimitSeparator}>/</Text>
+                                        <TextInput
+                                            style={[styles.dateLimitInput, styles.dateLimitYearInput]}
+                                            placeholder="AAAA"
+                                            value={dateLimitYear}
+                                            onChangeText={(t) => setDateLimitYear(t.replace(/\D/g, "").slice(0, 4))}
+                                            keyboardType="number-pad"
+                                            maxLength={4}
+                                        />
+                                    </View>
+                                </View>
+                            )}
 
                             {/* Toutes les semaines */}
                             <TouchableOpacity
@@ -732,6 +785,28 @@ const styles = StyleSheet.create({
     weekDaysRow: {
         flexDirection: "row",
         gap: spacing.sm,
+    },
+    dateLimitRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: spacing.sm,
+    },
+    dateLimitInput: {
+        backgroundColor: colors.white,
+        borderRadius: spacing.sm,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        ...typography.md,
+        color: colors.carbon[100],
+        textAlign: "center",
+        width: 52,
+    },
+    dateLimitYearInput: {
+        width: 72,
+    },
+    dateLimitSeparator: {
+        ...typography.lg,
+        color: colors.carbon[60],
     },
     weekDayButton: {
         flex: 1,
