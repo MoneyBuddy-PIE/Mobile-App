@@ -34,4 +34,6 @@ export interface SubAccountRegisterRequest {
     name: string;
     role: string;
     pin?: string;
+    iconStyle?: string;
+    iconName?: string;
 }
