@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFonts } from "expo-font";
 import { DMSans_700Bold, DMSans_400Regular, DMSans_600SemiBold } from "@expo-google-fonts/dm-sans";
@@ -9,11 +9,14 @@ import { authService } from "@/services/authService";
 import { userService } from "@/services/userService";
 import { TokenStorage, UserStorage } from "@/utils/storage";
 import { logger } from "@/utils/logger";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { DEVICE_PLATFORM } from "@/types/api";
 
 export default function PinEntry() {
     const params = useLocalSearchParams();
     const accountId = params.accountId as string;
     const accountName = params.accountName as string;
+    const { user } = useAuthContext();
 
     const [pin, setPin] = useState("");
     const [loading, setLoading] = useState(false);
@@ -70,6 +73,11 @@ export default function PinEntry() {
             const accountDetails = await userService.getSubAccount();
             await UserStorage.setSubAccount(accountDetails);
             await UserStorage.setSubAccountId(accountId);
+
+            if (user?.id) {
+                const devicePlatform = (Platform.OS === "ios" ? "IOS" : "ANDROID") as DEVICE_PLATFORM;
+                authService.deviceLogin({ userId: user.id, token: response.token, devicePlatform }).catch(() => {});
+            }
 
             // Navigate to home
             router.replace("/(app)/home/parent");

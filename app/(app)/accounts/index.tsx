@@ -10,7 +10,9 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { authService } from "@/services/authService";
 import { userService } from "@/services/userService";
 import { logger } from "@/utils/logger";
+import { Platform } from "react-native";
 import { colors, spacing, typography, shadows } from "@/styles";
+import { DEVICE_PLATFORM } from "@/types/api";
 
 export default function Accounts() {
     const { user: contextUser, refreshUserData } = useAuthContext();
@@ -65,6 +67,11 @@ export default function Accounts() {
                 const accountDetails = await userService.getSubAccount();
                 await UserStorage.setSubAccount(accountDetails);
                 await UserStorage.setSubAccountId(account.id);
+
+                if (user?.id) {
+                    const devicePlatform = (Platform.OS === "ios" ? "IOS" : "ANDROID") as DEVICE_PLATFORM;
+                    authService.deviceLogin({ userId: user.id, token: response.token, devicePlatform }).catch(() => {});
+                }
 
                 router.replace("/(app)/home/child");
             } catch (error) {

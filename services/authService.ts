@@ -12,7 +12,7 @@ export const authService = {
         return apiService.post<AuthResponse>('/auth/register', data);
     },
 
-    async deviceLogin(data: DeviceLoginRequest) {
+    async deviceLogin(data: DeviceLoginRequest): Promise<{ message: string; status: string }> {
         return apiService.post<{ message: string; status: string }>('/auth/device', data);
     },
 
