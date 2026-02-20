@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { TokenStorage, UserStorage } from "@/utils/storage";
+import { TokenStorage, UserStorage, clear } from "@/utils/storage";
 import { authService } from "@/services/authService";
 import { userService } from "@/services/userService";
 import { Account } from "@/types/Account";
@@ -44,6 +44,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setIsAuthenticated(true);
             } catch (error: any) {
                 console.log("Token validation failed:", error);
+                const status = error.response?.status ?? error.status;
+                if (status === 401 || status === 403) {
+                    await clear();
+                }
                 setIsAuthenticated(false);
                 setUser(null);
             }
