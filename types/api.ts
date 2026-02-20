@@ -11,6 +11,14 @@ export interface RegisterRequest {
     pin: string;
 }
 
+export type DEVICE_PLATFORM = 'IOS' | 'ANDROID';
+
+export interface DeviceLoginRequest {
+    userId: string;
+    token: string;
+    devicePlatform: DEVICE_PLATFORM;
+}
+
 export interface AuthResponse {
     token: string;
     error: string;

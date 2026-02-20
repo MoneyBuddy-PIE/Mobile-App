@@ -1,7 +1,7 @@
-import { apiService } from './api';
-import { LoginRequest, RegisterRequest, AuthResponse, SubAccountRegisterRequest } from '@/types/api';
-import { clear } from '@/utils/storage';
 import { router } from 'expo-router';
+import { apiService } from './api';
+import { LoginRequest, RegisterRequest, AuthResponse, SubAccountRegisterRequest, DeviceLoginRequest } from '@/types/api';
+import { clear } from '@/utils/storage';
 
 export const authService = {
     async login(credentials: LoginRequest): Promise<AuthResponse> {
@@ -10,6 +10,10 @@ export const authService = {
 
     async register(data: RegisterRequest): Promise<AuthResponse> {
         return apiService.post<AuthResponse>('/auth/register', data);
+    },
+
+    async deviceLogin(data: DeviceLoginRequest) {
+        return apiService.post<{ message: string; status: string }>('/auth/device', data);
     },
 
     async logout(): Promise<void> {

@@ -12,16 +12,13 @@ export const tasksService = {
     async getTasksByChild(
         childId: string,
         status?: 'PENDING' | 'PRE_VALIDATE' | 'COMPLETED' | 'REFUSED',
-        type?: 'PONCTUAL' | 'WEEKLY' | 'MONTHLY'
+        type?: 'PONCTUAL' | 'WEEKLY' | 'MONTHLY',
     ): Promise<Task[]> {
         const params = new URLSearchParams({ childId });
         if (status) params.append('status', status);
         if (type) params.append('type', type);
         const url = `/tasks?${params.toString()}`;
-        console.log('Fetching tasks from:', url);
-        const result = await apiService.get<Task[]>(url);
-        console.log('API response:', result);
-        return result;
+        return apiService.get<Task[]>(url);
     },
 
     // Créer une nouvelle tâche
