@@ -33,7 +33,7 @@ export interface ApiError {
 export interface SubAccountRegisterRequest {
     name: string;
     role: string;
-    pin?: string;
+    pin: string;
     iconStyle?: string;
     iconName?: string;
 }

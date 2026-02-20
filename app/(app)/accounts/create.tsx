@@ -79,8 +79,7 @@ export default function Create() {
 
     const isFormValid = () => {
         if (!name.trim() || !selectedRole) return false;
-        if (selectedRole === "PARENT") return pin.length === 4;
-        return true;
+        return pin.length === 4;
     };
 
     const handleSubmit = async () => {
@@ -91,11 +90,11 @@ export default function Create() {
             await authService.subAccountRegister({
                 name: name.trim(),
                 role: selectedRole,
-                pin: selectedRole === "PARENT" ? pin : undefined,
+                pin,
                 iconStyle: selectedAvatarStyle,
                 iconName: selectedAvatarSeed,
             });
-            Alert.alert("Succès", "Compte créé avec succès", [{ text: "OK", onPress: () => router.back() }]);
+            router.back();
         } catch (error: any) {
             console.error("Error creating sub-account:", error);
             Alert.alert("Erreur", error.response?.data?.message || "Impossible de créer le compte");
@@ -206,8 +205,8 @@ export default function Create() {
                     />
                 </View>
 
-                {/* Code PIN - Affiché seulement pour les parents */}
-                {selectedRole === "PARENT" && (
+                {/* Code PIN */}
+                {selectedRole !== "" && (
                     <View style={styles.section}>
                         <Text style={styles.sectionLabel}>Code de sécurité</Text>
                         <Text style={styles.sectionDescription}>Choisissez un code à 4 chiffres pour protéger ce compte</Text>

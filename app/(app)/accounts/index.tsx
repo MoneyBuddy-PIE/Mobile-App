@@ -4,15 +4,9 @@ import { useFonts } from "expo-font";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DMSans_700Bold, DMSans_400Regular, DMSans_600SemiBold } from "@expo-google-fonts/dm-sans";
 import { router } from "expo-router";
-import { TokenStorage, UserStorage } from "@/utils/storage";
 import { Account, SubAccount } from "@/types/Account";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { authService } from "@/services/authService";
-import { userService } from "@/services/userService";
-import { logger } from "@/utils/logger";
-import { Platform } from "react-native";
 import { colors, spacing, typography, shadows } from "@/styles";
-import { DEVICE_PLATFORM } from "@/types/api";
 
 export default function Accounts() {
     const { user: contextUser, refreshUserData } = useAuthContext();
@@ -59,33 +53,14 @@ export default function Accounts() {
         }
     };
 
-    const navigateToAccount = async (account: SubAccount) => {
-        if (account.role === "CHILD") {
-            try {
-                const response = await authService.subAccountLogin(account.id, undefined);
-                await TokenStorage.setSubAccountToken(response.token);
-                const accountDetails = await userService.getSubAccount();
-                await UserStorage.setSubAccount(accountDetails);
-                await UserStorage.setSubAccountId(account.id);
-
-                if (user?.id) {
-                    const devicePlatform = (Platform.OS === "ios" ? "IOS" : "ANDROID") as DEVICE_PLATFORM;
-                    authService.deviceLogin({ userId: user.id, token: response.token, devicePlatform }).catch(() => {});
-                }
-
-                router.replace("/(app)/home/child");
-            } catch (error) {
-                console.error("Error navigating to sub-account:", error);
-            }
-        } else {
-            router.push({
-                pathname: "/(app)/accounts/pin-entry",
-                params: {
-                    accountId: account.id,
-                    accountName: account.name,
-                },
-            });
-        }
+    const navigateToAccount = (account: SubAccount) => {
+        router.push({
+            pathname: "/(app)/accounts/pin-entry",
+            params: {
+                accountId: account.id,
+                accountName: account.name,
+            },
+        });
     };
 
     const getRoleIcon = (role: string) => {
