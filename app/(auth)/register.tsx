@@ -5,11 +5,11 @@ import { useFonts } from "expo-font";
 import { DMSans_700Bold, DMSans_400Regular } from "@expo-google-fonts/dm-sans";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { authService } from "@/services/authService";
-import { TokenStorage } from "@/utils/storage";
+import { useAuthContext } from "@/contexts/AuthContext";
 import { colors, spacing, typography, commonStyles, shadows } from "@/styles";
 
 export default function Register() {
+    const { register } = useAuthContext();
     const [step, setStep] = useState(1);
     const [firstName, setFirstName] = useState("");
     const [email, setEmail] = useState("");
@@ -69,22 +69,13 @@ export default function Register() {
         }
 
         setLoading(true);
-        try {
-            const response = await authService.register({
-                name: firstName,
-                email,
-                password,
-                confirmPassword,
-                pin,
-            });
-            await TokenStorage.setToken(response.token);
-            Alert.alert("Succès", "Inscription réussie !", [{ text: "OK", onPress: () => router.replace("/(app)/accounts") }]);
-        } catch (error: any) {
-            console.log("Registration error:", error);
-            const errorMessage = error.response?.data?.message || error.response?.data?.error || "Inscription échouée";
-            Alert.alert("Erreur", errorMessage);
-        } finally {
-            setLoading(false);
+        const result = await register(firstName, email, password, confirmPassword, pin);
+        setLoading(false);
+
+        if (result.success) {
+            router.replace("/(app)/accounts");
+        } else {
+            Alert.alert("Erreur", result.error || "Inscription échouée");
         }
     };
 
