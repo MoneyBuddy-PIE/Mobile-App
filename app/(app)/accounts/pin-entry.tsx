@@ -11,6 +11,7 @@ import { TokenStorage, UserStorage } from "@/utils/storage";
 import { logger } from "@/utils/logger";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { DEVICE_PLATFORM } from "@/types/api";
+import { colors, spacing, typography, shadows } from "@/styles";
 
 export default function PinEntry() {
     const params = useLocalSearchParams();
@@ -79,8 +80,13 @@ export default function PinEntry() {
                 authService.deviceLogin({ userId: user.id, token: response.token, devicePlatform }).catch(() => {});
             }
 
-            // Navigate to home
-            router.replace("/(app)/home/parent");
+            // Navigate to home based on role
+            const role = accountDetails.role?.toUpperCase();
+            if (role === "CHILD") {
+                router.replace("/(app)/home/child");
+            } else {
+                router.replace("/(app)/home/parent");
+            }
         } catch (error: any) {
             logger.error("PIN verification failed:", error);
             setError("Oups, ce code ne semble pas fonctionner !");
@@ -153,7 +159,7 @@ export default function PinEntry() {
                 {/* Message d'erreur */}
                 {error && (
                     <View style={styles.errorContainer}>
-                        <Ionicons name="information-circle" size={20} color="#FF6B6B" />
+                        <Ionicons name="information-circle" size={20} color={colors.tertiary[100]} />
                         <Text style={[styles.errorText, fontStylesRegular]}>{error}</Text>
                     </View>
                 )}
@@ -189,15 +195,15 @@ export default function PinEntry() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#f8f9fa",
+        backgroundColor: colors.screenBackground,
     },
     header: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingHorizontal: 20,
-        paddingTop: 10,
-        paddingBottom: 20,
+        paddingHorizontal: spacing.lg,
+        paddingTop: spacing.xs,
+        paddingBottom: spacing.lg,
     },
     headerSpacer: {
         width: 44,
@@ -205,33 +211,29 @@ const styles = StyleSheet.create({
     closeButton: {
         width: 44,
         height: 44,
-        backgroundColor: "#333",
-        borderRadius: 12,
+        backgroundColor: colors.carbon[100],
+        borderRadius: spacing.md,
         justifyContent: "center",
         alignItems: "center",
     },
     content: {
         flex: 1,
-        paddingHorizontal: 40,
-        paddingTop: 40,
+        paddingHorizontal: spacing["2xl"],
+        paddingTop: spacing["2xl"],
     },
     titleContainer: {
         alignItems: "center",
-        marginBottom: 60,
+        marginBottom: spacing["5xl"],
     },
     title: {
-        fontSize: 28,
-        fontWeight: "bold",
-        color: "#333",
-        marginBottom: 16,
+        ...typography.heading,
+        marginBottom: spacing.base,
         textAlign: "center",
     },
     subtitle: {
-        fontSize: 16,
-        color: "#666",
+        ...typography.subtitle,
         textAlign: "center",
-        lineHeight: 22,
-        paddingHorizontal: 20,
+        paddingHorizontal: spacing.lg,
     },
     hiddenInput: {
         position: "absolute",
@@ -240,72 +242,72 @@ const styles = StyleSheet.create({
     },
     pinContainer: {
         alignItems: "center",
-        marginBottom: 30,
+        marginBottom: spacing["3xl"],
     },
     pinDisplay: {
         flexDirection: "row",
-        gap: 16,
+        gap: spacing.base,
     },
     pinBox: {
         width: 64,
         height: 64,
-        borderRadius: 12,
-        backgroundColor: "#fff",
+        borderRadius: spacing.md,
+        backgroundColor: colors.white,
         borderWidth: 2,
-        borderColor: "#e0e0e0",
+        borderColor: colors.border,
         justifyContent: "center",
         alignItems: "center",
     },
     pinBoxActive: {
-        borderColor: "#6C5CE7",
+        borderColor: colors.primary[100],
     },
     pinBoxError: {
-        borderColor: "#FF6B6B",
+        borderColor: colors.tertiary[100],
     },
     pinStar: {
-        fontSize: 24,
-        color: "#333",
+        ...typography.xl,
+        color: colors.carbon[100],
         fontWeight: "bold",
     },
     errorContainer: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#FFE5E5",
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderRadius: 12,
-        gap: 8,
-        marginBottom: 20,
+        backgroundColor: colors.tertiary[20],
+        paddingHorizontal: spacing.base,
+        paddingVertical: spacing.md,
+        borderRadius: spacing.md,
+        gap: spacing.sm,
+        marginBottom: spacing.lg,
     },
     errorText: {
-        color: "#FF6B6B",
-        fontSize: 14,
+        ...typography.sm,
+        color: colors.tertiary[100],
         flex: 1,
     },
     spacer: {
         flex: 1,
     },
     accessButton: {
-        borderRadius: 12,
-        paddingVertical: 16,
-        paddingHorizontal: 32,
+        ...shadows.none,
+        borderRadius: spacing.md,
+        paddingVertical: spacing.base,
+        paddingHorizontal: spacing["2xl"],
         alignItems: "center",
-        marginBottom: 40,
+        marginBottom: spacing["3xl"],
     },
     accessButtonDisabled: {
-        backgroundColor: "#e0e0e0",
+        backgroundColor: colors.carbon[20],
     },
     accessButtonActive: {
-        backgroundColor: "#6C5CE7",
+        backgroundColor: colors.primary[100],
     },
     accessButtonText: {
-        fontSize: 16,
-        fontWeight: "600",
+        ...typography.button,
     },
     accessButtonTextDisabled: {
-        color: "#999",
+        color: colors.carbon[50],
     },
     accessButtonTextActive: {
-        color: "#fff",
+        color: colors.white,
     },
 });
