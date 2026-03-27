@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useFonts } from "expo-font";
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Image, Easing, Animated } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Image, Easing, Animated, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { typography } from "@/styles/typography";
@@ -31,6 +31,8 @@ export default function Index() {
     const [sticker3Rotate] = useState(new Animated.Value(0));
     const [sticker4Rotate] = useState(new Animated.Value(0));
     const [sticker5Rotate] = useState(new Animated.Value(0));
+
+    const [animationDone, setAnimationDone] = useState(false);
 
     const strokeDashoffset = useSharedValue(2000);
     const pathOpacity = useSharedValue(0);
@@ -78,65 +80,73 @@ export default function Index() {
         });
     };
 
+    // Start splash animation immediately on mount — avoids white screen during auth check
     useEffect(() => {
-        if (!isLoading) {
-            if (isAuthenticated) {
-                router.replace("/(app)/accounts");
-            } else {
-                const timer = setTimeout(() => {
-                    Animated.timing(circleScale, {
-                        toValue: 1,
-                        duration: 1200,
-                        easing: Easing.out(Easing.cubic),
-                        useNativeDriver: false,
-                    }).start(() => {
-                        Animated.timing(splashBackgroundColor, {
-                            toValue: 1,
-                            duration: 100,
-                            useNativeDriver: false,
-                        }).start(() => {
-                            setShowSplash(false);
+        const timer = setTimeout(() => {
+            Animated.timing(circleScale, {
+                toValue: 1,
+                duration: 1200,
+                easing: Easing.out(Easing.cubic),
+                useNativeDriver: false,
+            }).start(() => {
+                Animated.timing(splashBackgroundColor, {
+                    toValue: 1,
+                    duration: 100,
+                    useNativeDriver: false,
+                }).start(() => {
+                    setAnimationDone(true);
+                });
+            });
+        }, 500);
+        return () => clearTimeout(timer);
+    }, []);
 
-                            pathOpacity.value = withTiming(1, {
-                                duration: 300,
-                                reduceMotion: ReduceMotion.Never,
-                            });
-
-                            strokeDashoffset.value = withTiming(0, {
-                                duration: 2500,
-                                easing: ReanimatedEasing.out(ReanimatedEasing.cubic),
-                                reduceMotion: ReduceMotion.Never,
-                            });
-
-                            fillOpacity.value = withDelay(
-                                2000,
-                                withTiming(1, {
-                                    duration: 500,
-                                    reduceMotion: ReduceMotion.Never,
-                                }),
-                            );
-
-                            setTimeout(() => {
-                                Animated.timing(contentAnim, {
-                                    toValue: 1,
-                                    duration: 800,
-                                    useNativeDriver: false,
-                                }).start();
-
-                                setTimeout(() => {
-                                    animateStickers();
-                                }, 600);
-                            }, 1500);
-                        });
-                    });
-                }, 500);
-
-                return () => clearTimeout(timer);
-            }
+    // Navigate immediately when authenticated (don't wait for animation)
+    useEffect(() => {
+        if (!isLoading && isAuthenticated) {
+            router.replace("/(app)/accounts");
         }
-    }, [isLoading, isAuthenticated, strokeDashoffset, pathOpacity, fillOpacity, contentAnim, circleScale, splashBackgroundColor]);
+    }, [isLoading, isAuthenticated]);
 
-    if (isLoading || showSplash) {
+    // Show landing as soon as circle animation is done — buttons show loader until auth resolves
+    useEffect(() => {
+        if (!animationDone) return;
+
+        setShowSplash(false);
+
+        pathOpacity.value = withTiming(1, {
+            duration: 300,
+            reduceMotion: ReduceMotion.Never,
+        });
+
+        strokeDashoffset.value = withTiming(0, {
+            duration: 2500,
+            easing: ReanimatedEasing.out(ReanimatedEasing.cubic),
+            reduceMotion: ReduceMotion.Never,
+        });
+
+        fillOpacity.value = withDelay(
+            2000,
+            withTiming(1, {
+                duration: 500,
+                reduceMotion: ReduceMotion.Never,
+            }),
+        );
+
+        setTimeout(() => {
+            Animated.timing(contentAnim, {
+                toValue: 1,
+                duration: 800,
+                useNativeDriver: false,
+            }).start();
+
+            setTimeout(() => {
+                animateStickers();
+            }, 600);
+        }, 1500);
+    }, [animationDone]);
+
+    if (showSplash) {
         const finalSize = Math.sqrt(width * width + height * height) * 2;
 
         const backgroundColorInterpolated = splashBackgroundColor.interpolate({
@@ -308,13 +318,19 @@ export default function Index() {
                     <Text style={typography.bodySplash}>Construisez l'avenir financier de votre enfant, 5 minutes par jour !</Text>
                 </View>
                 <View style={styles.buttonContainer}>
-                    <TouchableOpacity style={[styles.primaryButton, styles.buttonGlobal]} onPress={navigateToLogin}>
-                        <Text style={[styles.primaryButtonText]}>Se connecter</Text>
-                    </TouchableOpacity>
+                    {isLoading ? (
+                        <ActivityIndicator size="large" color="#FFFFFF" />
+                    ) : (
+                        <>
+                            <TouchableOpacity style={[styles.primaryButton, styles.buttonGlobal]} onPress={navigateToLogin}>
+                                <Text style={[styles.primaryButtonText]}>Se connecter</Text>
+                            </TouchableOpacity>
 
-                    <TouchableOpacity style={[styles.secondaryButton, styles.buttonGlobal]} onPress={navigateToSignUp}>
-                        <Text style={[styles.secondaryButtonText]}>Je m'inscris</Text>
-                    </TouchableOpacity>
+                            <TouchableOpacity style={[styles.secondaryButton, styles.buttonGlobal]} onPress={navigateToSignUp}>
+                                <Text style={[styles.secondaryButtonText]}>Je m'inscris</Text>
+                            </TouchableOpacity>
+                        </>
+                    )}
                 </View>
                 <View>
                     <Text style={typography.subtitleSplash}>

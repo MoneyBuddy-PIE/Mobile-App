@@ -115,8 +115,7 @@ export default function ParentHome() {
                     // Récupérer les cours de tous les chapitres
                     const coursesData = await Promise.all(
                         parentChapters.map(async (chapter) => {
-                            const chapterCourses = await chapterService.getChapterCourses(chapter.id);
-                            return chapterCourses;
+                            return await chapterService.getChapterCourses(chapter.id);
                         }),
                     );
                     const flattenedCourses = coursesData.flat();
