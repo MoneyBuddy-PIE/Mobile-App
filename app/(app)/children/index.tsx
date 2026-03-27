@@ -123,6 +123,7 @@ export default function Children() {
         setLoadingTasks(true);
         try {
             const childTasks = await tasksService.getTasksByChild(selectedChildId);
+            console.log("Loaded child tasks:", childTasks);
             setTasks(childTasks);
         } catch (error) {
             logger.error("Error loading child tasks:", error);

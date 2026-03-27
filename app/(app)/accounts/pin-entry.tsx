@@ -85,6 +85,7 @@ export default function PinEntry() {
             if (role === "CHILD") {
                 router.replace("/(app)/home/child");
             } else {
+                await TokenStorage.saveParentSubAccountToken(response.token);
                 router.replace("/(app)/home/parent");
             }
         } catch (error: any) {

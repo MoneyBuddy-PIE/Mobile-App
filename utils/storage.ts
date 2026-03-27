@@ -6,6 +6,7 @@ const STORAGE_KEYS = {
     TOKEN: 'auth_token',
     REFRESH_TOKEN: 'refresh_token',
     SUB_ACCOUNT_TOKEN: 'sub_account_token',
+    PARENT_SUB_ACCOUNT_TOKEN: 'parent_sub_account_token',
     SUB_ACCOUNT_ID: 'sub_account_id',
     SUB_ACCOUNT: 'sub_account_data',
     USER: 'user_data',
@@ -80,6 +81,23 @@ export const TokenStorage = {
             return await AsyncStorage.getItem(STORAGE_KEYS.SUB_ACCOUNT_TOKEN);
         } catch (error) {
             console.error('Failed to get sub-account token:', error);
+            return null;
+        }
+    },
+
+    async saveParentSubAccountToken(token: string): Promise<void> {
+        try {
+            await AsyncStorage.setItem(STORAGE_KEYS.PARENT_SUB_ACCOUNT_TOKEN, token);
+        } catch (error) {
+            console.error('Failed to save parent sub-account token:', error);
+        }
+    },
+
+    async getParentSubAccountToken(): Promise<string | null> {
+        try {
+            return await AsyncStorage.getItem(STORAGE_KEYS.PARENT_SUB_ACCOUNT_TOKEN);
+        } catch (error) {
+            console.error('Failed to get parent sub-account token:', error);
             return null;
         }
     },

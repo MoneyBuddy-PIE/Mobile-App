@@ -36,7 +36,7 @@ export default function ChildHome() {
             setSubAccount(accountData);
 
             if (accountData) {
-                const childTasks = await tasksService.getTasksByChild(accountData.id, "CHILD");
+                const childTasks = await tasksService.getTasksByChild(accountData.id);
                 setTasks(childTasks);
 
                 try {
@@ -97,8 +97,8 @@ export default function ChildHome() {
     const completedTasks = tasks.filter((task) => task.status === "COMPLETED");
     const pendingTasks = tasks.filter((task) => task.status === "PENDING");
     const currentBalance = parseFloat(subAccount?.money || "0");
-    const totalEarned = completedTasks.reduce((sum, task) => sum + parseFloat(task.reward || "0"), 0);
-    const potentialEarnings = pendingTasks.reduce((sum, task) => sum + parseFloat(task.reward || "0"), 0);
+    const totalEarned = completedTasks.reduce((sum, task) => sum + task.moneyReward, 0);
+    const potentialEarnings = pendingTasks.reduce((sum, task) => sum + task.moneyReward, 0);
     const completionRate = tasks.length > 0 ? Math.round((completedTasks.length / tasks.length) * 100) : 0;
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -131,7 +131,7 @@ export default function ChildHome() {
     return (
         <SafeAreaView style={styles.container}>
             {/* <ScrollView
-                
+
                 showsVerticalScrollIndicator={false}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary[100]} />}
             > */}
@@ -283,6 +283,10 @@ const styles = StyleSheet.create({
         padding: 6,
         borderRadius: 4,
         backgroundColor: "#9bffe2",
+    },
+    messageImage: {
+        width: 64,
+        height: 64,
     },
     AllEarningsAmount: {
         fontFamily: "DMSans_700Bold",

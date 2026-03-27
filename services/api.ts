@@ -52,10 +52,17 @@ class ApiService {
                     return config;
                 }
 
-                const tokenUrl = ['/auth/me', '/auth/subAccount/login'];
-                const token = tokenUrl.some((url) => config.url?.includes(url))
-                    ? await TokenStorage.getToken()
-                    : await TokenStorage.getSubAccountToken();
+                const mainTokenUrls = ['/auth/me', '/auth/subAccount/login'];
+                const parentSubAccountTokenUrls = ['/tasks'];
+
+                let token: string | null;
+                if (mainTokenUrls.some((url) => config.url?.includes(url))) {
+                    token = await TokenStorage.getToken();
+                } else if (parentSubAccountTokenUrls.some((url) => config.url?.includes(url))) {
+                    token = await TokenStorage.getParentSubAccountToken() ?? await TokenStorage.getSubAccountToken();
+                } else {
+                    token = await TokenStorage.getSubAccountToken();
+                }
 
                 if (token) {
                     config.headers.Authorization = `Bearer ${token}`;
