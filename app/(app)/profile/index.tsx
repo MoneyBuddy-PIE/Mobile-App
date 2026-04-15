@@ -7,6 +7,7 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { UserStorage } from "@/utils/storage";
 import { SubAccount } from "@/types/Account";
 import { Link } from "expo-router";
+import AccountCard from "@/components/AccountCard";
 
 export default function Profile() {
 	const { user, logout } = useAuthContext();
@@ -44,49 +45,6 @@ export default function Profile() {
 
 	const isChildAccount = subAccount?.role === "CHILD";
 
-	const getRoleIcon = (role: string) => {
-		switch (role?.toUpperCase()) {
-			case "PARENT":
-			case "OWNER":
-				return "🍎";
-			case "CHILD":
-				return "🔸";
-			case "ADMIN":
-				return "👑";
-			default:
-				return "👤";
-		}
-	};
-
-	const getRoleDisplayName = (role: string) => {
-		switch (role?.toUpperCase()) {
-			case "OWNER":
-				return "Parent principal";
-			case "PARENT":
-				return "Parent";
-			case "CHILD":
-				return "Enfant";
-			case "ADMIN":
-				return "Administrateur";
-			default:
-				return role || "Utilisateur";
-		}
-	};
-
-	const getRoleBadgeColor = (role: string) => {
-		switch (role?.toUpperCase()) {
-			case "PARENT":
-			case "OWNER":
-				return "#4A90E2";
-			case "CHILD":
-				return "#00D4AA";
-			case "ADMIN":
-				return "#FF9800";
-			default:
-				return "#666";
-		}
-	};
-
 	return (
 		<SafeAreaView style={styles.container}>
 			<ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -98,32 +56,9 @@ export default function Profile() {
 
 				{/* Profil actuel */}
 				{subAccount && (
-					<View style={styles.profileCard}>
-						<View style={styles.profileHeader}>
-							<View style={styles.avatarContainer}>
-								<Text style={styles.avatarIcon}>{getRoleIcon(subAccount.role)}</Text>
-							</View>
-							<View style={styles.profileInfo}>
-								<Text style={[styles.profileName, fontStylesTitle]}>{subAccount.name}</Text>
-								<View
-									style={[styles.roleBadge, { backgroundColor: getRoleBadgeColor(subAccount.role) }]}
-								>
-									<Text style={[styles.roleText, fontStylesSemiBold]}>
-										{getRoleDisplayName(subAccount.role)}
-									</Text>
-								</View>
-							</View>
-						</View>
-
-						{subAccount.role === "CHILD" && (
-							<View style={styles.moneyContainer}>
-								<Text style={[styles.moneyLabel, fontStylesRegular]}>Mon argent de poche</Text>
-								<Text style={[styles.moneyAmount, fontStylesTitle]}>
-									{parseFloat(subAccount.money || "0").toFixed(2)}€
-								</Text>
-							</View>
-						)}
-					</View>
+					<View style={styles.section}>
+                        <AccountCard account={subAccount} onPress={() => {}} isRow />
+                    </View>
 				)}
 
 				{/* Informations du compte principal */}
@@ -177,6 +112,16 @@ export default function Profile() {
 									<Ionicons name="swap-horizontal" size={20} color="#6C5CE7" />
 								</View>
 								<Text style={[styles.actionText, fontStylesSemiBold]}>Changer de compte</Text>
+								<Ionicons name="chevron-forward" size={16} color="#999" />
+							</TouchableOpacity>
+						</Link>
+
+                        <Link href="/profile/profileForm" asChild>
+							<TouchableOpacity style={styles.actionItem}>
+								<View style={styles.actionIcon}>
+									<Ionicons name="man-sharp" size={20} color="#6C5CE7" />
+								</View>
+								<Text style={[styles.actionText, fontStylesSemiBold]}>Modifer le profil</Text>
 								<Ionicons name="chevron-forward" size={16} color="#999" />
 							</TouchableOpacity>
 						</Link>

@@ -1,58 +1,44 @@
 // components/AccountCard.tsx
 import React from "react";
-import { TouchableOpacity, Text, View, StyleSheet } from "react-native";
+import { TouchableOpacity, Text, View, StyleSheet, Image } from "react-native";
 import { SubAccount } from "@/types/Account";
 
 interface AccountCardProps {
 	account: SubAccount;
 	onPress: () => void;
+	isRow?: boolean;
+	cardStyle?: object;
+	children?: React.ReactNode;
 }
 
-const AccountCard: React.FC<AccountCardProps> = ({ account, onPress }) => {
-	const getRoleIcon = (role: string) => {
+const AccountCard: React.FC<AccountCardProps> = ({ account, onPress, isRow = false, cardStyle, children }) => {
+	const url = `https://api.dicebear.com/9.x/${account.iconStyle}/png?seed=${account.iconName}`
+
+	const getRoleColor = (role: string): {roleColor: string, role: string} => {
 		switch (role.toUpperCase()) {
-			case "PARENT":
-				return "👨‍👩‍👧‍👦";
 			case "CHILD":
-				return "👶";
-			case "ADMIN":
-				return "👑";
+				return {roleColor: "#59FFCF", role: "Enfant"};
 			default:
-				return "👤";
+				return {roleColor: "#97C9FF", role: "Parent"};
 		}
 	};
 
-	const getRoleColor = (role: string) => {
-		switch (role.toUpperCase()) {
-			case "PARENT":
-				return "#4CAF50";
-			case "CHILD":
-				return "#2196F3";
-			case "ADMIN":
-				return "#FF9800";
-			default:
-				return "#666";
-		}
-	};
+	const role = getRoleColor(account.role);
 
 	return (
-		<TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
-			<View style={styles.iconContainer}>
-				<Text style={styles.icon}>{getRoleIcon(account.role)}</Text>
-			</View>
+		<TouchableOpacity style={{...styles.card, ...cardStyle, ...isRow ? styles.cardRow : styles.cardColumn}} onPress={onPress} activeOpacity={0.7}>
+			<Image source={{ uri: url }} style={styles.imageContainer} />
 
-			<View style={styles.content}>
+			<View style={{...styles.content, ...isRow ?  {alignItems: "flex-start"} : {alignItems: "center"}}}>
 				<Text style={styles.name}>{account.name}</Text>
 				<View style={styles.roleContainer}>
-					<View style={[styles.roleBadge, { backgroundColor: getRoleColor(account.role) }]}>
-						<Text style={styles.roleText}>{account.role}</Text>
+					<View style={[styles.roleBadge, { backgroundColor: role.roleColor}]}>
+						<Text style={styles.roleText}>{role.role}</Text>
 					</View>
 				</View>
 			</View>
 
-			<View style={styles.arrow}>
-				<Text style={styles.arrowText}>→</Text>
-			</View>
+			{children}
 		</TouchableOpacity>
 	);
 };
@@ -61,33 +47,40 @@ const styles = StyleSheet.create({
 	card: {
 		backgroundColor: "#fff",
 		borderRadius: 16,
-		padding: 16,
-		flexDirection: "row",
+		padding: 24,
+		display: "flex",
 		alignItems: "center",
-		shadowColor: "#000",
+	},
+	cardColumn: {
+		flexDirection: "column",
+		justifyContent: "center",
+		minHeight: 160,
+				shadowColor: "#BFD0EA",
 		shadowOffset: {
 			width: 0,
-			height: 2,
+			height: 3.89,
 		},
-		shadowOpacity: 0.05,
-		shadowRadius: 4,
-		elevation: 2,
-		marginBottom: 12,
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 4,
 	},
-	iconContainer: {
+	cardRow : {
+		flexDirection: "row",
+		justifyContent: "flex-start",
+		gap: 16,
+	},
+	imageContainer: {
 		width: 50,
 		height: 50,
-		borderRadius: 25,
-		backgroundColor: "#f0f0f0",
-		justifyContent: "center",
-		alignItems: "center",
-		marginRight: 16,
+		marginBottom: 10,
 	},
 	icon: {
 		fontSize: 24,
 	},
 	content: {
-		flex: 1,
+		display: "flex",
+		flexDirection: "column",
+		justifyContent: "center",
 	},
 	name: {
 		fontSize: 18,
@@ -104,17 +97,9 @@ const styles = StyleSheet.create({
 		borderRadius: 6,
 	},
 	roleText: {
-		color: "#fff",
+		color: "#2F2F2F",
 		fontSize: 12,
-		fontWeight: "600",
-		textTransform: "uppercase",
-	},
-	arrow: {
-		marginLeft: 12,
-	},
-	arrowText: {
-		fontSize: 20,
-		color: "#999",
+		fontWeight: "400",
 	},
 });
 
