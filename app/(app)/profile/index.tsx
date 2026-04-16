@@ -6,7 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { UserStorage } from "@/utils/storage";
 import { SubAccount } from "@/types/Account";
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
 import AccountCard from "@/components/AccountCard";
 
 export default function Profile() {
@@ -25,7 +25,7 @@ export default function Profile() {
 
 	useEffect(() => {
 		loadSubAccount();
-	}, []);
+	}, [router]);
 
 	const loadSubAccount = async () => {
 		try {

@@ -21,7 +21,6 @@ export default function ChapterDetail() {
     const params = useLocalSearchParams();
     const chapterId = params.id as string;
     const imgIndex = parseInt(params.imgIndex as string) || 0;
-    const courseImage = COURSE_IMAGES[imgIndex % COURSE_IMAGES.length];
 
     const [chapter, setChapter] = useState<Chapter | null>(null);
     const [courses, setCourses] = useState<Course[]>([]);
@@ -67,7 +66,7 @@ export default function ChapterDetail() {
         router.push({
             pathname: "/(app)/courses/course/[courseId]",
             params: {
-                courseId: course.title,
+                courseId: course.id,
                 courseData: JSON.stringify(course),
             },
         });
@@ -75,7 +74,7 @@ export default function ChapterDetail() {
     };
 
     const renderCourse = (course: Course, index: number) => {
-        const isCompleted = false;
+        const isCompleted = course.completed;
         const isLocked = course.locked;
 
         return (
@@ -107,9 +106,7 @@ export default function ChapterDetail() {
 
                             {/* Course illustration placeholder */}
                             <View style={[styles.courseImage, isLocked && styles.courseImageLocked]}>
-                                <Text style={styles.courseImageEmoji}>
-                                    {index % 4 === 0 ? "💰" : index % 4 === 1 ? "📊" : index % 4 === 2 ? "🎯" : "👥"}
-                                </Text>
+                                <Image source={{uri: `https://pub-ce5bc62138bd4218b56745b7ccca587e.r2.dev/${course.imageUrl}`}} style={{width: "100%", height: "100%"}} resizeMode="cover" />
                             </View>
                         </View>
 
@@ -145,14 +142,14 @@ export default function ChapterDetail() {
             </SafeAreaView>
         );
     }
-
+    
     return (
         <SafeAreaView style={styles.container}>
             {/* Header avec illustration */}
             <View style={styles.headerContainer}>
                 <View style={styles.headerBackground}>
                     {/* Image de fond */}
-                    <Image source={courseImage} style={styles.headerImage} resizeMode="cover" />
+                    <Image source={{uri: `https://pub-ce5bc62138bd4218b56745b7ccca587e.r2.dev/${chapter.imageUrl}`}}  style={styles.headerImage} resizeMode="cover" />
                 </View>
 
                 {/* Bouton retour */}
@@ -169,7 +166,7 @@ export default function ChapterDetail() {
                 </View>
 
                 {/* Liste des cours */}
-                <View style={styles.coursesContainer}>{courses.map((course, index) => renderCourse(course, index))}</View>
+                <View style={styles.coursesContainer}>{courses?.length >0 && courses?.map((course, index) => renderCourse(course, index))}</View>
 
                 <View style={styles.bottomPadding} />
             </ScrollView>

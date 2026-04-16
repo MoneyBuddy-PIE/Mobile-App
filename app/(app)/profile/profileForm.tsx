@@ -65,11 +65,13 @@ export default function ProfileForm() {
 
 		setLoading(true);
 		try {
-			await userService.updateSubAccount({
+			const subAccount = await userService.updateSubAccount({
 				name: name.trim(),
                 iconName: icon.iconName,
                 iconStyle: icon.iconStyle
 			});
+            await UserStorage.setSubAccount(subAccount);
+
 			Alert.alert("Succès", "Compte modifié avec succès", [{ text: "OK", onPress: () => router.back() }]);
 		} catch (error: any) {
 			console.error("Error updating sub-account:", error);
