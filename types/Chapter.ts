@@ -30,7 +30,7 @@ export interface Course {
 	readTime: number;
 	imageUrl: string;
 	sections: Section[];
-	resources: Resource[];
+	ressource: Resource[];
 	locked: boolean;
 	completed: boolean;
 }

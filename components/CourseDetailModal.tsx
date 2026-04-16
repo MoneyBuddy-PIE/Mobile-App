@@ -143,18 +143,18 @@ export const CourseDetailModal: React.FC<CourseDetailModalProps> = ({ course, vi
                         </View>
 
                         {/* Sources Section */}
-                        {course.resources && course.resources.length > 0 && (
+                        {course.ressource && course.ressource.length > 0 && (
                             <View style={styles.sourcesSection}>
                                 <Text style={[styles.sourcesTitle, typography.subheading]}>Sources</Text>
-                                {course.resources.map((resource, index) => (
+                                {course.ressource.map((res, index) => (
                                     <TouchableOpacity
                                         key={index}
                                         style={styles.sourceItem}
-                                        onPress={() => handleResourcePress(resource.url)}
+                                        onPress={() => handleResourcePress(res.url)}
                                         activeOpacity={0.7}
                                     >
                                         <View style={styles.sourceContent}>
-                                            <Text style={[styles.sourceTitle, typography.semiBold]}>{resource.title}</Text>
+                                            <Text style={[styles.sourceTitle, typography.semiBold]}>{res.title}</Text>
                                             <Text style={styles.sourceInfo}>2025, La finance pour tous</Text>
                                         </View>
                                         <Ionicons name="open-outline" size={16} color="#6C5CE7" />
