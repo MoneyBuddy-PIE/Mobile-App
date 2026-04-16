@@ -1,11 +1,12 @@
 import { apiService } from "./api";
-import { Chapter, ChapterResponse, Course } from "@/types/Chapter";
+import { Chapter, ChapterCategory, ChapterResponse, Course } from "@/types/Chapter";
 
 export interface ChapterParams {
 	page?: number;
 	size?: number;
 	sortBy?: string;
 	sortDir?: "asc" | "desc";
+	category?: string;
 }
 
 export const chapterService = {
@@ -15,6 +16,7 @@ export const chapterService = {
 			size: params.size || 10,
 			sortBy: params.sortBy || "order",
 			sortDir: params.sortDir || "asc",
+			category: params.category || "*",
 		};
 
 		return apiService.get<ChapterResponse>("/chapters", searchParams);
@@ -25,13 +27,13 @@ export const chapterService = {
 	},
 
     async getChapterCourses(chapterId: string): Promise<Course[]> {
-        return apiService.get<Course[]>(`/courses/chapter/${chapterId}`);
+        return (await apiService.get<{content: Course[]}>(`/courses/chapter/${chapterId}`)).content;
     },
 
-	async getChaptersByRole(role: string): Promise<Chapter[]> {
-		if (role === "OWNER") role = "PARENT";
-		const response = await this.getChapters({ size: 100 });
-		return response.content.filter((chapter) => chapter.subAccountRole === role);
+	async getChaptersByCategory(category: string): Promise<Chapter[]> {
+		if (category === ChapterCategory.ALL) category = "*";
+		const response = await this.getChapters({ size: 100, category });
+		return response.content;
 	},
 
 	async getAllChapters(): Promise<Chapter[]> {

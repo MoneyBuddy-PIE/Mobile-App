@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Markdown from "react-native-markdown-display";
 import { Course, Section, Quiz } from "@/types/Chapter";
 import { typography } from "@/styles/typography";
+import { courseService } from "@/services/courseService";
+import { logger } from "@/utils/logger";
+import { progressService } from "@/services/progressService";
 
 interface CourseStep {
     type: "section" | "quiz";
@@ -15,25 +18,47 @@ interface CourseStep {
 
 export default function CourseReader() {
     const params = useLocalSearchParams();
-    const courseData = JSON.parse(params.courseData as string) as Course;
+    const courseId = params.courseId as string;
+    
+    const [courseData, setCourseData] = useState<Course | null>(null)
 
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
     const [showResult, setShowResult] = useState(false);
     const [isCorrect, setIsCorrect] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [quizScore, setQuizScore] = useState(0);
     const [totalQuizQuestions, setTotalQuizQuestions] = useState(0);
+    const [quizResponse, setQuizReponse] = useState<string>("");
 
     const steps: CourseStep[] = [];
-    courseData.sections.forEach((section, index) => {
+
+    useEffect(() => {
+        loadCourse();
+    }, []);
+
+    const loadCourse = async () => {
+        try {
+            const course = await courseService.getCourseById(courseId);
+            logger.log("Loaded course data:", course);
+            setCourseData(course);
+        } catch (error) {
+            logger.error("Error loading chapter:", error);
+            Alert.alert("Erreur", "Impossible de charger le chapitre", [{ text: "Retour", onPress: () => router.back() }]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    courseData?.sections.forEach((section, index) => {
         steps.push({
             type: "section",
             sectionIndex: index,
             section,
         });
 
-        if (section.quiz && section.quiz.length > 0) {
-            section.quiz.forEach((_, quizIndex) => {
+        if (section && section?.quiz && section?.quiz.length > 0) {
+            section?.quiz.forEach((_, quizIndex) => {
                 steps.push({
                     type: "quiz",
                     sectionIndex: index,
@@ -55,25 +80,35 @@ export default function CourseReader() {
         }
     };
 
-    const handleNext = () => {
+    const handleNext = async () => {
+        if (currentStep.type === "section" && !currentStep.section?.completed && currentStep.section?.quiz?.length === 0) {
+            currentStep.section.completed = await progressService.validateSection(currentStep.section.id);
+        }
+  
+        if (showResult && !isCorrect) return resetQuizState();
+
         if (!isLastStep) {
             setCurrentStepIndex(currentStepIndex + 1);
             resetQuizState();
         } else {
+            if (!courseData?.completed) 
+                currentStep.section.completed = await progressService.validateSection(currentStep.section.id);
+            
             Alert.alert("Félicitations !", "Vous avez terminé ce cours !", [{ text: "Retour", onPress: () => router.back() }]);
         }
     };
+
+    useEffect(() => {
+        if (currentStep?.type === "quiz" && currentStep?.quizIndex === 0) {
+            setQuizScore(0);
+            setTotalQuizQuestions(currentStep?.section?.quiz?.length || 0);
+        }
+    }, [currentStepIndex]);
 
     const resetQuizState = () => {
         setSelectedAnswer(null);
         setShowResult(false);
         setIsCorrect(false);
-        useEffect(() => {
-            if (currentStep.type === "quiz" && currentStep.quizIndex === 0) {
-                setQuizScore(0);
-                setTotalQuizQuestions(currentStep.section.quiz?.length || 0);
-            }
-        }, [currentStepIndex]);
     };
 
     const handleAnswerSelect = (answerIndex: number) => {
@@ -83,9 +118,9 @@ export default function CourseReader() {
     };
 
     const handleVerifyAnswer = () => {
-        if (selectedAnswer === null || !currentStep.section.quiz || currentStep.quizIndex === undefined) return;
+        if (selectedAnswer === null || !currentStep?.section?.quiz || currentStep?.quizIndex === undefined) return;
 
-        const currentQuiz = currentStep.section.quiz[currentStep.quizIndex];
+        const currentQuiz = currentStep?.section?.quiz[currentStep?.quizIndex];
         const correct = selectedAnswer === currentQuiz.correctAnswerIndex;
         setIsCorrect(correct);
         setShowResult(true);
@@ -97,15 +132,24 @@ export default function CourseReader() {
 
     const renderSectionContent = () => (
         <ScrollView style={styles.contentScrollView} showsVerticalScrollIndicator={false}>
-            <Markdown style={markdownStyles}>{currentStep.section.markdownContent}</Markdown>
+            <Markdown style={markdownStyles}>{currentStep?.section?.markdownContent}</Markdown>
         </ScrollView>
     );
 
-    const renderQuiz = () => {
-        if (!currentStep.section.quiz || currentStep.quizIndex === undefined) return null;
+    if (loading) {
+        return (
+            <View style={[styles.container, styles.center]}>
+                <ActivityIndicator size="large" color="#6C5CE7" />
+                <Text style={styles.loadingText}>Chargement du chapitre...</Text>
+            </View>
+        );
+    }
 
-        const quiz = currentStep.section.quiz[currentStep.quizIndex];
-        const isLastQuizQuestion = currentStep.quizIndex === currentStep.section.quiz.length - 1;
+    const renderQuiz = () => {
+        if (!currentStep?.section?.quiz || currentStep?.quizIndex === undefined) return null;
+        
+        const quiz = currentStep?.section?.quiz[currentStep?.quizIndex]
+        const isLastQuizQuestion = currentStep?.quizIndex === currentStep?.section?.quiz.length - 1;
 
         return (
             <ScrollView style={styles.contentScrollView} showsVerticalScrollIndicator={false}>
@@ -113,7 +157,7 @@ export default function CourseReader() {
                     {/* Badge Récap */}
                     <View style={styles.recapBadge}>
                         <Text style={styles.recapText}>
-                            Récap - Question {currentStep.quizIndex + 1}/{currentStep.section.quiz.length}
+                            Récap - Question {currentStep?.quizIndex + 1}/{currentStep?.section?.quiz.length}
                         </Text>
                     </View>
 
@@ -131,9 +175,8 @@ export default function CourseReader() {
                                     styles.optionButton,
                                     selectedAnswer === index && styles.optionButtonSelected,
                                     showResult && selectedAnswer === index && (isCorrect ? styles.optionButtonCorrect : styles.optionButtonIncorrect),
-                                    showResult && index === quiz.correctAnswerIndex && styles.optionButtonCorrect,
                                 ]}
-                                onPress={() => handleAnswerSelect(index)}
+                                onPress={() => {handleAnswerSelect(index), setQuizReponse(quiz.response || "")}}
                                 disabled={showResult}
                             >
                                 <Text
@@ -141,7 +184,6 @@ export default function CourseReader() {
                                         styles.optionText,
                                         selectedAnswer === index && styles.optionTextSelected,
                                         showResult && selectedAnswer === index && (isCorrect ? styles.optionTextCorrect : styles.optionTextIncorrect),
-                                        showResult && index === quiz.correctAnswerIndex && styles.optionTextCorrect,
                                     ]}
                                 >
                                     {option}
@@ -154,7 +196,7 @@ export default function CourseReader() {
                     {isLastQuizQuestion && showResult && (
                         <View style={styles.scoreSummary}>
                             <Text style={styles.scoreText}>
-                                Score: {quizScore}/{currentStep.section.quiz.length}
+                                Score: {quizScore}/{currentStep?.section?.quiz.length}
                             </Text>
                             {quizScore >= quiz.minimumScoreToPass ? (
                                 <Text style={styles.passText}>✅ Réussi!</Text>
@@ -169,9 +211,11 @@ export default function CourseReader() {
     };
 
     const getButtonText = () => {
-        if (currentStep.type === "quiz") {
+        if (currentStep?.type === "quiz") {
             if (!showResult) {
                 return "Vérifier ma réponse";
+            } else if (showResult && !isCorrect) {
+                return "Réessayer";
             } else {
                 return isLastStep ? "Terminer" : "Continuer";
             }
@@ -181,7 +225,7 @@ export default function CourseReader() {
     };
 
     const handleButtonPress = () => {
-        if (currentStep.type === "quiz" && !showResult) {
+        if (currentStep?.type === "quiz" && !showResult) {
             handleVerifyAnswer();
         } else {
             handleNext();
@@ -189,7 +233,7 @@ export default function CourseReader() {
     };
 
     const isButtonDisabled = () => {
-        return currentStep.type === "quiz" && !showResult && selectedAnswer === null;
+        return currentStep?.type === "quiz" && !showResult && selectedAnswer === null;
     };
 
     return (
@@ -213,34 +257,48 @@ export default function CourseReader() {
             <View style={styles.content}>
                 {/* Section title */}
                 <Text style={[styles.sectionTitle, typography.subheading]}>
-                    {currentStep.sectionIndex + 1}. {currentStep.section.title}
+                    {currentStep?.sectionIndex + 1}. {currentStep?.section?.title}
                 </Text>
 
                 {/* Main content */}
-                <View style={styles.mainContent}>{currentStep.type === "section" ? renderSectionContent() : renderQuiz()}</View>
+                <View style={styles.mainContent}>{currentStep?.type === "section" ? renderSectionContent() : renderQuiz()}</View>
             </View>
 
             {/* Navigation */}
-            <View style={styles.navigation}>
-                <TouchableOpacity
-                    style={[styles.navButton, styles.backButton, isFirstStep && styles.navButtonDisabled]}
-                    onPress={handlePrevious}
-                    disabled={isFirstStep}
-                >
-                    <Ionicons name="arrow-back" size={20} color={isFirstStep ? "#ccc" : "#666"} />
-                </TouchableOpacity>
+            <View style={{backgroundColor: "#fff"}}>
+                {showResult && 
+                    <View style={styles.sectionAnswer}>
+                        <View style={{width: "100%", height: 3, backgroundColor: isCorrect ? "#16AA75" : "#F7543E",}}></View>
+                        <View style={{paddingHorizontal: 20}}>
+                            <Text style={styles.rightAnswer}>
+                                {isCorrect ? "Bonne réponse !" : "Mauvaise réponse, réessayez !"}
+                            </Text>
+                            {isCorrect && quizResponse && <Text>{quizResponse}</Text>}  
+                        </View>
+                    </View>
+                }
+                <View style={styles.navigation}>
+                    <TouchableOpacity
+                        style={[styles.navButton, styles.backButton, isFirstStep && styles.navButtonDisabled]}
+                        onPress={handlePrevious}
+                        disabled={isFirstStep}
+                    >
+                        <Ionicons name="arrow-back" size={20} color={isFirstStep ? "#ccc" : "#666"} />
+                    </TouchableOpacity>
 
-                <TouchableOpacity
-                    style={[styles.navButton, styles.continueButton, isButtonDisabled() && styles.navButtonDisabled]}
-                    onPress={handleButtonPress}
-                    disabled={isButtonDisabled()}
-                >
-                    <Text style={[styles.continueButtonText, isButtonDisabled() && styles.continueButtonTextDisabled]}>{getButtonText()}</Text>
-                    {currentStep.type === "quiz" && !showResult && <Ionicons name="checkmark" size={16} color="#fff" style={styles.checkIcon} />}
-                    {(currentStep.type === "section" || showResult) && !isLastStep && (
-                        <Ionicons name="arrow-forward" size={16} color="#fff" style={styles.arrowIcon} />
-                    )}
-                </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.navButton, styles.continueButton, isButtonDisabled() && styles.navButtonDisabled]}
+                        onPress={handleButtonPress}
+                        disabled={isButtonDisabled()}
+                    >
+                        <Text style={[styles.continueButtonText, isButtonDisabled() && styles.continueButtonTextDisabled]}>{getButtonText()}</Text>
+                        {currentStep?.type === "quiz" && !showResult && isCorrect && <Ionicons name="checkmark" size={16} color="#fff" style={styles.checkIcon} />}
+                        {currentStep?.type === "quiz" && showResult && !isCorrect && <Ionicons name="reload-outline" size={16} color="#fff" style={styles.checkIcon} />}
+                        {(currentStep?.type === "section" || (showResult && isCorrect)) && !isLastStep && (
+                            <Ionicons name="arrow-forward" size={16} color="#fff" style={styles.arrowIcon} />
+                        )}
+                    </TouchableOpacity>
+                </View>
             </View>
         </SafeAreaView>
     );
@@ -250,6 +308,15 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#EBF2FB",
+    },
+    center: {
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    loadingText: {
+        marginTop: 12,
+        fontSize: 16,
+        color: "#666",
     },
     header: {
         flexDirection: "row",
@@ -369,6 +436,17 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingVertical: 20,
         gap: 16,
+    },
+    sectionAnswer: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
+    },
+    rightAnswer: {
+        fontSize: 20,
+        color: "#374151",
+        fontWeight: "700",
+        marginBlock: 12
     },
     navButton: {
         paddingVertical: 12,

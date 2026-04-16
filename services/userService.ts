@@ -25,4 +25,8 @@ export const userService = {
 			return false;
 		}
 	},
+
+	async updateSubAccount(data: { name: string; iconStyle: string, iconName: string }): Promise<SubAccount> {
+		return apiService.put<SubAccount>("/auth/subAccount", data);
+	}
 };

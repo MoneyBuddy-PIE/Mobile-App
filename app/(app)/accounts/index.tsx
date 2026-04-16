@@ -18,6 +18,7 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { authService } from "@/services/authService";
 import { userService } from "@/services/userService";
 import { logger } from "@/utils/logger";
+import AccountCard from "@/components/AccountCard";
 
 export default function Accounts() {
 	const { logout, user: contextUser, refreshUserData } = useAuthContext();
@@ -159,24 +160,7 @@ export default function Accounts() {
 				<View style={styles.cardsContainer}>
 					{user?.subAccounts && user.subAccounts.length > 0 ? (
 						user.subAccounts.map((account) => (
-							<TouchableOpacity
-								key={account.id}
-								style={styles.accountCard}
-								onPress={() => navigateToAccount(account)}
-								activeOpacity={0.7}
-							>
-								<View style={styles.iconContainer}>
-									<Text style={styles.accountIcon}>{getRoleIcon(account.role)}</Text>
-								</View>
-
-								<Text style={[styles.accountName, fontStylesSemiBold]}>{account.name}</Text>
-
-								<View style={[styles.roleBadge, { backgroundColor: getRoleBadgeColor(account.role) }]}>
-									<Text style={[styles.roleText, fontStylesSemiBold]}>
-										{getRoleDisplayName(account.role)}
-									</Text>
-								</View>
-							</TouchableOpacity>
+							<AccountCard account={account} key={account.id} onPress={() => navigateToAccount(account)} cardStyle={{width: "47%"}}/>
 						))
 					) : (
 						<View style={styles.emptyState}>

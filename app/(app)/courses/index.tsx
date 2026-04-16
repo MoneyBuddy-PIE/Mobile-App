@@ -15,44 +15,46 @@ import { router } from "expo-router";
 import { UserStorage } from "@/utils/storage";
 import { SubAccount } from "@/types/Account";
 import { chapterService } from "@/services/chapterService";
-import { Chapter } from "@/types/Chapter";
-import { logger } from "@/utils/logger";
+import { Chapter, ChapterCategory } from "@/types/Chapter";
 import { typography } from "@/styles/typography";
+import Card from "@/components/Card";
+import { logger } from "@/utils/logger";
 
 const { width } = Dimensions.get("window");
 const cardWidth = (width - 60) / 2;
 
-const AGE_FILTERS = [
-	{ id: "6-10", label: "6 à 10 ans", color: "#FF6B6B" },
-	{ id: "10-14", label: "10 à 14 ans", color: "#4ECDC4" },
-	{ id: "bases", label: "Les bases", color: "#45B7D1" },
-];
+const categoryImages = {
+	ALL: require("@/assets/images/chapterCategories/basics.png"),
+	BASICS: require("@/assets/images/chapterCategories/basics.png"),
+	SIX_TO_TEN: require("@/assets/images/chapterCategories/six_to_ten.png"),
+	TEN_TO_FOURTEEN: require("@/assets/images/chapterCategories/ten_to_fourteen.png"),
+};
 
-// Images des cours
-const COURSE_IMAGES = [
-	require("@/assets/images/cours/course-1.png"),
-	require("@/assets/images/cours/course-2.png"),
-	require("@/assets/images/cours/course-3.png"),
-	require("@/assets/images/cours/course-4.png"),
-	require("@/assets/images/cours/course-5.png"),
-	require("@/assets/images/cours/course-6.png"),
-];
+const categoryLabels = (category: string) => {
+	switch (category) {
+		case ChapterCategory.ALL:
+			return "Tous";
+		case ChapterCategory.BASICS:
+			return "Les bases";
+		case ChapterCategory.SIX_TO_TEN:
+			return "6 à 10 ans";
+		case ChapterCategory.TEN_TO_FOURTEEN:
+			return "10 à 14 ans";
+		default:
+			return category;
+	}
+}
 
 export default function Courses() {
 	const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
 	const [chapters, setChapters] = useState<Chapter[]>([]);
-	const [filteredChapters, setFilteredChapters] = useState<Chapter[]>([]);
-	const [selectedFilter, setSelectedFilter] = useState<string>("all");
+	const [selectedFilter, setSelectedFilter] = useState<ChapterCategory>(ChapterCategory.ALL);
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
 
 	useEffect(() => {
 		loadData();
-	}, []);
-
-	useEffect(() => {
-		filterChapters();
-	}, [chapters, selectedFilter]);
+	}, [selectedFilter]);
 
 	const loadData = async () => {
 		try {
@@ -60,8 +62,8 @@ export default function Courses() {
 			setSubAccount(accountData);
 
 			if (accountData) {
-				const chaptersData = await chapterService.getChaptersByRole(accountData.role);
-                logger.log("Chapters loaded:", chaptersData);
+				const chaptersData = await chapterService.getChaptersByCategory(selectedFilter);
+				logger.log("Courses loaded:", chaptersData);
 				setChapters(chaptersData);
 			}
 		} catch (error) {
@@ -80,20 +82,7 @@ export default function Courses() {
 		}
 	};
 
-	const filterChapters = () => {
-		if (selectedFilter === "all") {
-			setFilteredChapters(chapters);
-		} else {
-			setFilteredChapters(chapters);
-		}
-	};
-
-	const handleFilterPress = (filterId: string) => {
-		setSelectedFilter(filterId);
-	};
-
 	const renderChapterCard = (chapter: Chapter, index: number) => {
-		const courseImage = COURSE_IMAGES[index % COURSE_IMAGES.length];
 
 		return (
 			<TouchableOpacity
@@ -103,16 +92,16 @@ export default function Courses() {
 					router.push(`/(app)/courses/${chapter.id}?imgIndex=${index}`);
 				}}
 			>
-				<View style={styles.test}>
-					<View style={styles.chapterImageContainer}>
-						<Image source={courseImage} style={styles.chapterImage} resizeMode="cover" />
-					</View>
-				</View>
+				<Card>
+					<Image
+						source={{uri: `https://pub-ce5bc62138bd4218b56745b7ccca587e.r2.dev/${chapter.imageUrl}`}} 
+						style={styles.chapterImage} 
+					/>
+				</Card>
 				<View style={styles.chapterInfo}>
 					<Text style={styles.chapterTitle} numberOfLines={2}>
 						{chapter.title}
 					</Text>
-					<Text style={styles.chapterLevel}>Niveau {chapter.level}</Text>
 				</View>
 			</TouchableOpacity>
 		);
@@ -147,44 +136,39 @@ export default function Courses() {
 				</View>
 
 				{/* Age Filters */}
-				{/* <View style={styles.filtersContainer}>
-					<TouchableOpacity
-						style={[
-							styles.filterChip,
-							selectedFilter === "all" && styles.filterChipSelected,
-							{ backgroundColor: selectedFilter === "all" ? "#6C5CE7" : "#f0f0f0" },
-						]}
-						onPress={() => handleFilterPress("all")}
+				<View style={styles.filtersContainer}>
+					<ScrollView
+						horizontal
+						showsHorizontalScrollIndicator={false}
 					>
-						<Text style={[styles.filterText, selectedFilter === "all" && styles.filterTextSelected]}>
-							Tous
-						</Text>
-					</TouchableOpacity>
-
-					{AGE_FILTERS.map((filter) => (
-						<TouchableOpacity
-							key={filter.id}
-							style={[
-								styles.filterChip,
-								selectedFilter === filter.id && styles.filterChipSelected,
-								{ backgroundColor: selectedFilter === filter.id ? filter.color : "#f0f0f0" },
-							]}
-							onPress={() => handleFilterPress(filter.id)}
-						>
-							<Text
-								style={[styles.filterText, selectedFilter === filter.id && styles.filterTextSelected]}
-							>
-								{filter.label}
-							</Text>
-						</TouchableOpacity>
-					))}
-				</View> */}
+						{Object.values(ChapterCategory).map((category, key) => {
+							const imageSource = categoryImages[category as keyof typeof categoryImages];
+							return (
+								<TouchableOpacity
+									key={category + key}
+									onPress={() => setSelectedFilter(category as ChapterCategory)}
+									activeOpacity={0.7}
+								>
+									<Card 
+										style={{display: "flex", flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 6}}
+										showCard={category === selectedFilter}
+									>
+										<Image source={imageSource} style={{width: 35, height: 35}}  resizeMode="cover"/>
+										<Text style={styles.filterText} >
+											{categoryLabels(category)}
+										</Text>
+									</Card>
+								</TouchableOpacity>
+							)
+						})}
+					</ScrollView>
+				</View>
 
 				{/* Chapters Grid */}
 				<View style={styles.chaptersContainer}>
-					{filteredChapters.length > 0 ? (
+					{chapters.length > 0 ? (
 						<View style={styles.chaptersGrid}>
-							{filteredChapters.map((chapter, index) => renderChapterCard(chapter, index))}
+							{chapters.map((chapter, index) => renderChapterCard(chapter, index))}
 						</View>
 					) : (
 						<View style={styles.emptyContainer}>
@@ -210,7 +194,6 @@ const styles = StyleSheet.create({
 	},
 	content: {
 		flex: 1,
-		paddingHorizontal: 20,
 	},
 	center: {
 		justifyContent: "center",
@@ -224,6 +207,7 @@ const styles = StyleSheet.create({
 	header: {
 		paddingTop: 20,
 		paddingBottom: 24,
+		paddingHorizontal: 20,
 	},
 	title: {
 		marginBottom: 8,
@@ -233,11 +217,12 @@ const styles = StyleSheet.create({
 		textAlign: "center",
 	},
 	filtersContainer: {
+		display: "flex",
 		flexDirection: "row",
 		gap: 8,
         backgroundColor: "#EBF2FB",
-		marginBottom: 24,
-		flexWrap: "wrap",
+		paddingHorizontal: 20,
+		paddingVertical: 12,
 	},
 	filterChip: {
 		paddingHorizontal: 16,
@@ -251,13 +236,14 @@ const styles = StyleSheet.create({
 	filterText: {
 		fontSize: 14,
 		fontWeight: "500",
-		color: "#666",
+		color: "#333",
 	},
 	filterTextSelected: {
 		color: "#fff",
 	},
 	chaptersContainer: {
-		marginBottom: 20,
+		marginVertical: 20,
+		paddingHorizontal: 20,
 	},
 	chaptersGrid: {
 		flexDirection: "row",
@@ -266,9 +252,14 @@ const styles = StyleSheet.create({
 		gap: 12,
 	},
 	chapterCard: {
+		display: "flex",
+		flexDirection: "column",
+		gap: 8,
 		marginBottom: 24,
 	},
-	test: {
+	chapterImage: {
+		width: "100%",
+		height: 150,
 		shadowColor: "#BFD0EA",
 		shadowOffset: {
 			width: 0,
@@ -277,16 +268,6 @@ const styles = StyleSheet.create({
 		shadowOpacity: 1,
 		shadowRadius: 0,
 		elevation: 4,
-	},
-	chapterImageContainer: {
-		height: 130,
-		borderRadius: 8,
-		marginBottom: 12,
-		overflow: "hidden",
-	},
-	chapterImage: {
-		width: "100%",
-		height: "100%",
 	},
 	chapterInfo: {
 		gap: 4,
