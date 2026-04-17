@@ -30,7 +30,7 @@ export const chapterService = {
         return (await apiService.get<{content: Course[]}>(`/courses/chapter/${chapterId}`)).content;
     },
 
-	async getChaptersByCategory(category: string): Promise<Chapter[]> {
+	async getChaptersByCategory(category = "*"): Promise<Chapter[]> {
 		if (category === ChapterCategory.ALL) category = "*";
 		const response = await this.getChapters({ size: 100, category });
 		return response.content;

@@ -191,20 +191,6 @@ export default function CourseReader() {
                             </TouchableOpacity>
                         ))}
                     </View>
-
-                    {/* Show score summary if it's the last quiz question and result is shown */}
-                    {isLastQuizQuestion && showResult && (
-                        <View style={styles.scoreSummary}>
-                            <Text style={styles.scoreText}>
-                                Score: {quizScore}/{currentStep?.section?.quiz.length}
-                            </Text>
-                            {quizScore >= quiz.minimumScoreToPass ? (
-                                <Text style={styles.passText}>✅ Réussi!</Text>
-                            ) : (
-                                <Text style={styles.failText}>❌ Score minimum requis: {quiz.minimumScoreToPass}</Text>
-                            )}
-                        </View>
-                    )}
                 </View>
             </ScrollView>
         );

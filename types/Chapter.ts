@@ -48,6 +48,7 @@ export interface Chapter {
 	description: string;
 	level: number;
 	order: number;
+	isCompleted: boolean;
 	subAccountRole: "OWNER" | "PARENT" | "CHILD";
 	courses: Course[];
 	imageUrl: string;

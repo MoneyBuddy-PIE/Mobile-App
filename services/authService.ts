@@ -38,7 +38,7 @@ export const authService = {
 	},
 
 	async subAccountRegister(data: SubAccountRegisterRequest): Promise<any> {
-		return apiService.post<any>("/sub-accounts", data);
+		return apiService.post<any>("/subAccount", data);
 	},
 
 	async refreshUserData(): Promise<void> {
