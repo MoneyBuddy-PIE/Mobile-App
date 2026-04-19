@@ -20,13 +20,17 @@ import { tasksService } from "@/services/tasksService";
 import { Ionicons } from "@expo/vector-icons";
 import { Chapter } from "@/types/Chapter";
 import { chapterService } from "@/services/chapterService";
-import { courseService } from "@/services/courseService";
+import ManageTasksModal from "@/components/ManageTasksModal";
 
 interface ChildSummary {
 	child: SubAccount;
 	tasksCount: number;
 	completedTasksCount: number;
 	loading: boolean;
+}
+
+enum showModalTypes {
+	SHOW_CHILDREN_TASKS = "SHOW_CHILDREN_TASKS",
 }
 
 export default function ParentHome() {
@@ -38,6 +42,7 @@ export default function ParentHome() {
 
 	const [chapter, setChapter] = useState<Chapter | null>();
 	const [progressBarWidth, setProgressBarWidth] = useState(0);
+	const [showModal, setShowModal] = useState<showModalTypes | null>(null);
 
 	const [fontsLoaded] = useFonts({
 		DMSans_700Bold,
@@ -59,9 +64,14 @@ export default function ParentHome() {
 			const accountData = await UserStorage.getSubAccount();
 			setSubAccount(accountData);
 
-			const chaptersData = await chapterService.getChaptersByCategory();
-			setChapter(chaptersData.find((chap) => !chap.isCompleted) ?? null);
-			getPercentageCourseCompleted()
+			const chapterData = await chapterService.getChaptersByCategory();
+			const currentChapter = chapterData.find((chap) => !chap.isCompleted) ?? null
+			setChapter(currentChapter);
+	        if (currentChapter?.id) {
+				const courses = await chapterService.getChapterCourses(currentChapter.id);
+				const completed = courses.filter((course) => course.completed).length;
+				setProgressBarWidth(Math.round((completed / courses.length) * 100));
+			}
 		} catch (error) {
 			console.error("Error loading account:", error);
 		} finally {
@@ -85,7 +95,7 @@ export default function ParentHome() {
 		for (let i = 0; i < childAccounts.length; i++) {
 			const child = childAccounts[i];
 			try {
-				const tasks = await tasksService.getTasksByChild(child.id, "PARENT");
+				const tasks = await tasksService.getAllTasks({childId: child.id});
 				const completedTasks = tasks.filter((task) => task.done);
 
 				setChildrenSummary((prev) =>
@@ -160,15 +170,6 @@ export default function ParentHome() {
 		}, 0);
 	};
 
-	const getPercentageCourseCompleted = async() => {
-		if (!chapter) return 0
-
-		const courses = await chapterService.getChapterCourses(chapter.id)
-		const completed = courses.filter((course) => course.completed).length
-		
-		setProgressBarWidth(Math.round((completed / courses.length) * 100))
-	}
-
 	const renderChildCard = (summary: ChildSummary) => {
 		const { child, tasksCount, completedTasksCount, loading: childLoading } = summary;
 		const url = `https://api.dicebear.com/9.x/${child.iconStyle}/png?seed=${child.iconName}`
@@ -176,7 +177,14 @@ export default function ParentHome() {
 		const completionRate = tasksCount > 0 ? Math.round((completedTasksCount / tasksCount) * 100) : 0;
 
 		return (
-			<TouchableOpacity key={child.id} style={styles.childCard} onPress={() => router.push("/(app)/children")}>
+			<TouchableOpacity 
+				key={child.id} 
+				style={styles.childCard} 
+				onPress={() => router.push({
+    				pathname: "/(app)/children",
+    				params: { id: child.id }
+					})}
+				>
 				<View style={styles.childCardContainer}>
 					<View style={styles.childCardContainer}>
 						<Image source={{ uri: url }} style={styles.childCardImg} />
@@ -188,7 +196,7 @@ export default function ParentHome() {
 							</View>
 						</View>
 					</View>
-					<Ionicons name="arrow-back" size={24} color="#2F2F2F" style={{...styles.icon, ...{transform: "rotate(180deg)"}}} />
+					<Ionicons name="arrow-back" size={24} color="#2F2F2F" style={[styles.icon, {transform: [{rotate: "180deg"}]}]} />
 				</View>
 
 				<View style={styles.childCardContainer}>
@@ -232,6 +240,8 @@ export default function ParentHome() {
 
 	return (
 		<SafeAreaView style={styles.container}>
+			{ showModal === showModalTypes.SHOW_CHILDREN_TASKS 
+				&& <ManageTasksModal visible={showModal === showModalTypes.SHOW_CHILDREN_TASKS} onClose={() => setShowModal(null)} />}
 			<ScrollView
 				style={styles.content}
 				showsVerticalScrollIndicator={false}
@@ -260,7 +270,7 @@ export default function ParentHome() {
 							<TouchableOpacity
 								style={{width: "100%"}}
 								onPress={() => {
-									router.push(`/(app)/tasks`);
+									setShowModal(showModalTypes.SHOW_CHILDREN_TASKS);
 								}}
 							>
 								<View style={styles.generalStatsButton}>

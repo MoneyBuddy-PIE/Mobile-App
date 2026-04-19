@@ -25,7 +25,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 		const interval = setInterval(() => {
 			checkAuthStatus();
-		}, 5 * 60 * 1000);
+		}, 4 * 60 * 1000);
 
 		return () => clearInterval(interval);
 	}, []);
@@ -33,10 +33,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 	const checkAuthStatus = async () => {
 		try {
 			const token = await TokenStorage.getToken();
+			const refreshToken = await TokenStorage.getRefreshToken()
             const subaccountToken = await TokenStorage.getSubAccountToken();
             console.log("Subaccount token:", subaccountToken);
 
-			if (!token) {
+			if (!token || !refreshToken) {
 				setIsAuthenticated(false);
 				setUser(null);
 				setIsLoading(false);
@@ -44,6 +45,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 			}
 
 			try {
+				const newToken = (await authService.refreshToken(refreshToken)).token
+				TokenStorage.saveToken(newToken)
+				
 				const userData = await userService.getAccount();
 				await UserStorage.setUser(userData);
 				setUser(userData);
@@ -66,6 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 		try {
 			const response = await authService.login({ email, password });
 			await TokenStorage.saveToken(response.token);
+			await TokenStorage.saveRefreshToken(response.refreshToken);
 
 			const userData = await userService.getAccount();
 			await UserStorage.setUser(userData);
@@ -84,7 +89,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 		setIsLoading(true);
 
 		try {
-			await authService.logout();
+			const refreshToken = await TokenStorage.getRefreshToken() as string
+			await authService.logout(refreshToken);
 		} finally {
 			setIsAuthenticated(false);
 			setUser(null);

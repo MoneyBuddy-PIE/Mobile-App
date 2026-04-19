@@ -66,7 +66,7 @@ export default function AddMoney() {
 
 			const result = await moneyService.addMoney({
 				subAccountId: childId,
-				amount: finalAmount,
+				amount: Number(finalAmount),
 				description: message || `Versement de ${finalAmount}€`,
 			});
 

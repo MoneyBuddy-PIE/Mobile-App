@@ -12,8 +12,9 @@ export const authService = {
 		return apiService.post<AuthResponse>("/auth/register", data);
 	},
 
-	async logout(): Promise<void> {
+	async logout(refreshToken: string): Promise<void> {
 		try {
+			await apiService.post("/auth/logout", {refreshToken});
 			await clear();
 			router.replace("/(auth)/login");
 		} catch (error) {
@@ -48,4 +49,8 @@ export const authService = {
 			console.error("Failed to refresh user data:", error);
 		}
 	},
+
+	async refreshToken(refreshToken: string): Promise<AuthResponse> {
+		return await apiService.post<AuthResponse>("/auth/refreshToken", {refreshToken});
+	}
 };

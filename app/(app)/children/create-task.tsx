@@ -1,72 +1,15 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, ScrollView, Alert } from "react-native";
+import React from "react";
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { tasksService } from "@/services/tasksService";
-import { Ionicons } from "@expo/vector-icons";
-
-const PREDEFINED_AMOUNTS = ["0.50", "1", "1.50"];
+import { Task, TaskType } from "@/types/Task";
+import TaskForm from "@/components/forms/TaskForm";
 
 export default function CreateTask() {
 	const params = useLocalSearchParams();
+
 	const childId = params.childId as string;
-
-	const [taskName, setTaskName] = useState("");
-	const [selectedAmount, setSelectedAmount] = useState("");
-	const [customAmount, setCustomAmount] = useState("");
-	const [showCustomAmount, setShowCustomAmount] = useState(false);
-	const [taskType, setTaskType] = useState<"REGULAR" | "PUNCTUAL">("PUNCTUAL");
-	const [loading, setLoading] = useState(false);
-
-	const handleAmountSelect = (amount: string) => {
-		setSelectedAmount(amount);
-		setShowCustomAmount(false);
-		setCustomAmount("");
-	};
-
-	const handleCustomAmount = () => {
-		setShowCustomAmount(true);
-		setSelectedAmount("");
-	};
-
-	const getFinalAmount = () => {
-		if (showCustomAmount) {
-			return customAmount;
-		}
-		return selectedAmount;
-	};
-
-	const handleCreateTask = async () => {
-		const finalAmount = getFinalAmount();
-
-		if (!taskName.trim()) {
-			Alert.alert("Erreur", "Veuillez saisir un nom de tâche");
-			return;
-		}
-
-		if (!finalAmount) {
-			Alert.alert("Erreur", "Veuillez sélectionner un montant");
-			return;
-		}
-
-		setLoading(true);
-		try {
-			await tasksService.createTask({
-				description: taskName.trim(),
-				category: taskType === "REGULAR" ? "REGULAR" : "PUNCTUAL",
-				subAccountId: childId,
-				reward: finalAmount,
-				dateLimit: new Date().toISOString(),
-			});
-
-			Alert.alert("Succès", "Tâche créée avec succès", [{ text: "OK", onPress: () => router.back() }]);
-		} catch (error: any) {
-			console.error("Error creating task:", error);
-			const errorMessage = error.response?.data?.message || "Impossible de créer la tâche";
-			Alert.alert("Erreur", errorMessage);
-		} finally {
-			setLoading(false);
-		}
-	};
+	const taskTypeParams = params?.type as TaskType
+	const task = params?.task ? JSON.parse(params?.task as string) as Task : null
 
 	return (
 		<SafeAreaView style={styles.container}>
@@ -78,122 +21,11 @@ export default function CreateTask() {
 				</TouchableOpacity>
 			</View>
 
-			<ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-				{/* Nom de la tâche */}
-				<View style={styles.section}>
-					<Text style={styles.sectionLabel}>Nom de la tâche</Text>
-					<View style={styles.inputContainer}>
-						<TextInput
-							style={styles.textInput}
-							placeholder="Ex: Sortir les poubelles"
-							value={taskName}
-							onChangeText={setTaskName}
-							autoCapitalize="sentences"
-						/>
-						{taskName.trim() && <Ionicons name="checkmark-outline" size={18} color="#16AA75" />}
-					</View>
-				</View>
-
-				{/* Montant attribué */}
-				<View style={styles.section}>
-					<Text style={styles.sectionLabel}>Montant attribué</Text>
-					<View style={styles.amountContainer}>
-						{PREDEFINED_AMOUNTS.map((amount) => (
-							<TouchableOpacity
-								key={amount}
-								style={[styles.amountButton, selectedAmount === amount && styles.amountButtonSelected]}
-								onPress={() => handleAmountSelect(amount)}
-							>
-								<Text
-									style={[
-										styles.amountButtonText,
-										selectedAmount === amount && styles.amountButtonTextSelected,
-									]}
-								>
-									{amount}€
-								</Text>
-							</TouchableOpacity>
-						))}
-						<TouchableOpacity
-							style={[styles.amountButton, showCustomAmount && styles.amountButtonSelected]}
-							onPress={handleCustomAmount}
-						>
-							<Text
-								style={[styles.amountButtonText, showCustomAmount && styles.amountButtonTextSelected]}
-							>
-								Définir
-							</Text>
-						</TouchableOpacity>
-					</View>
-
-					{/* Input montant personnalisé */}
-					{showCustomAmount && (
-						<View style={styles.customAmountContainer}>
-							<TextInput
-								style={styles.customAmountInput}
-								placeholder="Montant personnalisé"
-								value={customAmount}
-								onChangeText={setCustomAmount}
-								keyboardType="decimal-pad"
-								autoFocus
-							/>
-							<Text style={styles.euroSymbol}>€</Text>
-						</View>
-					)}
-				</View>
-
-				{/* Type de tâche */}
-				<View style={styles.section}>
-					<Text style={styles.sectionLabel}>Type de tâche</Text>
-					<View style={styles.taskTypeContainer}>
-						<TouchableOpacity
-							style={[styles.taskTypeButton, taskType === "REGULAR" && styles.taskTypeButtonSelected]}
-							onPress={() => setTaskType("REGULAR")}
-						>
-							<Text
-								style={[
-									styles.taskTypeButtonText,
-									taskType === "REGULAR" && styles.taskTypeButtonTextSelected,
-								]}
-							>
-								Régulière
-							</Text>
-						</TouchableOpacity>
-						<TouchableOpacity
-							style={[styles.taskTypeButton, taskType === "PUNCTUAL" && styles.taskTypeButtonSelected]}
-							onPress={() => setTaskType("PUNCTUAL")}
-						>
-							<Text
-								style={[
-									styles.taskTypeButtonText,
-									taskType === "PUNCTUAL" && styles.taskTypeButtonTextSelected,
-								]}
-							>
-								Ponctuelle
-							</Text>
-						</TouchableOpacity>
-					</View>
-				</View>
-
-				<View style={styles.bottomPadding} />
-			</ScrollView>
-
-			{/* Bouton de création */}
-			<View style={styles.footer}>
-				<TouchableOpacity
-					style={[
-						styles.createButton,
-						(!taskName.trim() || !getFinalAmount() || loading) && styles.createButtonDisabled,
-					]}
-					onPress={handleCreateTask}
-					disabled={!taskName.trim() || !getFinalAmount() || loading}
-				>
-					<Text style={styles.createButtonText}>{loading ? "Création..." : "Créer la tâche"}</Text>
-				</TouchableOpacity>
-			</View>
+			<TaskForm childId={childId} type={taskTypeParams} task={task}/>
 		</SafeAreaView>
 	);
 }
+
 
 const styles = StyleSheet.create({
 	container: {
@@ -236,9 +68,9 @@ const styles = StyleSheet.create({
 		marginTop: 24,
 	},
 	sectionLabel: {
-		fontSize: 16,
-		fontWeight: "500",
-		color: "#333",
+		fontSize: 14,
+		fontWeight: "400",
+		color: "#2F2F2F",
 		marginBottom: 12,
 	},
 	inputContainer: {
@@ -247,7 +79,25 @@ const styles = StyleSheet.create({
 		backgroundColor: "#fff",
 		borderRadius: 8,
 		borderWidth: 1,
-		borderColor: "#ddd",
+		borderColor: "#D5D5D5",
+		paddingHorizontal: 16,
+	},
+	inputContainerSelectedGreen: {
+		flexDirection: "row",
+		alignItems: "center",
+		backgroundColor: "#FFFFFF",
+		borderRadius: 8,
+		borderWidth: 1,
+		borderColor: "#16AA75",
+		paddingHorizontal: 16,
+	},
+	inputContainerSelected: {
+		flexDirection: "row",
+		alignItems: "center",
+		backgroundColor: "#F3F0FD",
+		borderRadius: 8,
+		borderWidth: 1,
+		borderColor: "#846DED",
 		paddingHorizontal: 16,
 	},
 	textInput: {
@@ -262,6 +112,9 @@ const styles = StyleSheet.create({
 		flexWrap: "wrap",
 	},
 	amountButton: {
+		display: "flex",
+		flexDirection: "row",
+		alignItems: "center",
 		backgroundColor: "#EAEAEA",
 		padding: 8,
 		borderRadius: 8,
@@ -322,6 +175,43 @@ const styles = StyleSheet.create({
 	},
 	taskTypeButtonTextSelected: {
 		color: "#2F2F2F",
+	},
+	WeekDayContainer: {
+		backgroundColor: "#F3F0FD",
+		paddingHorizontal: 16,
+		paddingVertical: 20,
+		display: "flex",
+		flexDirection: "column",
+		gap: 12,
+		marginTop: 8,
+		borderRadius: 8
+	},
+	WeekDayTitle: {
+		fontSize: 14,
+		color: "#2F2F2F",
+		fontWeight: "400",
+	},
+	WeekDayButton: {
+		borderRadius: 8,
+		paddingHorizontal: 12,
+		paddingVertical: 8,
+		backgroundColor: "#FFFFFF",
+	},
+	weekdayButtonSelected: {
+		borderRadius: 8,
+		paddingHorizontal: 12,
+		paddingVertical: 8,
+		borderWidth: 1.5,
+		backgroundColor: "#CEC5F8",
+		borderColor: "#846DED"
+	},
+	weekdDayButtonText: {
+		fontSize: 16,
+		color: "#6E6E6E",
+		fontWeight: "400",
+	},
+	weekdDayButtonTextSelected: {
+		fontWeight: "700",
 	},
 	bottomPadding: {
 		height: 100,

@@ -29,7 +29,7 @@ export default function Tasks() {
 			setSubAccount(accountData);
 
 			if (accountData) {
-				const childTasks = await tasksService.getTasksByChild(accountData.id, "CHILD");
+				const childTasks = await tasksService.getAllTasks({childId: accountData.id});
 				setTasks(childTasks);
 			}
 		} catch (error) {
@@ -96,7 +96,7 @@ export default function Tasks() {
 							{task.category === "REGULAR" ? "Régulière" : "Ponctuelle"}
 						</Text>
 					</View>
-					<Text style={[styles.taskReward, typography.buttonSmall]}>+{task.reward}€</Text>
+					<Text style={[styles.taskReward, typography.buttonSmall]}>+{task.moneyReward}€</Text>
 				</View>
 			</View>
 			<View style={styles.taskAction}>
