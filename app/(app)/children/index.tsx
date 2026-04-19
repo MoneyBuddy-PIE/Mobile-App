@@ -242,11 +242,11 @@ export default function Children() {
 							</View>
 							<View style={styles.bubble}>
 								{/* Revenus */}
-								<TouchableOpacity 
+								<TouchableOpacity
 									style={styles.bubbleContainer}
 									onPress={() => router.push({
-										pathname: "/(app)/allowance",
-										params: {childId: selectedChild.id}
+										pathname: "/(app)/revenus/parent",
+										params: { childId: selectedChild.id, childName: selectedChild.name }
 									})}
 								>
 									<View style={styles.bubleTitleContainer}>

@@ -11,8 +11,6 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
 const ITEM_HEIGHT = 48
 const VISIBLE_ITEMS = 5
 const PADDING_ITEMS = Math.floor(VISIBLE_ITEMS / 2) // 2 items vides de chaque côté
@@ -21,8 +19,6 @@ const MONTHS_FR = [
     'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
     'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
 ]
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const getDaysInMonth = (month: number, year: number): number =>
     new Date(year, month + 1, 0).getDate()
@@ -36,8 +32,6 @@ const formatDateFR = (date: Date): string =>
         month: 'long',
         year: 'numeric',
     })
-
-// ─── WheelColumn ──────────────────────────────────────────────────────────────
 
 interface WheelColumnProps {
     items: string[]
@@ -147,8 +141,6 @@ const wheelStyles = StyleSheet.create({
         backgroundColor: 'rgba(255,255,255,0.6)',
     },
 })
-
-// ─── DatePickerInput ──────────────────────────────────────────────────────────
 
 export interface DatePickerInputProps {
     value: Date | null
@@ -308,8 +300,6 @@ const DatePickerInput: React.FC<DatePickerInputProps> = ({
         </>
     )
 }
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
     // Trigger
