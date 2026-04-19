@@ -9,22 +9,23 @@ import {
 	TouchableOpacity,
 	RefreshControl,
 	Modal,
+	Image
 } from "react-native";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { SubAccount } from "@/types/Account";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { tasksService } from "@/services/tasksService";
-import { Task } from "@/types/Task";
+import { Task, TaskStatus, TaskType } from "@/types/Task";
 import { logger } from "@/utils/logger";
 import { typography } from "@/styles/typography";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
+import TaskCard from "@/components/TaskCard";
 
 export default function Children() {
 	const { user, refreshUserData } = useAuthContext();
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
-	const [selectedChildId, setSelectedChildId] = useState<string>("");
+	const [selectedChildId, setSelectedChildId] = useState<string>(useLocalSearchParams()?.id as string ?? "");
 	const [showPicker, setShowPicker] = useState(false);
 	const [tasks, setTasks] = useState<Task[]>([]);
 	const [loadingTasks, setLoadingTasks] = useState(false);
@@ -71,7 +72,8 @@ export default function Children() {
 
 		setLoadingTasks(true);
 		try {
-			const childTasks = await tasksService.getTasksByChild(selectedChildId, "PARENT");
+			const childTasks = await tasksService.getAllTasks({childId: selectedChildId});
+			logger.log("Child tasks loaded:", childTasks);
 			setTasks(childTasks);
 		} catch (error) {
 			logger.error("Error loading child tasks:", error);
@@ -93,19 +95,14 @@ export default function Children() {
 	};
 
 	// Séparer les tâches par catégorie
-	const regularTasks = tasks.filter((task) => task.category === "REGULAR");
-	const punctualTasks = tasks.filter((task) => task.category === "PUNCTUAL");
+	const punctualTasks = tasks.filter((task) => task.type === TaskType.PONCTUAL);
+	const weeklyTasks = tasks.filter((task) => task.type === TaskType.WEEKLY);
+	const mounthlyTasks = tasks.filter((task) => task.type === TaskType.MONTHLY);
+
+	const completedTasks = tasks.filter((task) => task.status === TaskStatus.COMPLETED);
 
 	const renderTask = (task: Task) => (
-		<View key={task.id} style={styles.taskItem}>
-			<View style={styles.taskInfo}>
-				<Text style={[styles.taskReward, typography.bold, typography["xs"]]}>{task.reward}€</Text>
-				<Text style={[styles.taskDescription, typography["sm"]]}>{task.description}</Text>
-			</View>
-			<View style={[styles.taskStatus, task.done && styles.taskStatusCompleted]}>
-				{task.done ?? <Ionicons name="checkmark-outline" size={20} color={task.done ? "#fff" : "#ddd"} />}
-			</View>
-		</View>
+		<TaskCard key={task.id} task={task} />
 	);
 
 	if (loading) {
@@ -139,9 +136,10 @@ export default function Children() {
 				{/* Header avec sélecteur d'enfant */}
 				<View style={styles.header}>
 					<TouchableOpacity style={styles.childSelector} onPress={() => setShowPicker(true)}>
-						<View style={styles.childIcon}>
-							<Text style={styles.childIconText}>👶</Text>
-						</View>
+						<Image
+							source={{uri: `https://api.dicebear.com/9.x/${selectedChild?.iconStyle}/png?seed=${selectedChild?.iconName}`}}
+							style={{width: 30, height: 30, borderRadius: 4, marginRight: 8}}
+						/>
 						<Text style={styles.childName}>{selectedChild?.name || "Sélectionner"}</Text>
 						<Text style={styles.dropdownArrow}>▼</Text>
 					</TouchableOpacity>
@@ -176,6 +174,23 @@ export default function Children() {
 								</TouchableOpacity>
 								<Text style={[typography.regular, styles.actionButtonText]}>Verser de l'argent</Text>
 							</View>
+							<View style={styles.actionButtonContainer}>
+								<TouchableOpacity
+									style={styles.secondaryActionButton}
+									onPress={() =>
+										router.push({
+											pathname: "/(app)/children/add-money",
+											params: {
+												childId: selectedChildId,
+												childName: selectedChild.name,
+											},
+										})
+									}
+								>
+									<Ionicons name="settings-outline" size={28} color="#2F2F2F" />
+								</TouchableOpacity>
+								<Text style={[typography.regular, styles.actionButtonText]}>Paramétrer</Text>
+							</View>
 						</View>
 
 						{/* Message argent de poche */}
@@ -193,6 +208,78 @@ export default function Children() {
 								</Text>
 							</View>
 						)}
+						{selectedChild.money && selectedChild.money !== "0" && (
+							<View>
+							<View style={styles.bubble}>
+								{/* Dépenses du mois */}
+								<View style={styles.bubbleContainer}>
+									<View style={styles.bubleTitleContainer}>
+										<View style={[styles.bubbleIconBadge, {backgroundColor: "#E6E2FB"}]}>
+											<Ionicons name="cash-outline" size={20} color="#846DED" style={styles.bubbleIcon} />
+										</View>
+										<Text style={styles.bubleTitle}>Dépenses</Text>
+									</View>
+									<Text style={styles.bubleDescription}>0€</Text>
+									<Text style={styles.bubleText}>
+										{new Date().toLocaleString("fr-FR", {
+											month: "long",
+											year: "numeric",
+										})}
+									</Text>
+								</View>
+								
+								{/* Épargne */}
+								<View style={styles.bubbleContainer}>
+									<View style={styles.bubleTitleContainer}>
+									<View style={[styles.bubbleIconBadge, {backgroundColor: "#FEA0BA66"}]}>
+											<Ionicons name="cash-outline" size={20} color="#FD618C" style={styles.bubbleIcon} />
+										</View>
+										<Text style={styles.bubleTitle}>Épargne</Text>
+									</View>
+									<Text style={styles.bubleDescription}>{selectedChild.money?.toString() ?? "0"}€</Text>
+									<Text style={styles.bubleText}>Voir détails</Text>
+								</View>
+							</View>
+							<View style={styles.bubble}>
+								{/* Revenus */}
+								<TouchableOpacity
+									style={styles.bubbleContainer}
+									onPress={() => router.push({
+										pathname: "/(app)/revenus/parent",
+										params: { childId: selectedChild.id, childName: selectedChild.name }
+									})}
+								>
+									<View style={styles.bubleTitleContainer}>
+									<View style={[styles.bubbleIconBadge, {backgroundColor: "#E1FFF6"}]}>
+											<Ionicons name="cash-outline" size={20} color="#16AA75" style={styles.bubbleIcon} />
+										</View>
+										<Text style={styles.bubleTitle}>Revenus</Text>
+									</View>
+									<Text style={styles.bubleDescription}>{selectedChild.income?.toString() ?? "0"}€</Text>
+									<Text style={styles.bubleText}>À verser</Text>
+								</TouchableOpacity>
+
+								{/* Résumé tasks */}
+								<View style={styles.bubbleContainer}>
+									<View style={styles.bubleTitleContainer}>
+									<View style={[styles.bubbleIconBadge, {backgroundColor: "#97C9FF66"}]}>
+											<Ionicons name="cash-outline" size={20} color="#52A5FF" style={styles.bubbleIcon} />
+										</View>
+										<Text style={styles.bubleTitle}>Tâches</Text>
+									</View>
+									{
+										tasks.length > 0 ? (
+											<Text style={styles.bubleDescription}>{completedTasks?.length ?? 0} sur {tasks?.length}</Text>
+										) : (
+											<Text style={styles.bubleDescription}>0</Text>
+										)
+									}
+									<Text style={styles.bubleText}>Voir détails</Text>
+								</View>
+							</View>
+							</View>
+						)}
+
 
 						{/* Section Tâches */}
 						<View style={styles.tasksSection}>
@@ -202,30 +289,6 @@ export default function Children() {
 								<ActivityIndicator size="small" color="#007AFF" />
 							) : (
 								<>
-									{/* Tâches régulières */}
-									<View style={styles.taskCategory}>
-										<TouchableOpacity style={styles.taskCategoryHeader}>
-											<View style={styles.taskIconContainer}>
-												<Ionicons name="checkbox-outline" size={20} color="#16AA75" />
-											</View>
-											<Text style={[styles.taskCategoryTitle, typography.bold, typography["sm"]]}>
-												Tâches régulières ({regularTasks.length})
-											</Text>
-											<TouchableOpacity
-												style={styles.addButton}
-												onPress={() =>
-													router.push({
-														pathname: "/(app)/children/create-task",
-														params: { childId: selectedChildId, type: "REGULAR" },
-													})
-												}
-											>
-												<Text style={styles.addButtonText}>+</Text>
-											</TouchableOpacity>
-										</TouchableOpacity>
-										{regularTasks.map(renderTask)}
-									</View>
-
 									{/* Défis ponctuels */}
 									<View style={styles.taskCategory}>
 										<TouchableOpacity style={styles.taskCategoryHeader}>
@@ -233,14 +296,14 @@ export default function Children() {
 												<Ionicons name="rocket-outline" size={20} color="#16AA75" />
 											</View>
 											<Text style={[styles.taskCategoryTitle, typography.bold, typography["sm"]]}>
-												Défis ponctuels ({punctualTasks.length})
+												Défis réguliers ({punctualTasks.length})
 											</Text>
 											<TouchableOpacity
 												style={styles.addButton}
 												onPress={() =>
 													router.push({
 														pathname: "/(app)/children/create-task",
-														params: { childId: selectedChildId, type: "PUNCTUAL" },
+														params: { childId: selectedChildId, type: "PONCTUAL" },
 													})
 												}
 											>
@@ -248,6 +311,54 @@ export default function Children() {
 											</TouchableOpacity>
 										</TouchableOpacity>
 										{punctualTasks.map(renderTask)}
+									</View>
+
+									{/* Défis hebdomadaires */}
+									<View style={styles.taskCategory}>
+										<TouchableOpacity style={styles.taskCategoryHeader}>
+											<View style={styles.taskIconContainer}>
+												<Ionicons name="rocket-outline" size={20} color="#16AA75" />
+											</View>
+											<Text style={[styles.taskCategoryTitle, typography.bold, typography["sm"]]}>
+												Défis hébdomadaire ({weeklyTasks.length})
+											</Text>
+											<TouchableOpacity
+												style={styles.addButton}
+												onPress={() =>
+													router.push({
+														pathname: "/(app)/children/create-task",
+														params: { childId: selectedChildId, type: "WEEKLY" },
+													})
+												}
+											>
+												<Ionicons name="add-outline" size={20} color="#828282" />
+											</TouchableOpacity>
+										</TouchableOpacity>
+										{weeklyTasks.map(renderTask)}
+									</View>
+
+									{/* Défis mensuel */}
+									<View style={styles.taskCategory}>
+										<TouchableOpacity style={styles.taskCategoryHeader}>
+											<View style={styles.taskIconContainer}>
+												<Ionicons name="rocket-outline" size={20} color="#16AA75" />
+											</View>
+											<Text style={[styles.taskCategoryTitle, typography.bold, typography["sm"]]}>
+												Défis mensuels ({mounthlyTasks.length})
+											</Text>
+											<TouchableOpacity
+												style={styles.addButton}
+												onPress={() =>
+													router.push({
+														pathname: "/(app)/children/create-task",
+														params: { childId: selectedChildId, type: "MONTHLY" },
+													})
+												}
+											>
+												<Ionicons name="add-outline" size={20} color="#828282" />
+											</TouchableOpacity>
+										</TouchableOpacity>
+										{mounthlyTasks.map(renderTask)}
 									</View>
 
 									{/* Message aucune tâche */}
@@ -310,6 +421,10 @@ export default function Children() {
 									setShowPicker(false);
 								}}
 							>
+								<Image
+									source={{uri: `https://api.dicebear.com/9.x/${child?.iconStyle}/png?seed=${child?.iconName}`}}
+									style={{width: 30, height: 30, borderRadius: 4, marginRight: 8}}
+								/>
 								<Text
 									style={[
 										styles.modalOptionText,
@@ -406,8 +521,18 @@ const styles = StyleSheet.create({
 	},
 	primaryActionButton: {
 		width: "100%",
-		height: 64,
+		padding: 12,
 		backgroundColor: "#6C5CE7",
+		borderRadius: 8,
+		alignItems: "center",
+		justifyContent: "center",
+		marginBottom: 8,
+	},
+	secondaryActionButton: {
+		width: "100%",
+		padding: 12,
+		borderColor: "#BFD0EA",
+		borderWidth: 1.5,
 		borderRadius: 8,
 		alignItems: "center",
 		justifyContent: "center",
@@ -418,7 +543,6 @@ const styles = StyleSheet.create({
 		fontSize: 14,
 		color: "#333",
 	},
-
 	infoCard: {
 		backgroundColor: "rgba(191, 208, 234, 0.6)",
 		padding: 16,
@@ -440,6 +564,61 @@ const styles = StyleSheet.create({
 	infoText: {
 		color: "#666",
 		lineHeight: 20,
+	},
+	bubble: {
+		display: "flex",
+		flexDirection: "row",
+		justifyContent: "space-between"
+	},
+	bubbleContainer: {
+		width: "47%",
+		display: "flex",
+		flexDirection: "column",
+		gap: 8,
+		alignItems: "flex-start",
+		backgroundColor: "#FFFFFF",
+		shadowColor: "#BFD0EA",
+		shadowOffset: {
+			width: 0,
+			height: 4,
+		},
+		shadowOpacity: 0.6,
+		shadowRadius: 0,
+		elevation: 2,
+		borderRadius: 4,
+		paddingHorizontal: 8,
+		paddingTop: 8,
+		paddingBottom: 16,
+		marginBottom: 22
+	},
+	bubleTitleContainer: {
+		display: "flex",
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 8
+	},
+	bubbleIconBadge: {
+		display: "flex",
+		justifyContent: "center",
+		borderRadius: 4,
+	},
+	bubbleIcon: {
+		padding: 4,
+	},
+	bubleTitle:{
+		fontWeight: "700",
+		color: "#2F2F2F",
+		fontSize: 14,
+	},
+	bubleDescription: {
+		color: "#2F2F2F",
+		fontSize: 24,
+		fontWeight: "800",
+	},
+	bubleText: {
+		color: "#2F2F2F",
+		fontSize: 14,
+		fontWeight: "400",
 	},
 	tasksSection: {
 		marginBottom: 20,
@@ -589,14 +768,24 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 	},
 	taskInfo: {
-		flex: 1,
+		display: "flex",
+		flexDirection: "column",
+		gap: 8
 	},
 	taskDescription: {
 		color: "#333",
 	},
-	taskReward: {
-		color: "#6C5CE7",
-		marginBottom: 8,
+	taskBadgeContainer: {
+		display: "flex",
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 8
+	},
+	taskBadge: {
+		paddingVertical: 3,
+		paddingHorizontal: 5,
+		fontWeight: "700",
+		fontSize: 12
 	},
 	taskStatus: {
 		width: 40,

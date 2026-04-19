@@ -27,7 +27,7 @@ export default function Revenus() {
 			const accountData = await UserStorage.getSubAccount();
 			setSubAccount(accountData);
 			if (accountData) {
-				const childTasks = await tasksService.getTasksByChild(accountData.id, "CHILD");
+				const childTasks = await tasksService.getAllTasks({childId: accountData.id});
 				setTasks(childTasks);
 
 				const accountTransactions = await transactionService.getTransactionsBySubAccount(accountData.id);
@@ -50,7 +50,7 @@ export default function Revenus() {
 	};
 
 	const completedTasks = tasks.filter((task) => task.done);
-	const totalEarned = completedTasks.reduce((sum, task) => sum + parseFloat(task.reward || "0"), 0);
+	const totalEarned = completedTasks.reduce((sum, task) => sum + parseFloat(task.moneyReward || "0"), 0);
 
 	if (loading) {
 		return (

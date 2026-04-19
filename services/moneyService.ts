@@ -3,7 +3,7 @@ import { apiService } from "./api";
 
 export interface AddMoneyRequest {
 	subAccountId: string;
-	amount: string;
+	amount: number;
 	description: string;
 }
 

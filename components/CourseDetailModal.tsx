@@ -155,7 +155,6 @@ export const CourseDetailModal: React.FC<CourseDetailModalProps> = ({ course, vi
                                     >
                                         <View style={styles.sourceContent}>
                                             <Text style={[styles.sourceTitle, typography.semiBold]}>{res.title}</Text>
-                                            <Text style={styles.sourceInfo}>2025, La finance pour tous</Text>
                                         </View>
                                         <Ionicons name="open-outline" size={16} color="#6C5CE7" />
                                     </TouchableOpacity>

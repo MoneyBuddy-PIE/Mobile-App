@@ -1,11 +1,28 @@
-import { logger } from "@/utils/logger";
 import { apiService } from "./api";
-import { Task, CreateTaskRequest } from "@/types/Task";
+import { Task, CreateTaskRequest, TaskStatus } from "@/types/Task";
+
+type GetTasksParams = {
+    childId?: string;
+    status?: TaskStatus
+    type?: string;
+}
 
 export const tasksService = {
 	// Récupérer toutes les tâches
-	async getAllTasks(source: string): Promise<Task[]> {
-		return apiService.get<Task[]>('/tasks?source=' + source);
+	async getAllTasks(params: GetTasksParams): Promise<Task[]> {
+		const { childId, status, type } = params;
+		const queryParams = new URLSearchParams();
+
+		if (childId)
+			queryParams.append('childId', childId);
+		
+		if (status)
+			queryParams.append('status', status);
+		
+		if (type)
+			queryParams.append('type', type);
+
+		return apiService.get<Task[]>(`/tasks?${queryParams.toString()}`);
 	},
 
 	// Créer une nouvelle tâche
@@ -31,12 +48,6 @@ export const tasksService = {
 	// Marquer une tâche comme terminée
 	async completeTask(id: string): Promise<{ token: string; error: string }> {
 		return apiService.put<{ token: string; error: string }>(`/tasks/complete/${id}`);
-	},
-
-	// Récupérer les tâches d'un enfant spécifique
-	async getTasksByChild(childId: string, role: string): Promise<Task[]> {
-		const allTasks = await this.getAllTasks(role);
-		return allTasks.filter((task) => task.subaccountIdChild === childId);
 	},
 
 	// Récupérer les tâches par catégorie

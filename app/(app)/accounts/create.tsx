@@ -64,7 +64,7 @@ export default function Create() {
 			return false;
 		}
 		// PIN requis seulement pour les parents
-		if (selectedRole === "PARENT" && pin.length !== 4) {
+		if (pin.length !== 4) {
 			Alert.alert("Erreur", "Le code PIN doit contenir exactement 4 chiffres");
 			return false;
 		}
@@ -79,7 +79,7 @@ export default function Create() {
 			await authService.subAccountRegister({
 				name: name.trim(),
 				role: selectedRole,
-				pin: selectedRole === "PARENT" ? pin : "", // PIN vide pour les enfants
+				pin: pin
 			});
 			Alert.alert("Succès", "Compte créé avec succès", [{ text: "OK", onPress: () => router.back() }]);
 		} catch (error: any) {
@@ -98,11 +98,8 @@ export default function Create() {
 
 	// Vérifier si le formulaire est valide
 	const isFormValid = () => {
-		if (!name.trim() || !selectedRole) return false;
-		if (selectedRole === "PARENT") {
-			return pin.length === 4;
-		}
-		return true; // Pour les enfants, pas besoin de PIN
+		if (!name.trim() || !selectedRole || pin.length !== 4) return false;
+		return true;
 	};
 
 	return (
@@ -187,8 +184,7 @@ export default function Create() {
 					</View>
 				</View>
 
-				{/* Code PIN - Affiché seulement pour les parents */}
-				{selectedRole === "PARENT" && (
+				{/* Code PIN  */}
 					<View style={styles.section}>
 						<Text style={[styles.sectionLabel, fontStylesSemiBold]}>Code de sécurité</Text>
 						<Text style={[styles.sectionDescription, fontStylesRegular]}>
@@ -225,7 +221,6 @@ export default function Create() {
 							</View>
 						</View>
 					</View>
-				)}
 
 				<View style={styles.bottomPadding} />
 			</ScrollView>
