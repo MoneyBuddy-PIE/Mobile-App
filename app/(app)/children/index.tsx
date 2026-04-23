@@ -229,16 +229,22 @@ export default function Children() {
 								</View>
 								
 								{/* Épargne */}
-								<View style={styles.bubbleContainer}>
+								<TouchableOpacity 
+									style={styles.bubbleContainer}
+									onPress={() => router.push({
+										pathname: "/(app)/goals",
+										params: { childId: selectedChild.id, childName: selectedChild.name }
+									})}
+								>
 									<View style={styles.bubleTitleContainer}>
-									<View style={[styles.bubbleIconBadge, {backgroundColor: "#FEA0BA66"}]}>
+										<View style={[styles.bubbleIconBadge, {backgroundColor: "#FEA0BA66"}]}>
 											<Ionicons name="cash-outline" size={20} color="#FD618C" style={styles.bubbleIcon} />
 										</View>
 										<Text style={styles.bubleTitle}>Épargne</Text>
 									</View>
 									<Text style={styles.bubleDescription}>{selectedChild.money?.toString() ?? "0"}€</Text>
 									<Text style={styles.bubleText}>Voir détails</Text>
-								</View>
+								</TouchableOpacity>
 							</View>
 							<View style={styles.bubble}>
 								{/* Revenus */}
