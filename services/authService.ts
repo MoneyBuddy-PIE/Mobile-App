@@ -2,6 +2,7 @@ import { apiService } from "./api";
 import { LoginRequest, RegisterRequest, AuthResponse, SubAccountRegisterRequest } from "@/types/api";
 import { clear } from "@/utils/storage";
 import { router } from "expo-router";
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 export const authService = {
 	async login(credentials: LoginRequest): Promise<AuthResponse> {
@@ -51,6 +52,26 @@ export const authService = {
 	},
 
 	async refreshToken(refreshToken: string): Promise<AuthResponse> {
-		return await apiService.post<AuthResponse>("/auth/refreshToken", {refreshToken});
+		return await apiService.get<AuthResponse>("/auth/me", {refreshToken});
 	}
+};
+
+export const signInWithGoogle = async () => {
+
+	GoogleSignin.configure({
+  webClientId: process.env.GOOGLE_WEB_CLIENT_ID,
+});
+
+  await GoogleSignin.hasPlayServices();
+
+  const userInfo = await GoogleSignin.signIn();
+
+  return {
+    idToken: userInfo.data?.idToken,
+    user: userInfo.data?.user,
+  };
+};
+
+export const signOutGoogle = async () => {
+  await GoogleSignin.signOut();
 };

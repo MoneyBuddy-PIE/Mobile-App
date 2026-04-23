@@ -1,11 +1,17 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, SafeAreaView } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, SafeAreaView, Button } from "react-native";
 import { useFonts } from "expo-font";
 import { DMSans_700Bold, DMSans_400Regular } from "@expo-google-fonts/dm-sans";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { authService } from "@/services/authService";
 import { TokenStorage } from "@/utils/storage";
+import {
+  GoogleSignin,
+  GoogleSigninButton,
+} from '@react-native-google-signin/google-signin';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { signInWithGoogle } from '../../services/authService';
 
 export default function Register() {
 	const [step, setStep] = useState(1);
@@ -93,6 +99,37 @@ export default function Register() {
 		}
 	};
 
+  const handleGoogleSSO = async () => {
+    try {
+      const data = await signInWithGoogle();
+
+      await AsyncStorage.setItem(
+  'google_signup_data',
+  JSON.stringify({
+    firstName: data.user?.givenName || data.user?.name || '',
+    email: data.user?.email || '',
+  })
+);
+
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+  const loadData = async () => {
+    const data = await AsyncStorage.getItem('google_signup_data');
+
+    if (data) {
+      const parsed = JSON.parse(data);
+      setFirstName(parsed.firstName || '');
+      setEmail(parsed.email || '');
+    }
+  };
+
+  loadData();
+}, []);
+
 	const handlePinChange = (value: string) => {
 		if (value.length <= 4 && /^\d*$/.test(value)) {
 			setPin(value);
@@ -125,6 +162,14 @@ export default function Register() {
 							Vous serez le guide de votre enfant dans son aventure financière.
 						</Text>
 					</View>
+
+					{/* Bouton Google */}
+					<GoogleSigninButton
+        				size={GoogleSigninButton.Size.Wide}
+        				color={GoogleSigninButton.Color.Dark}
+        				onPress={handleGoogleSSO}
+						style={{ width: '100%', height: 48, marginTop: 20 }}
+      				/>
 
 					{/* Champ Prénom */}
 					<View style={styles.inputContainer}>

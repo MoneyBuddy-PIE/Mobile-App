@@ -5,6 +5,11 @@ import { DMSans_700Bold, DMSans_400Regular } from "@expo-google-fonts/dm-sans";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useAuthContext } from "@/contexts/AuthContext";
+import {
+  GoogleSignin,
+  GoogleSigninButton,
+} from '@react-native-google-signin/google-signin';
+import { authService, signInWithGoogle } from '../../services/authService';
 
 export default function Login() {
 	const { login } = useAuthContext();
@@ -49,6 +54,15 @@ export default function Login() {
 			} else {
 				router.replace("/(app)/accounts");
 			}
+			
+			// Si login via SSO
+
+			const ssoResult = await signInWithGoogle();
+
+			if (ssoResult) {
+				authService.refreshToken(ssoResult.idToken as string);
+			}
+
 		} catch (error: any) {
 			Alert.alert("Erreur", "Une erreur inattendue s'est produite");
 		} finally {
@@ -129,6 +143,13 @@ export default function Login() {
 						{loading ? "Connexion..." : "Se connecter"}
 					</Text>
 				</TouchableOpacity>
+				{/* Bouton Google */}
+				<GoogleSigninButton
+					size={GoogleSigninButton.Size.Wide}
+					color={GoogleSigninButton.Color.Dark}
+					onPress={handleLogin}
+					style={{ width: '100%', height: 48, marginTop: 20 }}
+				/>
 			</View>
 		</SafeAreaView>
 	);
