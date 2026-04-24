@@ -59,7 +59,7 @@ class ApiService {
                 if (mainTokenUrls.some((url) => config.url?.includes(url))) {
                     token = await TokenStorage.getToken();
                 } else if (parentSubAccountTokenUrls.some((url) => config.url?.includes(url))) {
-                    token = await TokenStorage.getParentSubAccountToken() ?? await TokenStorage.getSubAccountToken();
+                    token = (await TokenStorage.getParentSubAccountToken()) ?? (await TokenStorage.getSubAccountToken());
                 } else {
                     token = await TokenStorage.getSubAccountToken();
                 }

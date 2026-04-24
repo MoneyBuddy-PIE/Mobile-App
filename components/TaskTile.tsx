@@ -19,9 +19,6 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 export default function TaskTile({ task, showName, childName, onPress }: TaskTileProps) {
-    const Container = onPress ? TouchableOpacity : View;
-    const containerProps = onPress ? { onPress, activeOpacity: 0.7 } : {};
-
     const getRewardDisplay = () => {
         if (task.moneyReward > 0) {
             return `+ ${task.moneyReward}€`;
@@ -35,13 +32,12 @@ export default function TaskTile({ task, showName, childName, onPress }: TaskTil
     const rewardDisplay = getRewardDisplay();
 
     return (
-        <Container
+        <View
             style={[
                 styles.taskItem,
                 task.status === "COMPLETED" && styles.taskItemCompleted,
                 task.status === "PRE_VALIDATE" && styles.taskItemPreValidate,
             ]}
-            {...containerProps}
         >
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md, flex: 1 }}>
                 <View style={styles.taskInfo}>
@@ -61,8 +57,11 @@ export default function TaskTile({ task, showName, childName, onPress }: TaskTil
                     <Text style={[styles.taskDescription, task.status === "COMPLETED" && styles.taskDescriptionCompleted, typography["sm"]]}>
                         {task.description}
                     </Text>
+                    {showName && childName && <Text style={[styles.childNameBadge, typography.bold, typography["xs"]]}>{childName}</Text>}
                 </View>
-                <View
+                <TouchableOpacity
+                    onPress={onPress}
+                    activeOpacity={onPress ? 0.7 : 1}
                     style={[
                         styles.taskStatus,
                         task.status === "COMPLETED" && styles.taskStatusCompleted,
@@ -71,10 +70,9 @@ export default function TaskTile({ task, showName, childName, onPress }: TaskTil
                 >
                     {task.status === "COMPLETED" && <Check />}
                     {task.status === "PRE_VALIDATE" && <Minus />}
-                </View>
+                </TouchableOpacity>
             </View>
-            {showName && childName && <Text style={[styles.childNameBadge, typography.bold, typography["xs"]]}>{childName}</Text>}
-        </Container>
+        </View>
     );
 }
 
@@ -143,6 +141,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         justifyContent: "center",
         alignItems: "center",
+        alignSelf: "center",
         backgroundColor: colors.primary[40],
     },
     taskStatusCompleted: {

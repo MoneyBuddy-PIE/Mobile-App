@@ -18,5 +18,8 @@ export interface CreateGoalRequest {
     name: string;
     amount: number;
     emoji?: string;
-    transferMoney?: number;
+}
+
+export interface GoalMoneyRequest {
+    transferMoney: number;
 }

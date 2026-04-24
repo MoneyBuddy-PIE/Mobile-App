@@ -5,11 +5,12 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SvgUri } from "react-native-svg";
 import { authService } from "@/services/authService";
+import { SubAccountRole } from "@/types/Account";
 import { colors, spacing, typography, shadows } from "@/styles";
 import Cross from "@/components/Icons/Cross";
 
 interface RoleOption {
-    value: string;
+    value: SubAccountRole;
     label: string;
     description: string;
     icon: string;
@@ -64,7 +65,7 @@ const getDicebearUrl = (style: AvatarStyle, seed: string) => `https://api.dicebe
 
 export default function Create() {
     const [name, setName] = useState("");
-    const [selectedRole, setSelectedRole] = useState<string>("");
+    const [selectedRole, setSelectedRole] = useState<SubAccountRole | "">("");
     const [pin, setPin] = useState("");
     const [loading, setLoading] = useState(false);
     const [selectedAvatarStyle, setSelectedAvatarStyle] = useState<AvatarStyle>("bottts-neutral");
@@ -89,7 +90,7 @@ export default function Create() {
         try {
             await authService.subAccountRegister({
                 name: name.trim(),
-                role: selectedRole,
+                role: selectedRole as SubAccountRole,
                 pin,
                 iconStyle: selectedAvatarStyle,
                 iconName: selectedAvatarSeed,

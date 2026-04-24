@@ -1,17 +1,32 @@
+export type SubAccountRole = 'OWNER' | 'PARENT' | 'CHILD';
+
 export interface Authority {
     authority: string;
 }
 
+export interface Setting {
+    id: string;
+    subAccountId: string;
+    preValidate: boolean;
+    createdAt: string;
+    updatedAt: string | null;
+}
+
 export interface SubAccount {
+    id: string;
     accountId: string;
+    name: string;
+    role: SubAccountRole;
+    money: number;
+    income: number;
+    coin: number;
+    iconStyle: string | null;
+    iconName: string | null;
+    setting: Setting | null;
     active: boolean;
     createdAt: string;
-    id: string;
-    lastConnexion: string | null;
-    name: string;
-    role: string;
     updatedAt: string | null;
-    money: string;
+    lastConnexion: string | null;
 }
 
 export interface Account {

@@ -47,6 +47,8 @@ export default function Tasks() {
     const handleCompleteTask = async (task: Task) => {
         try {
             if (task.status === "PRE_VALIDATE") {
+                await tasksService.preValidateTask(task.id);
+                await loadData();
                 return;
             }
             if (task.preValidate) {

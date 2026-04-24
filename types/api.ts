@@ -1,7 +1,12 @@
+import { SubAccountRole } from './Account';
+
 export interface LoginRequest {
     email: string;
     password: string;
 }
+
+/** Alias matching the API schema name */
+export type AuthRequest = LoginRequest;
 
 export interface RegisterRequest {
     name: string;
@@ -11,7 +16,16 @@ export interface RegisterRequest {
     pin: string;
 }
 
+export interface AuthResetPassword {
+    password: string;
+    confirmPassword: string;
+    pin: string;
+}
+
 export type DEVICE_PLATFORM = 'IOS' | 'ANDROID';
+
+/** Alias matching the API schema name */
+export type DevicePlatform = DEVICE_PLATFORM;
 
 export interface DeviceLoginRequest {
     userId: string;
@@ -32,8 +46,31 @@ export interface ApiError {
 
 export interface SubAccountRegisterRequest {
     name: string;
-    role: string;
+    role: SubAccountRole;
     pin: string;
     iconStyle?: string;
     iconName?: string;
+}
+
+/** Alias matching the API schema name */
+export type SubAccountDto = SubAccountRegisterRequest;
+
+export interface UpdateSubAccountDto {
+    name?: string;
+    iconStyle?: string;
+    iconName?: string;
+}
+
+export interface AuthSubAccountRequest {
+    id: string;
+    pin?: string;
+}
+
+export interface ResponseDto {
+    message: string;
+    status: string;
+}
+
+export interface CompleteSection {
+    score: number;
 }

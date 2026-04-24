@@ -155,7 +155,7 @@ export default function ParentHome() {
 
     const getTotalMoney = () => {
         return childAccounts.reduce((total, child) => {
-            return total + parseFloat(child.money || "0");
+            return total + (child.income ?? 0);
         }, 0);
     };
 
@@ -317,9 +317,12 @@ export default function ParentHome() {
                     tasks={childrenSummary.flatMap((child) => child.preValidateTasks || [])}
                     children={childAccounts}
                     onClose={() => setModalVisible(false)}
-                    onValidateTasks={() => setModalVisible(false)}
                     onValidateTask={async (task, done) => {
                         await tasksService.completeTask(task.id, done);
+                        await loadChildrenData();
+                    }}
+                    onDeleteTask={async (task) => {
+                        await tasksService.deleteTask(task.id);
                         await loadChildrenData();
                     }}
                 />

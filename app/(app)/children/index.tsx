@@ -26,7 +26,7 @@ import { logger } from "@/utils/logger";
 import { typography, colors, spacing, shadows, commonStyles } from "@/styles";
 
 // Components
-import TaskTile from "@/components/TaskTile";
+import SwipeableTaskTile from "@/components/SwipeableTaskTile";
 
 // Icons
 import MoneyBill from "@/components/Icons/MoneyBill";
@@ -70,8 +70,6 @@ export default function Children() {
     const [refreshing, setRefreshing] = useState(false);
     const [selectedChildId, setSelectedChildId] = useState<string>("");
     const [showPicker, setShowPicker] = useState(false);
-    const [validationModalVisible, setValidationModalVisible] = useState(false);
-    const [taskToValidate, setTaskToValidate] = useState<Task | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loadingTasks, setLoadingTasks] = useState(false);
     const [debitTransactions, setDebitTransactions] = useState<Transaction[]>([]);
@@ -90,9 +88,7 @@ export default function Children() {
         return total + goal.progression;
     }, 0);
 
-    const moneyCredited = creditTransactions.reduce((total, transaction) => {
-        return total + parseFloat(transaction.amount);
-    }, 0);
+    const moneyCredited = selectedChild?.income ? selectedChild.income : 0;
 
     const completedTasksCount = tasks.filter((task) => task.status === "COMPLETED").length;
     const totalTasksCount = tasks.length;
@@ -123,7 +119,6 @@ export default function Children() {
         setLoadingTasks(true);
         try {
             const childTasks = await tasksService.getTasksByChild(selectedChildId);
-            console.log("Loaded child tasks:", childTasks);
             setTasks(childTasks);
         } catch (error) {
             logger.error("Error loading child tasks:", error);
@@ -168,7 +163,6 @@ export default function Children() {
         try {
             const childGoals = await goalsService.getGoals(selectedChildId);
             setGoals(childGoals);
-            logger.log("Loaded child goals:", childGoals);
         } catch (error) {
             logger.error("Error loading child goals:", error);
         }
@@ -188,27 +182,17 @@ export default function Children() {
         [loadChildTasks],
     );
 
-    const handleValidationChoice = useCallback(
-        async (choice: boolean) => {
-            if (!taskToValidate) return;
+    const handleDeleteTask = useCallback(
+        async (task: Task) => {
             try {
-                await validateTask(taskToValidate.id, choice);
-                setValidationModalVisible(false);
-                setTaskToValidate(null);
-
-                if (choice) {
-                    Alert.alert("Tâche validée ! ✅", `La récompense a été ajoutée au compte de ${selectedChild?.name}.`, [{ text: "Super !" }]);
-                } else {
-                    Alert.alert("Tâche refusée", "La tâche a été refusée et devra être refaite.", [{ text: "OK" }]);
-                }
+                await tasksService.deleteTask(task.id);
+                await loadChildTasks();
             } catch (error) {
-                setValidationModalVisible(false);
-                setTaskToValidate(null);
-                Alert.alert("Erreur", "Impossible de valider la tâche");
-                logger.error("Error in handleValidationChoice:", error);
+                Alert.alert("Erreur", "Impossible de supprimer la tâche");
+                logger.error("Error deleting task:", error);
             }
         },
-        [taskToValidate, validateTask, selectedChild?.name],
+        [loadChildTasks],
     );
 
     const onRefresh = useCallback(async () => {
@@ -266,7 +250,7 @@ export default function Children() {
     const renderBalanceSection = () => (
         <View style={styles.balanceSection}>
             <Text style={[styles.balanceLabel, typography.regular]}>Solde disponible</Text>
-            <Text style={[styles.balanceAmount, typography.title, typography["5xl"]]}>{selectedChild?.money || "0.00"}€</Text>
+            <Text style={[styles.balanceAmount, typography.title, typography["5xl"]]}>{(selectedChild?.money ?? 0).toFixed(2)}€</Text>
         </View>
     );
 
@@ -407,18 +391,23 @@ export default function Children() {
         return (
             <>
                 {taskList.map((task) => (
-                    <TaskTile
-                        key={task.id}
-                        task={task}
-                        onPress={
-                            task.status !== "COMPLETED" && !task.preValidate
-                                ? () => {
-                                      setTaskToValidate(task);
-                                      setValidationModalVisible(true);
-                                  }
-                                : undefined
-                        }
-                    />
+                    <View key={task.id} style={{ marginHorizontal: -spacing.lg }}>
+                        <SwipeableTaskTile
+                            task={task}
+                            horizontalPadding={spacing.lg}
+                            onValidate={
+                                task.status !== "COMPLETED" && !task.preValidate
+                                    ? async (t) => {
+                                          await validateTask(t.id, true);
+                                          Alert.alert("Tâche validée ! ✅", `La récompense a été ajoutée au compte de ${selectedChild?.name}.`, [
+                                              { text: "Super !" },
+                                          ]);
+                                      }
+                                    : undefined
+                            }
+                            onDelete={task.status !== "COMPLETED" ? (t) => handleDeleteTask(t) : undefined}
+                        />
+                    </View>
                 ))}
             </>
         );
@@ -434,14 +423,23 @@ export default function Children() {
                         Tâches en attente de validation ({preValidateTasks.length})
                     </Text>
                     {preValidateTasks.map((task) => (
-                        <TaskTile
-                            key={task.id}
-                            task={task}
-                            onPress={() => {
-                                setTaskToValidate(task);
-                                setValidationModalVisible(true);
-                            }}
-                        />
+                        <View key={task.id} style={{ marginHorizontal: -spacing.lg }}>
+                            <SwipeableTaskTile
+                                task={task}
+                                horizontalPadding={spacing.lg}
+                                onValidate={async (t) => {
+                                    await validateTask(t.id, true);
+                                    Alert.alert("Tâche validée ! ✅", `La récompense a été ajoutée au compte de ${selectedChild?.name}.`, [
+                                        { text: "Super !" },
+                                    ]);
+                                }}
+                                onReject={async (t) => {
+                                    await validateTask(t.id, false);
+                                    Alert.alert("Tâche refusée", "La tâche a été refusée et devra être refaite.", [{ text: "OK" }]);
+                                }}
+                                onDelete={(t) => handleDeleteTask(t)}
+                            />
+                        </View>
                     ))}
                 </View>
             )}
@@ -491,31 +489,6 @@ export default function Children() {
         </Modal>
     );
 
-    const renderValidationModal = () => (
-        <Modal visible={validationModalVisible} transparent={true} animationType="fade" onRequestClose={() => setValidationModalVisible(false)}>
-            <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setValidationModalVisible(false)}>
-                <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
-                    <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>Valider la tâche</Text>
-                        <TouchableOpacity onPress={() => setValidationModalVisible(false)} style={styles.closeButton}>
-                            <Ionicons name="close" size={24} color="#666" />
-                        </TouchableOpacity>
-                    </View>
-                    <Text style={[styles.infoText, { marginBottom: 12 }]}>{taskToValidate?.description}</Text>
-
-                    <View style={styles.validationButtons}>
-                        <TouchableOpacity style={[styles.validationButton, styles.validationSecondary]} onPress={() => handleValidationChoice(false)}>
-                            <Text style={{ color: "#333", fontWeight: "600" }}>Refuser</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={[styles.validationButton, styles.validationPrimary]} onPress={() => handleValidationChoice(true)}>
-                            <Text style={{ color: "#fff", fontWeight: "600" }}>Valider</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </TouchableOpacity>
-        </Modal>
-    );
-
     // Loading state
     if (loading) {
         return (
@@ -551,7 +524,7 @@ export default function Children() {
                     <View style={styles.content}>
                         {renderBalanceSection()}
                         {renderActionButtons()}
-                        {!selectedChild.money || selectedChild.money === "0" ? renderEmptyMoneyInfo() : renderSummarySection()}
+                        {!selectedChild.money && selectedChild.income === 0 ? renderEmptyMoneyInfo() : renderSummarySection()}
                         {renderTasksSection()}
                     </View>
                 )}
@@ -577,7 +550,6 @@ export default function Children() {
             )}
 
             {renderChildPicker()}
-            {renderValidationModal()}
         </SafeAreaView>
     );
 }

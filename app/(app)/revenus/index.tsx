@@ -75,7 +75,7 @@ export default function Revenus() {
                     <View style={styles.balanceHeader}>
                         <Text style={[styles.balanceLabel, typography.body]}>Mon argent de poche</Text>
                     </View>
-                    <Text style={[styles.balanceAmount, typography["5xl"], typography.bold]}>{parseFloat(subAccount?.money || "0").toFixed(2)}€</Text>
+                    <Text style={[styles.balanceAmount, typography["5xl"], typography.bold]}>{(subAccount?.money ?? 0).toFixed(2)}€</Text>
                 </View>
 
                 {/* Statistiques */}

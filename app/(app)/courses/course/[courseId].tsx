@@ -195,10 +195,10 @@ export default function CourseReader() {
                             <Text style={styles.scoreText}>
                                 Score: {quizScore}/{currentStep.section.quiz.length}
                             </Text>
-                            {quizScore >= quiz.minimumScoreToPass ? (
+                            {quizScore >= currentStep.section.minimumScoreToPass ? (
                                 <Text style={styles.passText}>✅ Réussi!</Text>
                             ) : (
-                                <Text style={styles.failText}>❌ Score minimum requis: {quiz.minimumScoreToPass}</Text>
+                                <Text style={styles.failText}>❌ Score minimum requis: {currentStep.section.minimumScoreToPass}</Text>
                             )}
                         </View>
                     )}

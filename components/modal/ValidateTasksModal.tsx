@@ -1,10 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { View, Text, StyleSheet, Modal, Dimensions, TouchableOpacity, Animated, PanResponder, StatusBar, ScrollView, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { typography } from "@/styles/typography";
 import { Task } from "@/types/Task";
 import { SubAccount } from "@/types/Account";
-import TaskTile from "../TaskTile";
+import SwipeableTaskTile from "../SwipeableTaskTile";
 import { colors, spacing } from "@/styles";
 
 const { height: screenHeight } = Dimensions.get("window");
@@ -16,11 +16,11 @@ interface ValidateTasksModalProps {
     children: SubAccount[];
     visible: boolean;
     onClose: () => void;
-    onValidateTasks: (tasks: Task[]) => void;
     onValidateTask?: (task: Task, done: boolean) => Promise<void>;
+    onDeleteTask?: (task: Task) => Promise<void>;
 }
 
-export const ValidateTasksModal: React.FC<ValidateTasksModalProps> = ({ tasks, children, visible, onClose, onValidateTasks, onValidateTask }) => {
+export const ValidateTasksModal: React.FC<ValidateTasksModalProps> = ({ tasks, children, visible, onClose, onValidateTask, onDeleteTask }) => {
     const translateY = useRef(new Animated.Value(MODAL_HEIGHT)).current;
     const opacity = useRef(new Animated.Value(0)).current;
 
@@ -126,44 +126,48 @@ export const ValidateTasksModal: React.FC<ValidateTasksModalProps> = ({ tasks, c
                     {/* Content */}
                     <ScrollView style={styles.content}>
                         {tasks.length === 0 ? (
-                            <Text style={typography.body}>Aucune tâche en attente de validation.</Text>
+                            <Text style={[typography.body, { paddingHorizontal: 24 }]}>Aucune tâche en attente de validation.</Text>
                         ) : (
                             <>
-                                <Text style={[typography.xl, typography.bold, { marginBottom: 16, color: colors.carbon[100] }]}>
+                                <Text
+                                    style={[typography.xl, typography.bold, { marginBottom: 16, color: colors.carbon[100], paddingHorizontal: 24 }]}
+                                >
                                     À vous de jouer : validez ses tâches complétées ! ✅
                                 </Text>
                                 {tasks.map((task) => (
-                                    <View key={task.id}>
-                                        <TaskTile task={task} showName childName={getChildName(task.subaccountIdChild)} />
-                                        {onValidateTask && (
-                                            <View style={styles.validationButtons}>
-                                                <TouchableOpacity
-                                                    style={[styles.validationButton, styles.validationSecondary]}
-                                                    onPress={async () => {
-                                                        await onValidateTask(task, false);
-                                                        Alert.alert("Tâche refusée", "La tâche a été refusée et devra être refaite.", [
-                                                            { text: "OK" },
-                                                        ]);
-                                                    }}
-                                                >
-                                                    <Text style={styles.validationSecondaryText}>Refuser</Text>
-                                                </TouchableOpacity>
-                                                <TouchableOpacity
-                                                    style={[styles.validationButton, styles.validationPrimary]}
-                                                    onPress={async () => {
-                                                        await onValidateTask(task, true);
-                                                        Alert.alert(
-                                                            "Tâche validée ! ✅",
-                                                            `La récompense a été ajoutée au compte de ${getChildName(task.subaccountIdChild)}.`,
-                                                            [{ text: "Super !" }],
-                                                        );
-                                                    }}
-                                                >
-                                                    <Text style={styles.validationPrimaryText}>Valider</Text>
-                                                </TouchableOpacity>
-                                            </View>
-                                        )}
-                                    </View>
+                                    <SwipeableTaskTile
+                                        key={task.id}
+                                        task={task}
+                                        showName
+                                        childName={getChildName(task.subaccountIdChild)}
+                                        onValidate={
+                                            onValidateTask
+                                                ? async (t) => {
+                                                      await onValidateTask(t, true);
+                                                      Alert.alert(
+                                                          "Tâche validée ! ✅",
+                                                          `La récompense a été ajoutée au compte de ${getChildName(t.subaccountIdChild)}.`,
+                                                          [{ text: "Super !" }],
+                                                      );
+                                                  }
+                                                : undefined
+                                        }
+                                        onReject={
+                                            onValidateTask
+                                                ? async (t) => {
+                                                      await onValidateTask(t, false);
+                                                      Alert.alert("Tâche refusée", "La tâche a été refusée et devra être refaite.", [{ text: "OK" }]);
+                                                  }
+                                                : undefined
+                                        }
+                                        onDelete={
+                                            onDeleteTask
+                                                ? async (t) => {
+                                                      await onDeleteTask(t);
+                                                  }
+                                                : undefined
+                                        }
+                                    />
                                 ))}
                             </>
                         )}
@@ -206,8 +210,6 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
-        paddingHorizontal: 24,
-        // paddingTop: 32,
         paddingBottom: 24,
     },
     validationButtons: {

@@ -143,10 +143,10 @@ export const CourseDetailModal: React.FC<CourseDetailModalProps> = ({ course, vi
                         </View>
 
                         {/* Sources Section */}
-                        {course.resources && course.resources.length > 0 && (
+                        {course.ressource && course.ressource.length > 0 && (
                             <View style={styles.sourcesSection}>
                                 <Text style={[styles.sourcesTitle, typography.subheading]}>Sources</Text>
-                                {course.resources.map((resource, index) => (
+                                {course.ressource.map((resource, index) => (
                                     <TouchableOpacity
                                         key={index}
                                         style={styles.sourceItem}

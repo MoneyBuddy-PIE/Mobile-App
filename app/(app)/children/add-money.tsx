@@ -54,7 +54,7 @@ export default function AddMoney() {
         try {
             // Récupérer le solde actuel de l'enfant
             const currentChild = user?.subAccounts?.find((account) => account.id === childId);
-            const currentBalance = parseFloat(currentChild?.money || "0");
+            const currentBalance = currentChild?.money ?? 0;
 
             const result = await moneyService.addMoney({
                 subAccountId: childId,

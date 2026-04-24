@@ -96,7 +96,7 @@ export default function ChildHome() {
 
     const completedTasks = tasks.filter((task) => task.status === "COMPLETED");
     const pendingTasks = tasks.filter((task) => task.status === "PENDING");
-    const currentBalance = parseFloat(subAccount?.money || "0");
+    const currentBalance = subAccount?.money ?? 0;
     const totalEarned = completedTasks.reduce((sum, task) => sum + task.moneyReward, 0);
     const potentialEarnings = pendingTasks.reduce((sum, task) => sum + task.moneyReward, 0);
     const completionRate = tasks.length > 0 ? Math.round((completedTasks.length / tasks.length) * 100) : 0;

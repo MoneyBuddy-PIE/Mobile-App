@@ -81,7 +81,7 @@ export default function AddExpense() {
             }
 
             // Récupérer le solde actuel de l'enfant
-            const currentBalance = parseFloat(subAccount.money || "0");
+            const currentBalance = subAccount.money ?? 0;
 
             const result = await transactionService.addExpense({
                 subAccountId: subAccount.id,

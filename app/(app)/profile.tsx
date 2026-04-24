@@ -115,7 +115,7 @@ export default function Profile() {
                         {subAccount.role === "CHILD" && (
                             <View style={styles.moneyContainer}>
                                 <Text style={[styles.moneyLabel, fontStylesRegular]}>Mon argent de poche</Text>
-                                <Text style={[styles.moneyAmount, fontStylesTitle]}>{parseFloat(subAccount.money || "0").toFixed(2)}€</Text>
+                                <Text style={[styles.moneyAmount, fontStylesTitle]}>{(subAccount.money ?? 0).toFixed(2)}€</Text>
                             </View>
                         )}
                     </View>
