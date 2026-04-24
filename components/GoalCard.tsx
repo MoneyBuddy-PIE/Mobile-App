@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, Animated } from "react-native";
+import { View, Text, StyleSheet, Animated, TouchableOpacity } from "react-native";
 import CircularProgress from "./CircualProgress";
 import { Goal } from "@/types/Goal";
 import getRandomColor from "@/utils/fn/getRandomColor";
@@ -7,17 +7,20 @@ import getRandomColor from "@/utils/fn/getRandomColor";
 type IProps = {
     goal: Goal
     backgroundIconColor?: string
+    onPress?: () => void
 }
 
-export default function GoalCard({goal, backgroundIconColor = getRandomColor()} : IProps) {
+export default function GoalCard({goal, backgroundIconColor = getRandomColor(), onPress} : IProps) {
     const {amount, emoji, name, progression} = goal
   const formattedAmount = amount.toLocaleString("fr-FR", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
 
+  const CardWrapper = onPress ? TouchableOpacity : View
+
   return (
-    <View style={styles.card}>
+    <CardWrapper style={styles.card} onPress={onPress} activeOpacity={0.75}>
       <View style={styles.left}>
         <View style={[styles.iconWrapper, { backgroundColor: backgroundIconColor }]}>
           <Text style={styles.iconEmoji}>{emoji ?? "🦸"}</Text>
@@ -39,7 +42,7 @@ export default function GoalCard({goal, backgroundIconColor = getRandomColor()} 
         size={88}
         strokeWidth={12}
       />
-    </View>
+    </CardWrapper>
   );
 }
 

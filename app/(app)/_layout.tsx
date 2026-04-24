@@ -20,6 +20,7 @@ export default function AppLayout() {
 					<Stack.Screen name="tasks" />
 					<Stack.Screen name="profile" />
 					<Stack.Screen name="home" />
+					<Stack.Screen name="goals" />
 				</Stack>
 				{!hideBottomNav && <BottomNavigation />}
 			</View>
