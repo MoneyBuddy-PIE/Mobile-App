@@ -13,12 +13,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-
-const GOAL_EMOJIS = [
-    "🎯", "🏠", "🚗", "🎮", "🎁", "🏖️", "📚", "💻",
-    "🎸", "⚽", "🎨", "✈️", "🐶", "🐱", "🏋️", "🧸",
-    "💎", "🌟", "🍕", "🎭",
-];
+import getRandomItemFromList from "@/utils/fn/getRandomItemFromList";
+import emojis from "@/styles/emojis";
 
 const PREDEFINED_AMOUNTS = ["10", "20", "50", "100"];
 
@@ -31,7 +27,7 @@ export default function GoalForm({ childId, goal }: IProps) {
     const isUpdate = Boolean(goal?.id);
 
     const [name, setName] = useState(goal?.name ?? "");
-    const [selectedEmoji, setSelectedEmoji] = useState(goal?.emoji ?? "🎯");
+    const [selectedEmoji, setSelectedEmoji] = useState(goal?.emoji ?? getRandomItemFromList(emojis));
     const [customAmount, setCustomAmount] = useState(goal?.amount?.toString() ?? "");
     const [selectedPreset, setSelectedPreset] = useState("");
     const [loading, setLoading] = useState(false);
@@ -131,7 +127,7 @@ export default function GoalForm({ childId, goal }: IProps) {
                 <View style={styles.section}>
                     <Text style={styles.sectionLabel}>Choisis une icône</Text>
                     <View style={styles.emojiGrid}>
-                        {GOAL_EMOJIS.map((emoji) => (
+                        {emojis.map((emoji) => (
                             <Pressable
                                 key={emoji}
                                 style={[styles.emojiBtn, selectedEmoji === emoji && styles.emojiBtnSelected]}
@@ -297,7 +293,7 @@ const styles = StyleSheet.create({
         elevation: 4,
     },
     btnPrimaryText: {
-        color: "#fff",
+        color: "#FFFFFF",
         fontSize: 16,
         fontWeight: "600",
     },

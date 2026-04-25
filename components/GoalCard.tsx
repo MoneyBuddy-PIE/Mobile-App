@@ -2,7 +2,9 @@ import React from "react";
 import { View, Text, StyleSheet, Animated, TouchableOpacity } from "react-native";
 import CircularProgress from "./CircualProgress";
 import { Goal } from "@/types/Goal";
-import getRandomColor from "@/utils/fn/getRandomColor";
+import getRandomItemFromList from "@/utils/fn/getRandomItemFromList";
+import colorList from "@/styles/colors";
+import emojis from "@/styles/emojis";
 
 type IProps = {
     goal: Goal
@@ -10,7 +12,7 @@ type IProps = {
     onPress?: () => void
 }
 
-export default function GoalCard({goal, backgroundIconColor = getRandomColor(), onPress} : IProps) {
+export default function GoalCard({goal, backgroundIconColor = getRandomItemFromList(colorList), onPress} : IProps) {
     const {amount, emoji, name, progression} = goal
   const formattedAmount = amount.toLocaleString("fr-FR", {
     minimumFractionDigits: 2,
@@ -23,7 +25,7 @@ export default function GoalCard({goal, backgroundIconColor = getRandomColor(), 
     <CardWrapper style={styles.card} onPress={onPress} activeOpacity={0.75}>
       <View style={styles.left}>
         <View style={[styles.iconWrapper, { backgroundColor: backgroundIconColor }]}>
-          <Text style={styles.iconEmoji}>{emoji ?? "🦸"}</Text>
+          <Text style={styles.iconEmoji}>{emoji ?? getRandomItemFromList(emojis)}</Text>
         </View>
 
         <View style={styles.textBlock}>

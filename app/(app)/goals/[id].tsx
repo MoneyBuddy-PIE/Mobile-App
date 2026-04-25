@@ -213,7 +213,6 @@ export default function GoalDetailScreen() {
                         trackColor="#F0F0F0"
                     />
 
-                    {/* Montants */}
                     <View style={styles.amountsRow}>
                         <View style={styles.amountBlock}>
                             <Text style={styles.amountLabel}>Épargné</Text>
@@ -236,7 +235,6 @@ export default function GoalDetailScreen() {
                     </View>
                 </View>
 
-                {/* Actions */}
                 {isActivated && (
                     <View style={styles.actionsCard}>
                         <TouchableOpacity
@@ -291,7 +289,6 @@ export default function GoalDetailScreen() {
                     </View>
                 )}
 
-                {/* Zone danger */}
                 {!isUsed && (
                     <View style={styles.dangerCard}>
                         <TouchableOpacity style={styles.dangerBtn} onPress={handleDelete} disabled={actionLoading}>
@@ -304,7 +301,6 @@ export default function GoalDetailScreen() {
                 <View style={{ height: 40 }} />
             </ScrollView>
 
-            {/* ==================== MODAL DÉPÔT ==================== */}
             <Modal transparent visible={showDepositModal} animationType="slide">
                 <GestureHandlerRootView style={{ flex: 1 }}>
                     <Pressable style={styles.modalOverlay} onPress={() => { setShowDepositModal(false); resetDepositForm(); }}>
@@ -393,7 +389,6 @@ export default function GoalDetailScreen() {
                 </GestureHandlerRootView>
             </Modal>
 
-            {/* ==================== MODAL EDITION ==================== */}
             <Modal transparent visible={showEditModal} animationType="slide">
                 <GestureHandlerRootView style={{ flex: 1 }}>
                     <Pressable style={styles.modalOverlay} onPress={() => setShowEditModal(false)}>
@@ -455,6 +450,7 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
     scroll: {
+        backgroundColor: "#EBF2FB",
         flex: 1,
         padding: 20,
     },

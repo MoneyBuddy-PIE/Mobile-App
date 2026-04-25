@@ -55,13 +55,6 @@ const GoalPage = () => {
         })
     }
 
-    function navigateToCreate() {
-        router.push({
-            pathname: "/(app)/goals/create",
-            params: { childId, childName },
-        })
-    }
-
     if (loading) {
         return (
             <SafeAreaView style={styles.container}>
@@ -167,11 +160,6 @@ const GoalPage = () => {
 
                 <View style={{ height: 100 }} />
             </ScrollView>
-
-            {/* FAB */}
-            <TouchableOpacity style={styles.fab} onPress={navigateToCreate} activeOpacity={0.85}>
-                <Ionicons name="add" size={28} color="#fff" />
-            </TouchableOpacity>
         </SafeAreaView>
     )
 }
@@ -236,6 +224,7 @@ const styles = StyleSheet.create({
     },
     // ScrollView
     scrollView: {
+        backgroundColor: "#EBF2FB",
         flex: 1,
         paddingHorizontal: 20,
         paddingTop: 10,
