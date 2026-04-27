@@ -13,9 +13,9 @@ export interface AddMoneyResponse {
 }
 
 export const moneyService = {
-	async addMoney(data: AddMoneyRequest): Promise<AddMoneyResponse> {
+	async addMoney(data: AddMoneyRequest, isAdd = "true"): Promise<AddMoneyResponse> {
 		try {
-			await apiService.post("/money?isAdd=true", data);
+			await apiService.post(`/money?isAdd=${isAdd}`, data);
 			return { success: true };
 		} catch (error: any) {
 			logger.error("Error adding money:", error);

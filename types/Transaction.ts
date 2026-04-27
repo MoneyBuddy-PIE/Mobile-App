@@ -1,8 +1,19 @@
+export enum TransactionType {
+	CREDIT = 'CREDIT',
+	DEBIT = "DEBIT"
+}
+
+export enum TransactionCategory {
+	COIN = 'COIN',
+	MONEY = "MONEY"
+}
+
 export interface Transaction {
 	id: string;
 	childId: string;
 	parentId: string;
-	type: "CREDIT" | "DEBIT";
+	type: TransactionType;
+	category: TransactionCategory
 	createdAt: string;
 	updatedAt: string;
 	amount: string;
