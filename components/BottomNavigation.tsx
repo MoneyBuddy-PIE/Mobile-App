@@ -45,8 +45,8 @@ export const BottomNavigation: React.FC = () => {
 					iconNameActive: "home",
 				},
 				{
-					route: "/(app)/revenus",
-					label: "Revenus",
+					route: "/(app)/budget",
+					label: "Budget",
 					iconName: "wallet-outline",
 					iconNameActive: "wallet",
 				},
@@ -55,6 +55,12 @@ export const BottomNavigation: React.FC = () => {
 					label: "Tâches",
 					iconName: "checkmark-circle-outline",
 					iconNameActive: "checkmark-circle",
+				},
+				{
+					route: "/(app)/courses",
+					label: "Cours",
+					iconName: "book-outline",
+					iconNameActive: "book",
 				},
 				{
 					route: "/(app)/profile",
