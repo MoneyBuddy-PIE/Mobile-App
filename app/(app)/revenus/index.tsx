@@ -30,7 +30,7 @@ export default function Revenus() {
 				const childTasks = await tasksService.getAllTasks({childId: accountData.id});
 				setTasks(childTasks);
 
-				const accountTransactions = await transactionService.getTransactionsBySubAccount(accountData.id);
+				const accountTransactions = await transactionService.getTransactions({});
 				setTransactions(accountTransactions);
 			}
 		} catch (error) {

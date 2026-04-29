@@ -26,7 +26,9 @@ type IProps = {
 
 const ButtonsActionChildren = ({subAccount, labelPosition = "inside", addScan = false} : IProps) => {
     const list = addScan ? buttonWithScan : buttons
+
     const [showModal, setShowModal] = useState<ButtonType.SPEND | null>(null)
+    const [modalBackgroundColor, setModalBackgroundColor] = useState<string>("#FFFFFF")
 
     const handleButtonClick = (type: string) => {
         if (type === ButtonType.SPEND)
@@ -38,12 +40,12 @@ const ButtonsActionChildren = ({subAccount, labelPosition = "inside", addScan = 
         if (type === ButtonType.SCAN)
             console.log(type)
     }
-
+    
     return (
         <>
         {showModal === ButtonType.SPEND &&
-            <ModalComponent visible={showModal === ButtonType.SPEND} onClose={() => setShowModal(null)} backgroundColor="#FFFFFF">
-                <SpendForm subAccountId={subAccount.id}/>
+            <ModalComponent visible={showModal === ButtonType.SPEND} onClose={() => setShowModal(null)} backgroundColor={modalBackgroundColor} >
+                <SpendForm subAccountId={subAccount.id} onFn={() => setModalBackgroundColor("#EBF2FB")}/>
             </ModalComponent>
         }
 

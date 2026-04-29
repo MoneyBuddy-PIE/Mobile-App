@@ -12,8 +12,8 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { UserStorage } from "@/utils/storage";
-import { transactionService } from "@/services/transactionService";
 import { logger } from "@/utils/logger";
+import { moneyService } from "@/services/moneyService";
 
 const PREDEFINED_AMOUNTS = ["1", "2", "5", "10"];
 const PREDEFINED_CATEGORIES = [
@@ -92,10 +92,11 @@ export default function AddExpense() {
 			// Récupérer le solde actuel de l'enfant
 			const currentBalance = parseFloat(subAccount.money || "0");
 
-			const result = await transactionService.addExpense({
+			const result = await moneyService.addMoney({
 				subAccountId: subAccount.id,
-				amount: finalAmount,
+				amount: Number(finalAmount),
 				description: finalDescription,
+				emoji: selectedCategory
 			});
 
 			if (result.success) {

@@ -21,7 +21,7 @@ const TransactionsPage = () => {
 			setSubAccount(accountData);
 
             if (accountData)
-                setTransactions(await transactionService.getTransactionsBySubAccount(accountData.id))
+                setTransactions(await transactionService.getTransactions({}))
 
 		} catch (error) {
 			console.error("Error loading chapters:", error);
@@ -45,13 +45,7 @@ const TransactionsPage = () => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView
-                style={styles.content}
-                showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6C5CE7" />}
-            >
-
-                {/* Header */}
+            {/* Header */}
                 <View style={styles.header}>
                     <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
                         <Ionicons name='arrow-back-sharp' size={24} color={"#FFFFFF"} />
@@ -64,6 +58,11 @@ const TransactionsPage = () => {
                         <Text style={styles.headerText}>{new Date().toLocaleString("fr-FR", { day: "2-digit", month: "long", year: "numeric"})}</Text>
                     </View>
                 </View>
+            <ScrollView
+                style={styles.content}
+                showsVerticalScrollIndicator={false}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6C5CE7" />}
+            >
 
                 {/* Content */}
                 <View style={[styles.contentContainer]}>

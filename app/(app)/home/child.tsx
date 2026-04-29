@@ -31,7 +31,7 @@ export default function ChildHome() {
 			setSubAccount(accountData);
 
 			if (accountData) {
-				const childTasks = await tasksService.getTasksByChild(accountData.id, "CHILD");
+				const childTasks = await tasksService.getAllTasks({});
 				setTasks(childTasks);
 			}
 		} catch (error) {
@@ -76,8 +76,8 @@ export default function ChildHome() {
 	const completedTasks = tasks.filter((task) => task.done);
 	const pendingTasks = tasks.filter((task) => !task.done);
 	const currentBalance = parseFloat(subAccount?.money || "0");
-	const totalEarned = completedTasks.reduce((sum, task) => sum + parseFloat(task.reward || "0"), 0);
-	const potentialEarnings = pendingTasks.reduce((sum, task) => sum + parseFloat(task.reward || "0"), 0);
+	const totalEarned = completedTasks.reduce((sum, task) => sum + parseFloat(task.moneyReward || "0"), 0);
+	const potentialEarnings = pendingTasks.reduce((sum, task) => sum + parseFloat(task.moneyReward || "0"), 0);
 	const completionRate = tasks.length > 0 ? Math.round((completedTasks.length / tasks.length) * 100) : 0;
 
 	const getGreeting = () => {
@@ -178,7 +178,7 @@ export default function ChildHome() {
 												{task.category === "REGULAR" ? "Régulière" : "Ponctuelle"}
 											</Text>
 										</View>
-										<Text style={[styles.taskReward, typography.caption]}>+{task.reward}€</Text>
+										<Text style={[styles.taskReward, typography.caption]}>+{task.moneyReward}€</Text>
 									</View>
 								</View>
 								<View style={styles.taskAction}>
