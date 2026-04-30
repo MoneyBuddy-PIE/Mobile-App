@@ -2,26 +2,42 @@ import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-na
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import GoalForm from "@/components/forms/GoalForm";
+import { useState } from "react";
+import SuccessComponent from "@/components/SuccessComponent";
 
 export default function CreateGoalScreen() {
     const { childId, childName } = useLocalSearchParams<{ childId: string; childName: string }>();
 
+    const [step, setStep] = useState<"FORM" | "SUCCESS">("FORM")
+
     return (
         <SafeAreaView style={styles.container}>
+
             {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                    <Ionicons name="arrow-back" size={18} color="#fff" />
-                </TouchableOpacity>
+            <View style={[styles.header, step === "FORM" && {backgroundColor: "#FFFFFF", borderBottomWidth: 1, borderBottomColor: "#BFD0EA",}]}>
                 <View>
-                    <Text style={styles.headerTitle}>Nouvel objectif</Text>
-                    {childName && (
-                        <Text style={styles.headerSubtitle}>Pour {childName}</Text>
-                    )}
+                    {step === "FORM" &&
+                    <>
+                        <Text style={styles.headerTitle}>Créer un objectif</Text>
+                        {childName && (
+                            <Text style={styles.headerSubtitle}>pour {childName}</Text>
+                        )}
+                    </>
+                    }
                 </View>
+                <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                    <Ionicons name="close" size={18} color="#fff" />
+                </TouchableOpacity>
             </View>
 
-            <GoalForm childId={childId ?? ""} />
+            {step === "FORM" && <GoalForm childId={childId ?? ""} onChange={() => (setStep("SUCCESS"))}/>}
+            {step === "SUCCESS" && 
+                <SuccessComponent 
+                    title="Ton objectif est lancé 🚀" 
+                    subTitle="Ajoute de l’argent pour le faire grandir !"
+                    onClose={() => router.back()}
+                />
+            }
         </SafeAreaView>
     );
 }
@@ -29,17 +45,15 @@ export default function CreateGoalScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#f8f9fa",
+        backgroundColor: "#FFFFFF"
     },
     header: {
         flexDirection: "row",
+        justifyContent: "space-between",
         alignItems: "center",
         gap: 14,
         paddingHorizontal: 20,
         paddingVertical: 16,
-        backgroundColor: "#fff",
-        borderBottomWidth: 1,
-        borderBottomColor: "#F0F0F0",
     },
     backButton: {
         backgroundColor: "#2F2F2F",
@@ -54,9 +68,9 @@ const styles = StyleSheet.create({
         color: "#2F2F2F",
     },
     headerSubtitle: {
-        fontFamily: "DMSans_400Regular",
-        fontSize: 13,
-        color: "#828282",
+        fontWeight: 700,
+        fontSize: 20,
+        color: "#2F2F2F",
         marginTop: 2,
     },
 });

@@ -6,7 +6,9 @@ import { SubAccount } from "@/types/Account";
 import { Transaction } from "@/types/Transaction";
 import { UserStorage } from "@/utils/storage";
 import { useEffect, useState } from "react";
-import { StyleSheet, SafeAreaView, ScrollView, View, ActivityIndicator, Text, RefreshControl, Image } from "react-native"
+import { StyleSheet, SafeAreaView, ScrollView, View, ActivityIndicator, Text, RefreshControl, Image, TouchableOpacity } from "react-native"
+import { Ionicons } from '@expo/vector-icons'
+import { router } from "expo-router";
 
 
 const BudgetPage = () => {
@@ -21,7 +23,7 @@ const BudgetPage = () => {
 			setSubAccount(accountData);
 
             if (accountData)
-                setTransactions(await transactionService.getTransactionsBySubAccount(accountData.id))
+                setTransactions(await transactionService.getTransactions({}))
 
 		} catch (error) {
 			console.error("Error loading chapters:", error);
@@ -81,7 +83,44 @@ const BudgetPage = () => {
                 </View>
 
                 {/* Content - Buttons bis */}
-
+                <View style={{display: "flex", flexDirection: "row", justifyContent: "space-between", marginTop: 32,}}>
+                    <TouchableOpacity
+                        onPress={() => {}}
+                        style={styles.cardButtonContainer}
+                    >
+                        <View style={[styles.cardButtonRow, {gap: 4}]}>
+                            <View style={[styles.cardButtonIconContainer, {backgroundColor: "#E6E2FB"}]}>
+                                <Ionicons name="wallet" size={20} color={"#846DED"}/>
+                            </View>
+                            <Text style={styles.cardButtonTitle}>Dépenses</Text>
+                        </View>
+                        <View style={[styles.cardButtonRow, {justifyContent: "space-between"}]}>
+                            <Text style={styles.cardButtonText}>{Number(subAccount.money).toFixed(2)}€</Text>
+                            <View style={[styles.cardButtonIconContainer, {backgroundColor: "#EAEAEA"}]}>
+                                <Ionicons name="arrow-back" size={20} color={"#2F2F2F"} style={{transform: [{rotate: "180deg"}]}} />
+                            </View>
+                        </View>
+                        <Text style={styles.cardButtonSubText}>{new Date().toLocaleString("fr-FR", {month: "long", year: "numeric"})}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => router.push('goals/child')}
+                        style={styles.cardButtonContainer}
+                    >
+                        <View style={[styles.cardButtonRow, {gap: 4}]}>
+                            <View style={[styles.cardButtonIconContainer, {backgroundColor: "#FEA0BA66"}]}>
+                                <Ionicons name="wallet" size={20} color={"#FD618C"}/>
+                            </View>
+                            <Text style={styles.cardButtonTitle}>Objectifs</Text>
+                        </View>
+                        <View style={[styles.cardButtonRow, {justifyContent: "space-between"}]}>
+                            <Text style={styles.cardButtonText}>{Number(subAccount.money).toFixed(2)}€</Text>
+                            <View style={[styles.cardButtonIconContainer, {backgroundColor: "#EAEAEA"}]}>
+                                <Ionicons name="arrow-back" size={20} color={"#2F2F2F"} style={{transform: [{rotate: "180deg"}]}} />
+                            </View>
+                        </View>
+                        <Text style={styles.cardButtonSubText}>Voir détails</Text>
+                    </TouchableOpacity>
+                </View>
 
                 {/* Content - Transaction */}
                 <View style={{display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 12, marginVertical: 32,}}>
@@ -169,8 +208,51 @@ const styles = StyleSheet.create({
         backgroundColor: "#D1DEF1",
         borderRadius: 8,
         padding: 12
-    }
-
+    },
+    // Content - card
+    cardButtonContainer: {
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-start",
+        gap: 8,
+        paddingHorizontal: 8,
+        paddingTop: 8,
+        paddingBottom: 16,
+        borderRadius: 4,
+        backgroundColor: "#FFFFFF",
+        shadowColor: "#BFD0EA",
+        shadowOffset: { width: 0, height: 3.89 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 4,
+        width: "48%"
+    },
+    cardButtonRow: {
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "center",
+        width: "100%"
+    },
+    cardButtonIconContainer: {
+        borderRadius: 4,
+        padding: 4
+    },
+    cardButtonTitle: {
+        fontWeight: 700,
+        fontSize: 14,
+        color: "#2F2F2F"
+    },
+    cardButtonText: {
+        fontWeight: 800,
+        fontSize: 24,
+        color: "#2F2F2F"
+    },
+    cardButtonSubText: {
+        fontWeight: 400,
+        fontSize: 14,
+        color: "#2F2F2F",
+        textTransform: "capitalize"
+    },
 })
 
 export default BudgetPage

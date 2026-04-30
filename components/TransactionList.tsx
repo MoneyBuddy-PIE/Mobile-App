@@ -51,9 +51,9 @@ const TransactionList = ({transactions, lilList = false}: IProps) => {
                 return (
                     <View style={[styles.transactionFullContainer, radius]}>
                         <View style={styles.transactionContainer}>
-                            <View style={{display: "flex", flexDirection: "row", alignItems: "center", gap: 8}}>
+                            <View style={{display: "flex", flexDirection: "row", alignItems: "center", gap: 12}}>
                                 <GetIcon transactionType={item.type}/>
-                                <View style={{display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4}}>
+                                <View style={{display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 2}}>
                                     <Text style={[styles.transactionTitle, {fontSize: 16, color: "2F2F2F"}]}>{item.description.substring(0, 18)}</Text>
                                     <Text style={styles.transactionText}>{new Date(item.createdAt).toLocaleString("fr-FR", { day: "2-digit", month: "long", year: "numeric"})}</Text>
                                 </View>

@@ -1,3 +1,5 @@
+import { Pagination } from "./api";
+
 export enum TransactionType {
 	CREDIT = 'CREDIT',
 	DEBIT = "DEBIT"
@@ -21,6 +23,8 @@ export interface Transaction {
 	newAmount: string;
 	description: string;
 }
+
+export type Transactions = Pagination<Transaction>
 
 export interface AddExpenseRequest {
 	subAccountId: string;

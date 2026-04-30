@@ -5,6 +5,7 @@ export interface AddMoneyRequest {
 	subAccountId: string;
 	amount: number;
 	description: string;
+	emoji: string
 }
 
 export interface AddMoneyResponse {

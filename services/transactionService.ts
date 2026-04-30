@@ -1,29 +1,24 @@
 import { apiService } from "./api";
-import { Transaction, AddExpenseRequest } from "@/types/Transaction";
-import { logger } from "@/utils/logger";
+import { Transaction, Transactions } from "@/types/Transaction";
 
-export interface AddMoneyResponse {
-	success: boolean;
-	message?: string;
+type TransactionParams = {
+	subAccountId?: string
+	isGoal?: boolean
+	page?: number
+	size?: number
+	sortBy?: string
+	sortDir?: string
 }
 
 export const transactionService = {
 	// Récupérer l'historique des transactions d'un sous-compte
-	async getTransactionsBySubAccount(subAccountId: string): Promise<Transaction[]> {
-		return apiService.get<Transaction[]>(`/transactions/subAccount/${subAccountId}`);
-	},
+	async getTransactions({
+		subAccountId, isGoal = false, page = 0, size = 50, sortBy = "createdAt", sortDir = "desc"
+	}: TransactionParams): Promise<Transaction[]> {
+		const params: TransactionParams = {page, size, sortBy, sortDir}
+		if (isGoal) params.isGoal = true
+		if (subAccountId) params.subAccountId = subAccountId
 
-	// Ajouter une dépense (retirer de l'argent)
-	async addExpense(data: AddExpenseRequest): Promise<AddMoneyResponse> {
-		try {
-			await apiService.post("/money?isAdd=false", data);
-			return { success: true };
-		} catch (error: any) {
-			logger.error("Error adding expense:", error);
-			return {
-				success: false,
-				message: error.response?.data?.message || "Erreur lors de l'ajout de la dépense",
-			};
-		}
+		return (await (apiService.get<Transactions>(`/transactions/subAccount`, params))).content
 	},
 };

@@ -4,13 +4,15 @@ import { SafeAreaView, ScrollView, StyleSheet, View, Text, TextInput, TouchableO
 import { Ionicons } from "@expo/vector-icons"
 import DatePickerInput from "../DatePickerInput"
 import { moneyService } from "@/services/moneyService"
+import SpendReceipt from "../SpendReceipt"
 
 
 type IProps = {
     subAccountId: string
+    onFn?: () => void
 }
 
-const SpendForm = ({subAccountId}: IProps ) => {
+const SpendForm = ({subAccountId, onFn}: IProps ) => {
     const [step, setStep] = useState<"Form" | "ValidateForm">("Form")
 
     const [amount, setAmount] = useState<string>("0.00")
@@ -23,7 +25,7 @@ const SpendForm = ({subAccountId}: IProps ) => {
     const handleForm = async() => {
         setLoading(true)
         try {
-            await moneyService.addMoney({subAccountId, amount: Number(amount), description: details}, "false")
+            await moneyService.addMoney({subAccountId, amount: Number(amount), description: details, emoji: category}, "false")
             Alert.alert("Succès", "Dépense enregistré !", [{ text: "OK" }]);
         } catch (error: any){
             console.error("Error creating task:", error);
@@ -31,6 +33,13 @@ const SpendForm = ({subAccountId}: IProps ) => {
 			Alert.alert("Erreur", errorMessage);
         } finally {
             setLoading(false)
+        }
+    }
+
+    const handleFistStep = () => {
+        if (Boolean(Number(amount) && category && date)) {
+            setStep('ValidateForm')
+            onFn && onFn()
         }
     }
 
@@ -105,7 +114,7 @@ const SpendForm = ({subAccountId}: IProps ) => {
                     {/* Footer - Button */}
                     <View style={[styles.footer]}>
                         <TouchableOpacity
-                            onPress={() => {Boolean(Number(amount) && category && date) && setStep('ValidateForm')}}
+                            onPress={() => {handleFistStep()}}
                             style={[styles.button, Boolean(Number(amount) && category && date) ? styles.buttonSelected : {backgroundColor: "#D5D5D5"}, { width: "100%"}]}
                             disabled={!Boolean(Number(amount) && category && date)}
                         >
@@ -116,11 +125,11 @@ const SpendForm = ({subAccountId}: IProps ) => {
                 )}
 
                 {/* Content - First Step*/}
-                { step === "ValidateForm" && (
+                { step === "ValidateForm" && Boolean(Number(amount) && category && date) && (
                 <View>
                     {/* Summary */}
                     <View>
-
+                        <SpendReceipt amount={amount}  categoryEmoji={category} description={details} date={date as Date} />
                     </View>
 
                     {/* Footer - Button */}
@@ -134,7 +143,6 @@ const SpendForm = ({subAccountId}: IProps ) => {
                         <TouchableOpacity
                             onPress={() => {handleForm()}}
                             style={[styles.button, styles.buttonSelected, {width: "74%"} ]}
-                            disabled={!Boolean(Number(amount) && category && date)}
                         >
                             <Text style={[styles.buttonText, {color: "#FFFFFF"} ]}>Valider</Text>
                         </TouchableOpacity>

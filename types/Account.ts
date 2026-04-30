@@ -12,6 +12,7 @@ export interface SubAccount {
 	role: string;
 	updatedAt: string | null;
 	money: string;
+	coin: string
 	income: number
 	iconStyle: string;
 	iconName: string
