@@ -7,7 +7,7 @@ export default function AppLayout() {
 	const pathname = usePathname();
 
 	const hideBottomNav =
-		pathname.startsWith("/accounts") || (pathname.startsWith("/courses/") && pathname !== "/courses");
+		pathname.startsWith("/accounts") || (pathname.startsWith("/courses/") && pathname !== "/courses" && pathname !== "/courses/child");
 
 	return (
 		<AuthGuard>

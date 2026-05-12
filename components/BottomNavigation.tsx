@@ -57,7 +57,7 @@ export const BottomNavigation: React.FC = () => {
 					iconNameActive: "checkmark-circle",
 				},
 				{
-					route: "/(app)/courses",
+					route: "/(app)/courses/child",
 					label: "Cours",
 					iconName: "book-outline",
 					iconNameActive: "book",

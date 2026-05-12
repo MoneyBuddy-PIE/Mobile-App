@@ -175,7 +175,11 @@ class ApiService {
 
 	async put<T>(url: string, data?: any): Promise<T> {
 		try {
-			const response = await this.api.put(url, data);
+			const response = await this.api.put(url, data, {
+				validateStatus: (status) => {
+					return status < 400 || status === 409
+				}
+			});
 			return response.data;
 		} catch (error) {
 			this.handleApiError(error);

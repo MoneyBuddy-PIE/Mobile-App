@@ -15,7 +15,7 @@ import { router } from "expo-router";
 import { UserStorage } from "@/utils/storage";
 import { SubAccount } from "@/types/Account";
 import { chapterService } from "@/services/chapterService";
-import { Chapter, ChapterCategory } from "@/types/Chapter";
+import { Chapter, ChapterParentCategory } from "@/types/Chapter";
 import { typography } from "@/styles/typography";
 import Card from "@/components/Card";
 import { logger } from "@/utils/logger";
@@ -32,13 +32,13 @@ const categoryImages = {
 
 const categoryLabels = (category: string) => {
 	switch (category) {
-		case ChapterCategory.ALL:
+		case ChapterParentCategory.ALL:
 			return "Tous";
-		case ChapterCategory.BASICS:
+		case ChapterParentCategory.BASICS:
 			return "Les bases";
-		case ChapterCategory.SIX_TO_TEN:
+		case ChapterParentCategory.SIX_TO_TEN:
 			return "6 à 10 ans";
-		case ChapterCategory.TEN_TO_FOURTEEN:
+		case ChapterParentCategory.TEN_TO_FOURTEEN:
 			return "10 à 14 ans";
 		default:
 			return category;
@@ -48,7 +48,7 @@ const categoryLabels = (category: string) => {
 export default function Courses() {
 	const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
 	const [chapters, setChapters] = useState<Chapter[]>([]);
-	const [selectedFilter, setSelectedFilter] = useState<ChapterCategory>(ChapterCategory.ALL);
+	const [selectedFilter, setSelectedFilter] = useState<ChapterParentCategory>(ChapterParentCategory.ALL);
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
 
@@ -141,12 +141,12 @@ export default function Courses() {
 						horizontal
 						showsHorizontalScrollIndicator={false}
 					>
-						{Object.values(ChapterCategory).map((category, key) => {
+						{Object.values(ChapterParentCategory).map((category, key) => {
 							const imageSource = categoryImages[category as keyof typeof categoryImages];
 							return (
 								<TouchableOpacity
 									key={category + key}
-									onPress={() => setSelectedFilter(category as ChapterCategory)}
+									onPress={() => setSelectedFilter(category as ChapterParentCategory)}
 									activeOpacity={0.7}
 								>
 									<Card 

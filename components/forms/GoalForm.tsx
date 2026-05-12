@@ -91,7 +91,7 @@ export default function GoalForm({ childId, goal, onChange }: IProps) {
                 {/* Nom */}
                 <View style={styles.section}>
                     <Text style={styles.sectionLabel}>Nom de l’objectif</Text>
-                    <View style={[name.trim() && name?.length > 5 ? styles.inputActive : styles.inputContainer]}>
+                    <View style={[name.trim() && name?.length > 2 ? styles.inputActive : styles.inputContainer]}>
                         <TextInput
                             style={styles.textInput}
                             placeholder="Ex: Acheter une console"
@@ -99,7 +99,7 @@ export default function GoalForm({ childId, goal, onChange }: IProps) {
                             onChangeText={setName}
                             autoCapitalize="sentences"
                         />
-                        {name.trim() && name?.length > 5 && <Ionicons name="checkmark-outline" size={18} color="#16AA75" />}
+                        {name.trim() && name?.length > 2 && <Ionicons name="checkmark-outline" size={18} color="#16AA75" />}
                     </View>
                 </View>
 
@@ -129,18 +129,18 @@ export default function GoalForm({ childId, goal, onChange }: IProps) {
                         <TouchableOpacity
                             style={[styles.btnPrimary]}
                             onPress={handleSubmit}
-                            disabled={!Boolean(name?.trim()?.length > 5 && Number(amount) > 0) || loading}
+                            disabled={!Boolean(name?.trim()?.length > 2 && Number(amount) > 0) || loading}
                         >
                             <Text style={styles.btnPrimaryText}>{loading ? "Modification..." : "Enregistrer"}</Text>
                         </TouchableOpacity>
                     </View>
                 ) : (
                     <TouchableOpacity
-                        style={[Boolean(name?.trim()?.length > 5 && Number(amount) > 0) ? styles.btnPrimary : styles.btnPrimaryDisabled]}
+                        style={[Boolean(name?.trim()?.length > 2 && Number(amount) > 0) ? styles.btnPrimary : styles.btnPrimaryDisabled]}
                         onPress={handleSubmit}
-                        disabled={!Boolean(name?.trim()?.length > 5 && Number(amount) > 0) || loading}
+                        disabled={!Boolean(name?.trim()?.length > 2 && Number(amount) > 0) || loading}
                     >
-                        <Text style={[Boolean(name?.trim()?.length > 5 && Number(amount) > 0) ? styles.btnPrimaryText : styles.btnPrimaryTextDisabled]}>
+                        <Text style={[Boolean(name?.trim()?.length > 2 && Number(amount) > 0) ? styles.btnPrimaryText : styles.btnPrimaryTextDisabled]}>
                             {loading ? "Création..." : "Créer l'objectif"}
                         </Text>
                     </TouchableOpacity>

@@ -1,5 +1,5 @@
 import { apiService } from "./api";
-import { Chapter, ChapterCategory, ChapterResponse, Course } from "@/types/Chapter";
+import { Chapter, ChapterParentCategory, ChapterResponse, Course } from "@/types/Chapter";
 
 export interface ChapterParams {
 	page?: number;
@@ -31,7 +31,7 @@ export const chapterService = {
     },
 
 	async getChaptersByCategory(category = "*"): Promise<Chapter[]> {
-		if (category === ChapterCategory.ALL) category = "*";
+		if (category === ChapterParentCategory.ALL) category = "*";
 		const response = await this.getChapters({ size: 100, category });
 		return response.content;
 	},

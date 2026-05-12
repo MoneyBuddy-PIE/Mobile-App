@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { ReactElement, useEffect, useRef } from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
@@ -11,6 +11,7 @@ type IProps = {
     progress?: number
     color?: string
     trackColor?: string
+    children?: ReactElement
 }
 
 const CircularProgress = ({
@@ -19,6 +20,7 @@ const CircularProgress = ({
     progress = 0,
     color = "#F06C8A",
     trackColor = "#EBEBEB",
+    children
   }: IProps) => {
     const radius = (size - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
@@ -69,7 +71,12 @@ const CircularProgress = ({
   
         {/* Pourcentage centré */}
         <View style={[StyleSheet.absoluteFill, styles.percentCenter]}>
-          <Text style={styles.percentText}>{Math.round(progress)}%</Text>
+          {children
+            ? children
+            : <Text style={styles.percentText}>
+                {Math.round(progress)}%
+              </Text>
+          }
         </View>
       </View>
     );
