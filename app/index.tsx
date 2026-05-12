@@ -13,6 +13,10 @@ import Reanimated, {
   Easing as ReanimatedEasing,
 } from 'react-native-reanimated';
 
+import { NativeModules } from 'react-native';
+
+console.log(NativeModules);
+
 const { width, height } = Dimensions.get('window');
 
 const AnimatedPath = Reanimated.createAnimatedComponent(Path);
