@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Alert, ActivityIndicator, Image } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Markdown from "react-native-markdown-display";
-import { Course, Section, Quiz } from "@/types/Chapter";
+import { Course, Section, Quiz, QuizType } from "@/types/Chapter";
 import { typography } from "@/styles/typography";
 import { courseService } from "@/services/courseService";
 import { logger } from "@/utils/logger";
 import { progressService } from "@/services/progressService";
+import { SubAccount } from "@/types/Account";
+import { UserStorage } from "@/utils/storage";
+import GuessCashFromValue from "@/components/GuessCashFromValue";
+import SuccessComponent from "@/components/SuccessComponent";
 
 interface CourseStep {
     type: "section" | "quiz";
@@ -20,6 +24,7 @@ export default function CourseReader() {
     const params = useLocalSearchParams();
     const courseId = params.courseId as string;
     
+    const [subAccount, setSubAccount] = useState<SubAccount | null>(null)
     const [courseData, setCourseData] = useState<Course | null>(null)
 
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -30,6 +35,8 @@ export default function CourseReader() {
     const [quizScore, setQuizScore] = useState(0);
     const [totalQuizQuestions, setTotalQuizQuestions] = useState(0);
     const [quizResponse, setQuizReponse] = useState<string>("");
+    const [moneyCounts, setMoneyCounts] = useState<Record<string, number>>({})
+    const [showLastStep, setShowLastStep] = useState<boolean>(false)
 
     const steps: CourseStep[] = [];
 
@@ -42,6 +49,7 @@ export default function CourseReader() {
             const course = await courseService.getCourseById(courseId);
             logger.log("Loaded course data:", course);
             setCourseData(course);
+            setSubAccount(await UserStorage.getSubAccount())
         } catch (error) {
             logger.error("Error loading chapter:", error);
             Alert.alert("Erreur", "Impossible de charger le chapitre", [{ text: "Retour", onPress: () => router.back() }]);
@@ -73,6 +81,8 @@ export default function CourseReader() {
     const isFirstStep = currentStepIndex === 0;
     const isLastStep = currentStepIndex === steps.length - 1;
 
+    const isChild = subAccount?.role === "CHILD"
+
     const handlePrevious = () => {
         if (!isFirstStep) {
             setCurrentStepIndex(currentStepIndex - 1);
@@ -94,7 +104,7 @@ export default function CourseReader() {
             if (!courseData?.completed) 
                 currentStep.section.completed = await progressService.validateSection(currentStep.section.id);
             
-            Alert.alert("Félicitations !", "Vous avez terminé ce cours !", [{ text: "Retour", onPress: () => router.back() }]);
+            setShowLastStep(true)
         }
     };
 
@@ -122,11 +132,13 @@ export default function CourseReader() {
 
         const currentQuiz = currentStep?.section?.quiz[currentStep?.quizIndex];
         const correct = selectedAnswer === currentQuiz.correctAnswerIndex;
+
         setIsCorrect(correct);
         setShowResult(true);
 
         if (correct) {
             setQuizScore(quizScore + 1);
+            setMoneyCounts({})
         }
     };
 
@@ -140,16 +152,49 @@ export default function CourseReader() {
         return (
             <View style={[styles.container, styles.center]}>
                 <ActivityIndicator size="large" color="#6C5CE7" />
-                <Text style={styles.loadingText}>Chargement du chapitre...</Text>
+                <Text style={styles.loadingText}>Chargement du cours...</Text>
             </View>
         );
     }
+
+    if (showLastStep)
+        return (
+            <SafeAreaView style={styles.container}>
+                <SuccessComponent 
+                    title="Bien joué !" 
+                    subTitle="Tu sais reconnaître et compter des montants simples." 
+                    image={require("@/assets/images/complete_course.png")} 
+                    onClose={() => router.back()} 
+                    showHeader
+                />
+            </SafeAreaView>
+        )
 
     const renderQuiz = () => {
         if (!currentStep?.section?.quiz || currentStep?.quizIndex === undefined) return null;
         
         const quiz = currentStep?.section?.quiz[currentStep?.quizIndex]
         const isLastQuizQuestion = currentStep?.quizIndex === currentStep?.section?.quiz.length - 1;
+
+        const total = Object.entries(moneyCounts).reduce((acc, [money, count]) => {
+            return acc + (Number(money) * count)
+        }, 0)
+
+        const incrementMoney = (money: string) => {
+            handleAnswerSelect((total / 100)?.toString() === quiz.options[0] ? 1 : 0)
+            setMoneyCounts(prev => ({
+                ...prev,
+                [money]: (prev[money] || 0) + 1
+            }))
+        }
+        
+        const decrementMoney = (money: string) => {
+            handleAnswerSelect(total?.toString() === quiz.options[0] ? 0 : 1)
+            setMoneyCounts(prev => ({
+                ...prev,
+                [money]: Math.max((prev[money] || 0) - 1, 0)
+            }))
+        }
 
         return (
             <ScrollView style={styles.contentScrollView} showsVerticalScrollIndicator={false}>
@@ -164,32 +209,142 @@ export default function CourseReader() {
                     <Text style={styles.quizInstruction}>Complétez la phrase</Text>
 
                     {/* Question */}
-                    <Text style={[styles.quizQuestion, typography.body]}>{quiz.question}</Text>
+                    {isChild
+                        ?   <View style={{display: "flex", flexDirection: "row", justifyContent: "space-between", marginBottom: 32}}>
+                                <Image
+                                    source={require('@/assets/lil_mascot_head.png')}
+                                />
+                                <View style={{display: "flex", flexDirection: "row", alignItems: "center"}}>
+                                <View
+                                    style={{
+                                        width: 0,
+                                        height: 0,
+                                        borderTopWidth: 10,
+                                        borderTopColor: "transparent",
+                                        borderBottomWidth: 10,
+                                        borderBottomColor: "transparent",
+                                        borderRightWidth: 10,
+                                        borderRightColor: "#FFFFFF",
+                                        marginRight: -1,
+                                    }}
+                                />
+                                    <View style={{backgroundColor: "#FFFFFF", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, minWidth: "70%", justifyContent: "center"}}>
+                                        <Text style={[{lineHeight: 28, color: "#2F2F2F"}, typography.body]}>{quiz.question}</Text>
+                                    </View>
+                                </View>
+                            </View>
+                        : <Text style={[styles.quizQuestion, typography.body]}>{quiz.question}</Text>
+                    }
 
                     {/* Options */}
                     <View style={styles.optionsContainer}>
-                        {quiz.options.map((option, index) => (
-                            <TouchableOpacity
-                                key={index}
-                                style={[
-                                    styles.optionButton,
-                                    selectedAnswer === index && styles.optionButtonSelected,
-                                    showResult && selectedAnswer === index && (isCorrect ? styles.optionButtonCorrect : styles.optionButtonIncorrect),
-                                ]}
-                                onPress={() => {handleAnswerSelect(index), setQuizReponse(quiz.response || "")}}
-                                disabled={showResult}
-                            >
-                                <Text
-                                    style={[
-                                        styles.optionText,
-                                        selectedAnswer === index && styles.optionTextSelected,
-                                        showResult && selectedAnswer === index && (isCorrect ? styles.optionTextCorrect : styles.optionTextIncorrect),
-                                    ]}
-                                >
-                                    {option}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
+                        {quiz.options.map((option, index) => {
+                            if (!isChild) 
+                                return (
+                                    <TouchableOpacity
+                                        key={index}
+                                        style={[
+                                            styles.optionButton,
+                                            selectedAnswer === index && styles.optionButtonSelected,
+                                            showResult && selectedAnswer === index && (isCorrect ? styles.optionButtonCorrect : styles.optionButtonIncorrect),
+                                        ]}
+                                        onPress={() => {handleAnswerSelect(index), setQuizReponse(quiz.response || "")}}
+                                        disabled={showResult}
+                                    >
+                                        <Text
+                                            style={[
+                                                styles.optionText,
+                                                selectedAnswer === index && styles.optionTextSelected,
+                                                showResult && selectedAnswer === index && (isCorrect ? styles.optionTextCorrect : styles.optionTextIncorrect),
+                                            ]}
+                                        >
+                                            {option}
+                                        </Text>
+                                    </TouchableOpacity>
+                                )
+                            
+                            switch (quiz.quizType) {
+                                case QuizType.CALCULATE:
+                                    return quiz.moneyValues?.map((money, idx) => (
+                                        <View key={idx + money} style={{width: "100%", display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "center"}}>
+                                            <GuessCashFromValue value={money} />
+                                            <View style={{display: "flex", flexDirection: "row", gap: 12, alignItems: "center"}}>
+                                                <TouchableOpacity
+                                                    disabled={showResult}
+                                                    onPress={() => decrementMoney(money)}
+                                                    style={[styles.quizOptionButton, {borderColor: "#E0ECFF", shadowColor: "#BFD0EA", backgroundColor: "#FFFFFF", paddingVertical: 12, paddingHorizontal: 8}]}
+                                                >
+                                                    <Ionicons name="remove" size={24} color={"#2F2F2F"} />
+                                                </TouchableOpacity>
+                                                <View style={{backgroundColor: "#BFD0EA", paddingVertical: 8, paddingHorizontal: 18, borderRadius: 4, borderWidth: 3, borderColor: "#BFD0EA"}}>
+                                                    <Text style={{color: "#2F2F2F", fontSize: 26, fontWeight: 800}}>{moneyCounts[money] || 0}</Text>
+                                                </View>
+                                                <TouchableOpacity
+                                                    disabled={showResult}
+                                                    onPress={() => incrementMoney(money)}
+                                                    style={[styles.quizOptionButton, {borderColor: "#E0ECFF", shadowColor: "#BFD0EA", backgroundColor: "#FFFFFF", paddingVertical: 12, paddingHorizontal: 8}]}
+                                                >
+                                                    <Ionicons name="add" size={24} color={"#2F2F2F"} />
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
+                                    ))
+                                case QuizType.IMAGES:
+                                    return (
+                                        <TouchableOpacity
+                                            key={index}
+                                            onPress={() => {
+                                                handleAnswerSelect(index);
+                                                setQuizReponse(quiz.response || "");
+                                            }}
+                                            disabled={showResult}
+                                            style={[
+                                                styles.quizOptionButton, {width: "47%", marginBottom: 12},
+                                                showResult ? selectedAnswer === index ? isCorrect
+                                                    ? { backgroundColor: "#C4FFEA", borderColor: "#16AA75", shadowColor: "#005C49"}
+                                                    : { backgroundColor: "#FFD9E3", borderColor: "#FD618C", shadowColor: "#D1325E"}
+                                                    : { backgroundColor: "#FFFFFF", borderColor: "#E0ECFF", shadowColor: "#BFD0EA"}
+                                                    : selectedAnswer === index
+                                                        ? { backgroundColor: "#E0ECFF", borderColor: "#75B7FF", shadowColor: "#52A5FF"}
+                                                        : { backgroundColor: "#FFFFFF", borderColor: "#E0ECFF",shadowColor: "#BFD0EA"},
+                                            ]}
+                                        >
+                                            <Image 
+                                                source={{uri: `https://pub-ce5bc62138bd4218b56745b7ccca587e.r2.dev/${option}`}} 
+                                                style={{width: "100%",  aspectRatio: 1, borderRadius: 9, padding: 12}}
+                                                resizeMode="cover"
+                                            />
+                                        </TouchableOpacity>
+                                    )
+                                default:
+                                    return (
+                                        <TouchableOpacity
+                                            key={index}
+                                            onPress={() => {
+                                                handleAnswerSelect(index);
+                                                setQuizReponse(quiz.response || "");
+                                            }}
+                                            disabled={showResult}
+                                            style={[
+                                                styles.quizOptionButton, {width: "100%", marginBottom: 12},
+                                                showResult ? selectedAnswer === index ? isCorrect
+                                                    ? { backgroundColor: "#C4FFEA", borderColor: "#16AA75", shadowColor: "#005C49"}
+                                                    : { backgroundColor: "#FFD9E3", borderColor: "#FD618C", shadowColor: "#D1325E"}
+                                                    : { backgroundColor: "#FFFFFF", borderColor: "#E0ECFF", shadowColor: "#BFD0EA"}
+                                                    : selectedAnswer === index
+                                                        ? { backgroundColor: "#E0ECFF", borderColor: "#75B7FF", shadowColor: "#52A5FF"}
+                                                        : { backgroundColor: "#FFFFFF", borderColor: "#E0ECFF",shadowColor: "#BFD0EA"},
+                                            ]}
+                                        >
+                                            <Text 
+                                                style={{fontWeight: 700, fontSize: 24, color: "#2F2F2F", paddingHorizontal: 12, paddingVertical: 8, textAlign: "center"}}
+                                            >
+                                                {option}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ) 
+                            }
+                        })}
                     </View>
                 </View>
             </ScrollView>
@@ -273,7 +428,12 @@ export default function CourseReader() {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        style={[styles.navButton, styles.continueButton, isButtonDisabled() && styles.navButtonDisabled]}
+                        style={
+                            [   styles.navButton, 
+                                styles.continueButton, 
+                                isChild ? styles.continueButtonChild : {backgroundColor: "#6C5CE7",},
+                                isButtonDisabled() && styles.navButtonDisabled
+                            ]}
                         onPress={handleButtonPress}
                         disabled={isButtonDisabled()}
                     >
@@ -304,6 +464,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: "#666",
     },
+    // Header
     header: {
         flexDirection: "row",
         alignItems: "center",
@@ -379,7 +540,7 @@ const styles = StyleSheet.create({
     optionsContainer: {
         flexDirection: "row",
         flexWrap: "wrap",
-        gap: 12,
+        justifyContent: "space-between",
     },
     optionButton: {
         backgroundColor: "#E5E7EB",
@@ -453,6 +614,16 @@ const styles = StyleSheet.create({
         flex: 1,
         marginLeft: 8,
     },
+    continueButtonChild: {
+        backgroundColor: "#16AA75",
+        shadowColor: "#005C49",
+		shadowOffset: {
+			width: 0,
+			height: 3.89,
+		},
+		shadowOpacity: 1,
+		shadowRadius: 0,
+    },
     navButtonDisabled: {
         opacity: 0.5,
     },
@@ -494,6 +665,18 @@ const styles = StyleSheet.create({
         color: "#EF4444",
         fontWeight: "500",
     },
+    // Quiz
+    quizOptionButton: {
+        borderWidth: 3,
+        borderRadius: 8,
+        shadowOffset: {
+			width: 0,
+			height: 2,
+		},
+		shadowOpacity: 0.6,
+		shadowRadius: 0,
+		elevation: 2,
+    }
 });
 
 // Styles pour le markdown

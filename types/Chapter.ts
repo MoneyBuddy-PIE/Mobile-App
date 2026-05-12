@@ -1,3 +1,9 @@
+export enum QuizType {
+	IMAGES = "IMAGES",
+	TEXT = "TEXT",
+	CALCULATE = "CALCULATE"
+}
+
 export interface Quiz {
 	id: string
 	sectionId: string
@@ -6,6 +12,11 @@ export interface Quiz {
 	options: string[];
 	correctAnswerIndex: number;
 	minimumScoreToPass: number;
+	quizType: QuizType
+	// QuizType === Images 
+	imageUrl: string
+	// QuizType === Calculate
+	moneyValues: string[]
 }
 
 export interface Section {
@@ -35,11 +46,18 @@ export interface Course {
 	completed: boolean;
 }
 
-export enum ChapterCategory {
+export enum ChapterParentCategory {
 	ALL = 'ALL',
 	SIX_TO_TEN = 'SIX_TO_TEN',
 	TEN_TO_FOURTEEN = 'TEN_TO_FOURTEEN',
 	BASICS = 'BASICS',
+}
+
+export enum ChapterChildCategory {
+	EVERYDAY_MATH = "EVERYDAY_MATH",
+	HISTORY_OF_MONEY = "HISTORY_OF_MONEY", 
+	BUDGETING = "BUDGETING",
+	SCAM_OR_NOT = "SCAM_OR_NOT"
 }
 
 export interface Chapter {
@@ -51,10 +69,12 @@ export interface Chapter {
 	isCompleted: boolean;
 	subAccountRole: "OWNER" | "PARENT" | "CHILD";
 	courses: Course[];
+	category: string[]
 	imageUrl: string;
 	creatorId: string;
 	createdAt: string;
 	updatedAt: string;
+	progressPercentage: number
 }
 
 export interface ChapterResponse {

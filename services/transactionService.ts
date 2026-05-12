@@ -21,4 +21,8 @@ export const transactionService = {
 
 		return (await (apiService.get<Transactions>(`/transactions/subAccount`, params))).content
 	},
+
+	async getTransactionByGoaldId(goalId: string): Promise<Transaction[]> {
+		return await apiService.get<Transaction[]>(`/transactions/goal/${goalId}`)
+	}
 };
