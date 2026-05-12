@@ -48,7 +48,6 @@ const ActiveGoalCard = ({ goal, index, onPress }: ActiveCardProps) => {
     const deposited = (goal.amount * goal.progression) / 100
     const target = goal.amount || 1
     const pct = goal.progression
-    console.log({goal})
 
     return (
         <TouchableOpacity style={cardStyles.card} onPress={onPress} activeOpacity={0.75}>

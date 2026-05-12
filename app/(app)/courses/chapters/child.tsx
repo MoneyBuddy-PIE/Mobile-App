@@ -7,6 +7,7 @@ import { Chapter } from "@/types/Chapter";
 import { chapterService } from "@/services/chapterService";
 import { logger } from "@/utils/logger";
 import { categoryLabels } from "../child";
+import Loader from "@/components/Loader";
 
 
 const childChapterList = () => {
@@ -43,12 +44,7 @@ const childChapterList = () => {
 
 
 	if (loading) {
-		return (
-			<View style={[styles.container, styles.center]}>
-				<ActivityIndicator size="large" color="#6C5CE7" />
-				<Text style={styles.loadingText}>Chargement des cours...</Text>
-			</View>
-		);
+		return <Loader />
 	}
 
     return (
@@ -110,15 +106,6 @@ const styles = StyleSheet.create({
 	},
 	content: {
 		flex: 1,
-	},
-    center: {
-		justifyContent: "center",
-		alignItems: "center",
-	},
-	loadingText: {
-		marginTop: 12,
-		fontSize: 16,
-		color: "#666",
 	},
 	// Header
 	header: {

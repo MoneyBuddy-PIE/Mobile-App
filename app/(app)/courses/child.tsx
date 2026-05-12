@@ -75,7 +75,7 @@ const ChildCategoryPage = () => {
                     {Object.keys(ChapterChildCategory).map((cat, index) => {
 						const imageSource = categoryImages[cat as keyof typeof categoryImages];
 						const chaptersOfCategory = chapters?.filter((chap) => chap.category?.includes(cat))
-						console?.log("Cat => %s", cat, {chaptersOfCategory})
+
 						return (
 							<TouchableOpacity 
 								key={index + cat} 
