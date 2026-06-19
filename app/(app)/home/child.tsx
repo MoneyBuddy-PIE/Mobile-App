@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Image, Animated, PanResponder, Dimensions, ScrollView } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Animated, PanResponder, Dimensions, ScrollView } from "react-native";
+import { RiveView, useRiveFile, Fit } from "@rive-app/react-native";
 import AddExpenseSheet from "@/components/AddExpenseSheet";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -25,6 +26,18 @@ import Pig from "@/components/Icons/Pig";
 import { PiggyBankIcon } from "@/components/Icons/PiggyBankIcon";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+
+function DragonAnimation({ height }: { height: number }) {
+    const { riveFile } = useRiveFile(require("../../../assets/dragon_home.riv"));
+
+    if (!riveFile) return null;
+
+    return (
+        <View pointerEvents="none" style={[styles.dragonContainer, { height }]}>
+            <RiveView file={riveFile} artboardName="Buddy_Home" stateMachineName="Dragon" fit={Fit.Contain} style={{ flex: 1 }} />
+        </View>
+    );
+}
 
 // Dragon height scales with screen so the earnings card stays visible
 const DRAGON_HEIGHT = Math.min(370, SCREEN_HEIGHT * 0.44);
@@ -162,13 +175,7 @@ export default function ChildHome() {
                 </View>
             </View>
 
-            <View pointerEvents="none">
-                <Image
-                    source={require("@/assets/images/child/dragonchild.png")}
-                    style={[styles.dragonImage, { height: DRAGON_HEIGHT }]}
-                    resizeMode="contain"
-                />
-            </View>
+            <DragonAnimation height={DRAGON_HEIGHT} />
 
             <View style={styles.allEarningsCard} onLayout={onEarningsLayout}>
                 <View>
@@ -323,9 +330,8 @@ const styles = StyleSheet.create({
     },
 
     // Dragon
-    dragonImage: {
+    dragonContainer: {
         marginHorizontal: 70,
-        width: "auto",
     },
 
     // All earnings card
