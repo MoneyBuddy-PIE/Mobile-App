@@ -1,22 +1,25 @@
-import { AllowanceFrequency, Allowance } from "@/types/Allowance"
-import { WeekDay } from "@/types/Task"
-import { useEffect, useState } from "react"
-import { Ionicons } from "@expo/vector-icons"
+import { AllowanceFrequency, Allowance } from "@/types/Allowance";
+import { WeekDay } from "@/types/Task";
+import { useEffect, useRef, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import {
+    Animated,
+    Dimensions,
+    Easing,
+    KeyboardAvoidingView,
+    Platform,
     StyleSheet,
     View,
     Text,
     TouchableOpacity,
-    ScrollView,
     ActivityIndicator,
     Alert,
-} from "react-native"
-import { TextInput } from "react-native-gesture-handler"
-import { router } from "expo-router"
-import { SubAccount } from "@/types/Account"
-import { userService } from "@/services/userService"
-import { allowanceService } from "@/services/allowanceService"
-import DatePickerInput, { formatDateFR } from "@/components/DatePickerInput"
+} from "react-native";
+import { TextInput } from "react-native-gesture-handler";
+import { router } from "expo-router";
+import { allowanceService } from "@/services/allowanceService";
+import DatePickerInput, { formatDateFR } from "@/components/DatePickerInput";
+import { theme, typography } from "@/styles";
 
 enum FormSteps {
     DATE_AND_FREQUENCY = "DATE_AND_FREQUENCY",
@@ -24,91 +27,90 @@ enum FormSteps {
     SUMMARY = "SUMMARY",
 }
 
-const WEEKDAY_FROM_JS: WeekDay[] = [
-    WeekDay.SUNDAY,
-    WeekDay.MONDAY,
-    WeekDay.TUESDAY,
-    WeekDay.WEDNESDAY,
-    WeekDay.THURSDAY,
-    WeekDay.FRIDAY,
-    WeekDay.SATURDAY,
-]
+const SCREEN_WIDTH = Dimensions.get("window").width;
+const TRIGGER_HEIGHT = 53;
+
+const WEEKDAY_FROM_JS: WeekDay[] = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
 
 const formatDateForAPI = (date: Date): string => {
-    const y = date.getFullYear()
-    const m = String(date.getMonth() + 1).padStart(2, "0")
-    const d = String(date.getDate()).padStart(2, "0")
-    return `${y}-${m}-${d}`
-}
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+};
 
 const parseDateFromAPI = (dateStr: string): Date => {
-    const [y, m, d] = dateStr.split("-").map(Number)
-    return new Date(y, m - 1, d)
-}
+    const [y, m, d] = dateStr.split("-").map(Number);
+    return new Date(y, m - 1, d);
+};
 
-const guessAllowanceLabel = (frequency: AllowanceFrequency | null) => {
-    switch (frequency) {
-        case AllowanceFrequency.WEEKLY:   return "Semaine"
-        case AllowanceFrequency.BIWEEKLY: return "Quinzaine (15 jours)"
-        case AllowanceFrequency.MONTHLY:  return "Mois"
-        default: return null
-    }
-}
+const FREQUENCY_OPTIONS: { value: AllowanceFrequency; label: string }[] = [
+    { value: AllowanceFrequency.WEEKLY, label: "Semaine" },
+    { value: AllowanceFrequency.BIWEEKLY, label: "Quinzaine (15 jours)" },
+    { value: AllowanceFrequency.MONTHLY, label: "Mois" },
+];
 
 type IProps = {
-    childId: string
-}
+    childId: string;
+    childName: string;
+};
 
-const AllowanceForm = ({ childId }: IProps) => {
-    const [formStep, setFormStep] = useState<FormSteps>(FormSteps.DATE_AND_FREQUENCY)
-    const [showFrequency, setShowFrequency] = useState<boolean>(false)
+const AllowanceForm = ({ childId, childName }: IProps) => {
+    const [formStep, setFormStep] = useState<FormSteps>(FormSteps.DATE_AND_FREQUENCY);
+    const [showFrequency, setShowFrequency] = useState(false);
+    const [existingAllowance, setExistingAllowance] = useState<Allowance | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+    const [amount, setAmount] = useState("");
+    const [date, setDate] = useState<Date | null>(null);
+    const [frequency, setFrequency] = useState<AllowanceFrequency | null>(null);
 
-    const [child, setChild] = useState<SubAccount | null>(null)
-    const [existingAllowance, setExistingAllowance] = useState<Allowance | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [submitting, setSubmitting] = useState(false)
+    const slideAnim = useRef(new Animated.Value(0)).current;
+    const isEditMode = existingAllowance !== null;
 
-    const [amount, setAmount] = useState<string>("")
-    const [date, setDate] = useState<Date | null>(null)
-    const [frequency, setFrequency] = useState<AllowanceFrequency | null>(null)
-
-    const isEditMode = existingAllowance !== null
-
-    const loadData = async () => {
-        try {
-            const [account, existing] = await Promise.all([
-                userService.getAccount(),
-                allowanceService.getByChildId(childId),
-            ])
-
-            setChild(account.subAccounts.find((s) => s.id === childId) ?? null)
-
-            if (existing) {
-                setExistingAllowance(existing)
-                setFrequency(existing.frequency)
-                setAmount(existing.amount.toString())
-                setDate(parseDateFromAPI(existing.startDate))
-            }
-        } catch {
-            router.back()
-        } finally {
-            setLoading(false)
-        }
-    }
+    const selectedFrequencyLabel = FREQUENCY_OPTIONS.find((o) => o.value === frequency)?.label ?? "Choisir une fréquence";
 
     useEffect(() => {
-        loadData()
-    }, [])
+        (async () => {
+            try {
+                const existing = await allowanceService.getByChildId(childId);
+                if (existing) {
+                    setExistingAllowance(existing);
+                    setFrequency(existing.frequency);
+                    setAmount(existing.amount.toString());
+                    setDate(parseDateFromAPI(existing.startDate));
+                }
+            } catch {
+                router.back();
+            } finally {
+                setLoading(false);
+            }
+        })();
+    }, []);
+
+    const goToStep = (nextStep: FormSteps, dir: 1 | -1 = 1) => {
+        setShowFrequency(false);
+        Animated.timing(slideAnim, {
+            toValue: -dir * SCREEN_WIDTH,
+            duration: 220,
+            easing: Easing.in(Easing.quad),
+            useNativeDriver: true,
+        }).start(() => {
+            setFormStep(nextStep);
+            slideAnim.setValue(dir * SCREEN_WIDTH);
+            Animated.timing(slideAnim, {
+                toValue: 0,
+                duration: 220,
+                easing: Easing.out(Easing.quad),
+                useNativeDriver: true,
+            }).start();
+        });
+    };
 
     const handleSubmit = async () => {
-        if (!date || !frequency) return
-        setSubmitting(true)
-
-        const weeklyDay =
-            frequency === AllowanceFrequency.WEEKLY
-                ? WEEKDAY_FROM_JS[date.getDay()]
-                : undefined
-
+        if (!date || !frequency) return;
+        setSubmitting(true);
+        const weeklyDay = frequency === "WEEKLY" ? WEEKDAY_FROM_JS[date.getDay()] : undefined;
         try {
             if (isEditMode && existingAllowance) {
                 await allowanceService.update(existingAllowance.id, {
@@ -117,7 +119,7 @@ const AllowanceForm = ({ childId }: IProps) => {
                     startDate: formatDateForAPI(date),
                     active: true,
                     ...(weeklyDay && { weeklyDay, weeklyDayValid: true }),
-                })
+                });
             } else {
                 await allowanceService.create({
                     subAccountIdChild: childId,
@@ -126,349 +128,355 @@ const AllowanceForm = ({ childId }: IProps) => {
                     active: true,
                     startDate: formatDateForAPI(date),
                     ...(weeklyDay && { weeklyDay }),
-                })
+                });
             }
-            router.back()
+            router.back();
         } catch (error: any) {
-            Alert.alert(
-                "Erreur",
-                error?.response?.data?.message ?? "Impossible de sauvegarder l'argent de poche."
-            )
+            Alert.alert("Erreur", error?.response?.data?.message ?? "Impossible de sauvegarder l'argent de poche.");
         } finally {
-            setSubmitting(false)
+            setSubmitting(false);
         }
-    }
+    };
 
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#846DED" />
+                <ActivityIndicator size="large" color={theme.colors.primary[100]} />
             </View>
-        )
+        );
     }
 
-    return (
-        <ScrollView style={{ flex: 1 }}>
-            <View style={styles.contentSetup}>
+    const step1Valid = !!frequency && !!date;
+    const step2Valid = Number(amount) > 0;
 
-                {/* ── Étape 1 : Fréquence + Date ── */}
-                {formStep === FormSteps.DATE_AND_FREQUENCY && (
+    const renderStep1 = () => (
+        <View style={styles.stepContent}>
+            <Text style={styles.stepTitle}>À quelle fréquence souhaitez-vous verser l'argent de poche de {childName} ?</Text>
+
+            <View style={styles.fieldsContainer}>
+                {/* Frequency select */}
+                <View style={{ zIndex: 10 }}>
+                    <Text style={styles.fieldLabel}>Chaque</Text>
                     <View>
-                        <Text style={styles.title}>
-                            À quelle fréquence souhaitez-vous verser l'argent de poche de {child?.name} ?
-                        </Text>
-
-                        <View style={styles.section}>
-                            <Text style={styles.sectionLabel}>Chaque</Text>
-
-                            <TouchableOpacity
-                                onPress={() => setShowFrequency(!showFrequency)}
-                                style={frequency ? styles.inputContainerSelectedGreen : styles.inputContainer}
-                            >
-                                <Text style={styles.textInput}>
-                                    {guessAllowanceLabel(frequency) ?? "Choisir une fréquence"}
-                                </Text>
-                                {frequency
-                                    ? <Ionicons name="checkmark-outline" size={18} color="#16AA75" />
-                                    : <Ionicons
-                                        name="arrow-back"
-                                        size={18}
-                                        color="#D5D5D5"
-                                        style={{ transform: [{ rotate: showFrequency ? "90deg" : "-90deg" }] }}
-                                    />
-                                }
-                            </TouchableOpacity>
-
-                            {showFrequency && (
-                                <View style={styles.frequencyContainer}>
-                                    {Object.values(AllowanceFrequency).map((v) => (
-                                        <TouchableOpacity
-                                            key={v}
-                                            style={[
-                                                styles.frequencyOption,
-                                                frequency === v && styles.frequencyOptionSelected,
-                                            ]}
-                                            onPress={() => {
-                                                setShowFrequency(false)
-                                                setFrequency(v)
-                                            }}
-                                        >
-                                            <Text style={styles.textInput}>{guessAllowanceLabel(v)}</Text>
-                                        </TouchableOpacity>
-                                    ))}
-                                </View>
+                        <TouchableOpacity
+                            style={[styles.selectTrigger, frequency && styles.selectTriggerDone]}
+                            onPress={() => setShowFrequency((v) => !v)}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={[styles.selectTriggerText, !frequency && styles.selectPlaceholder]}>{selectedFrequencyLabel}</Text>
+                            {frequency ? (
+                                <Ionicons name="checkmark-outline" size={18} color={theme.colors.jadegreen[100]} />
+                            ) : (
+                                <Ionicons name={showFrequency ? "chevron-up" : "chevron-down"} size={18} color={theme.colors.carbon[60]} />
                             )}
+                        </TouchableOpacity>
 
-                            <Text style={styles.sectionLabel}>À partir du</Text>
-                            <DatePickerInput
-                                value={date}
-                                onChange={setDate}
-                                placeholder="Choisir une date de début"
-                            />
-                        </View>
-
-                        <AllowanceButton
-                            textButton="Continuer"
-                            onNext={() => setFormStep(FormSteps.AMOUNT)}
-                            disabled={!frequency || !date}
-                        />
-                    </View>
-                )}
-
-                {/* ── Étape 2 : Montant ── */}
-                {formStep === FormSteps.AMOUNT && (
-                    <View>
-                        <Text style={styles.title}>
-                            Combien est-ce que {child?.name} va recevoir ?
-                        </Text>
-
-                        <View style={styles.section}>
-                            <Text style={styles.sectionLabel}>Chaque {guessAllowanceLabel(frequency)}</Text>
-                            <View style={Number(amount) > 0 ? styles.inputContainerSelectedGreen : styles.inputContainer}>
-                                <TextInput
-                                    style={styles.textInput}
-                                    placeholder="0.00€"
-                                    value={amount}
-                                    onChangeText={setAmount}
-                                    keyboardType="decimal-pad"
-                                    autoFocus
-                                />
-                                {Number(amount) > 0 && (
-                                    <Ionicons name="checkmark-outline" size={18} color="#16AA75" />
-                                )}
+                        {showFrequency && (
+                            <View style={styles.dropdownList}>
+                                {FREQUENCY_OPTIONS.map((option) => (
+                                    <TouchableOpacity
+                                        key={option.value}
+                                        style={[styles.dropdownOption, frequency === option.value && styles.dropdownOptionSelected]}
+                                        onPress={() => {
+                                            setFrequency(option.value);
+                                            setShowFrequency(false);
+                                        }}
+                                    >
+                                        <Text style={styles.dropdownOptionText}>{option.label}</Text>
+                                    </TouchableOpacity>
+                                ))}
                             </View>
-                        </View>
-
-                        <AllowanceButton
-                            textButton="Continuer"
-                            onNext={() => setFormStep(FormSteps.SUMMARY)}
-                            onBack={() => setFormStep(FormSteps.DATE_AND_FREQUENCY)}
-                            disabled={Number(amount) <= 0}
-                        />
+                        )}
                     </View>
-                )}
+                </View>
 
-                {/* ── Étape 3 : Récapitulatif ── */}
-                {formStep === FormSteps.SUMMARY && (
-                    <View>
-                        <Text style={styles.title}>Tout est prêt !</Text>
-
-                        <View style={styles.summaryContent}>
-                            <View style={styles.summaryContent}>
-                                <View style={styles.summaryContainer}>
-                                    <Text style={styles.summaryTextLight}>Fréquence</Text>
-                                    <Text style={[styles.summaryText, { width: "60%" }]}>
-                                        Chaque {guessAllowanceLabel(frequency)}
-                                    </Text>
-                                </View>
-                                <View style={styles.summaryContainer}>
-                                    <Text style={styles.summaryTextLight}>Date de début</Text>
-                                    <Text style={[styles.summaryText, { width: "60%" }]}>
-                                        {date ? formatDateFR(date) : ""}
-                                    </Text>
-                                </View>
-                                <View style={styles.summaryContainer}>
-                                    <Text style={styles.summaryTextLight}>Montant</Text>
-                                    <Text style={[styles.summaryText, { width: "60%" }]}>{amount}€</Text>
-                                </View>
-                            </View>
-
-                            <View style={styles.summaryContent}>
-                                <Text style={styles.summaryText}>
-                                    Votre enfant recevra désormais son argent de poche régulièrement.
-                                </Text>
-                                <Text style={styles.summaryText}>
-                                    On vous enverra un rappel la veille du jour de paiement pour ne rien oublier !
-                                </Text>
-                            </View>
-                        </View>
-
-                        <AllowanceButton
-                            textButton={isEditMode ? "Mettre à jour" : "Activer l'argent de poche"}
-                            onNext={handleSubmit}
-                            onBack={() => setFormStep(FormSteps.AMOUNT)}
-                            loading={submitting}
-                        />
-                    </View>
-                )}
-
+                {/* Date picker */}
+                <View style={{ zIndex: 1 }}>
+                    <Text style={styles.fieldLabel}>À partir du</Text>
+                    <DatePickerInput value={date} onChange={setDate} placeholder="Choisir une date de début" />
+                </View>
             </View>
-        </ScrollView>
-    )
-}
+        </View>
+    );
 
-type AllowanceButtonProps = {
-    textButton: string
-    onNext: () => void
-    onBack?: () => void
-    disabled?: boolean
-    loading?: boolean
-}
+    const renderStep2 = () => (
+        <View style={styles.stepContent}>
+            <Text style={styles.stepTitle}>Combien est-ce que {childName} va recevoir ?</Text>
 
-const AllowanceButton = ({
-    textButton,
-    onNext,
-    onBack,
-    disabled = false,
-    loading = false,
-}: AllowanceButtonProps) => (
-    <View style={styles.footer}>
-        {!!onBack && (
-            <TouchableOpacity
-                style={[styles.button, styles.backButton]}
-                onPress={onBack}
-                disabled={loading}
-            >
-                <Text style={[styles.createButtonText, { color: "#6A6A6A" }]}>Retour</Text>
-            </TouchableOpacity>
-        )}
-        <TouchableOpacity
-            style={[
-                styles.button,
-                disabled || loading ? styles.createButtonDisabled : styles.createButton,
-                { width: !!onBack ? "70%" : "100%" },
-            ]}
-            onPress={onNext}
-            disabled={disabled || loading}
-        >
-            {loading
-                ? <ActivityIndicator size="small" color="#fff" />
-                : <Text style={[styles.createButtonText, { color: "#fff" }]}>{textButton}</Text>
-            }
-        </TouchableOpacity>
-    </View>
-)
+            <View style={styles.fieldsContainer}>
+                <Text style={styles.fieldLabel}>Chaque {selectedFrequencyLabel}</Text>
+                <View style={[styles.selectTrigger, Number(amount) > 0 && styles.selectTriggerDone]}>
+                    <TextInput
+                        style={styles.selectTriggerText}
+                        placeholder="0.00€"
+                        placeholderTextColor={theme.colors.carbon[40]}
+                        value={amount}
+                        onChangeText={setAmount}
+                        keyboardType="decimal-pad"
+                        autoFocus
+                    />
+                    {Number(amount) > 0 && <Ionicons name="checkmark-outline" size={18} color={theme.colors.jadegreen[100]} />}
+                </View>
+            </View>
+        </View>
+    );
+
+    const renderStep3 = () => (
+        <View style={styles.stepContent}>
+            <Text style={styles.stepTitle}>Tout est prêt !</Text>
+
+            <View style={styles.summaryContainer}>
+                <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Fréquence</Text>
+                    <Text style={styles.summaryValue}>Chaque {selectedFrequencyLabel}</Text>
+                </View>
+                <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Date de début</Text>
+                    <Text style={styles.summaryValue}>{date ? formatDateFR(date) : ""}</Text>
+                </View>
+                <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Montant</Text>
+                    <Text style={styles.summaryValue}>{amount}€</Text>
+                </View>
+
+                <View style={styles.summaryNotes}>
+                    <Text style={styles.summaryNote}>Votre enfant recevra désormais son argent de poche régulièrement.</Text>
+                    <Text style={styles.summaryNote}>On vous enverra un rappel la veille du jour de paiement pour ne rien oublier !</Text>
+                </View>
+            </View>
+        </View>
+    );
+
+    const isDisabled = () => {
+        if (formStep === FormSteps.DATE_AND_FREQUENCY) return !step1Valid;
+        if (formStep === FormSteps.AMOUNT) return !step2Valid;
+        return false;
+    };
+
+    const handleNext = () => {
+        if (formStep === FormSteps.DATE_AND_FREQUENCY) goToStep(FormSteps.AMOUNT, 1);
+        else if (formStep === FormSteps.AMOUNT) goToStep(FormSteps.SUMMARY, 1);
+        else handleSubmit();
+    };
+
+    const handleBack = () => {
+        if (formStep === FormSteps.AMOUNT) goToStep(FormSteps.DATE_AND_FREQUENCY, -1);
+        else if (formStep === FormSteps.SUMMARY) goToStep(FormSteps.AMOUNT, -1);
+    };
+
+    const isFirstStep = formStep === FormSteps.DATE_AND_FREQUENCY;
+    const isLastStep = formStep === FormSteps.SUMMARY;
+    const disabled = isDisabled();
+    const buttonLabel = isLastStep ? (isEditMode ? "Mettre à jour" : "Activer l'argent de poche") : "Continuer";
+
+    return (
+        <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+            <View style={styles.overflow}>
+                <Animated.View style={[styles.animated, { transform: [{ translateX: slideAnim }] }]}>
+                    {formStep === FormSteps.DATE_AND_FREQUENCY && renderStep1()}
+                    {formStep === FormSteps.AMOUNT && renderStep2()}
+                    {formStep === FormSteps.SUMMARY && renderStep3()}
+
+                    {/* Footer — always at bottom */}
+                    <View style={styles.footer}>
+                        {!isFirstStep && (
+                            <TouchableOpacity style={styles.backButton} onPress={handleBack} disabled={submitting}>
+                                <Text style={styles.backButtonText}>Retour</Text>
+                            </TouchableOpacity>
+                        )}
+                        <TouchableOpacity
+                            style={[styles.continueButton, disabled || submitting ? styles.continueButtonDisabled : styles.continueButtonActive]}
+                            onPress={handleNext}
+                            disabled={disabled || submitting}
+                        >
+                            {submitting ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                                <Text style={[styles.continueButtonText, (disabled || submitting) && styles.continueButtonTextDisabled]}>
+                                    {buttonLabel}
+                                </Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                </Animated.View>
+            </View>
+        </KeyboardAvoidingView>
+    );
+};
 
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: theme.colors.white,
+    },
+    overflow: {
+        flex: 1,
+        overflow: "hidden",
+    },
+    animated: {
+        flex: 1,
+        flexDirection: "column",
+    },
     loadingContainer: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
         paddingTop: 60,
     },
-    contentSetup: {
+    stepContent: {
         flex: 1,
-        justifyContent: "flex-end",
-        paddingHorizontal: 20,
+        paddingHorizontal: 24,
+        paddingTop: 24,
     },
-    title: {
-        fontWeight: "700",
+    stepTitle: {
+        ...typography.bold,
         fontSize: 20,
-        marginTop: 20,
+        color: theme.colors.carbon[100],
+        lineHeight: 28,
     },
-    section: {
+    fieldsContainer: {
         marginTop: 24,
-        display: "flex",
-        flexDirection: "column",
+        gap: 20,
+    },
+    fieldLabel: {
+        ...typography.regular,
+        fontSize: 14,
+        color: theme.colors.carbon[100],
+        marginBottom: 8,
+    },
+    selectTrigger: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        backgroundColor: theme.colors.white,
+        borderRadius: 8,
+        borderWidth: 2,
+        borderColor: theme.colors.carbon[20],
+        paddingHorizontal: 14,
+        height: TRIGGER_HEIGHT,
+    },
+    selectTriggerDone: {
+        borderColor: theme.colors.jadegreen[100],
+    },
+    selectTriggerText: {
+        flex: 1,
+        ...typography.regular,
+        fontSize: 16,
+        color: theme.colors.carbon[100],
+    },
+    selectPlaceholder: {
+        color: theme.colors.carbon[40],
+    },
+    dropdownList: {
+        position: "absolute",
+        top: TRIGGER_HEIGHT + 4,
+        left: 0,
+        right: 0,
+        backgroundColor: theme.colors.white,
+        borderRadius: 8,
+        padding: 4,
+        zIndex: 100,
+        elevation: 8,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.14,
+        shadowRadius: 5,
+    },
+    dropdownOption: {
+        height: TRIGGER_HEIGHT,
+        paddingHorizontal: 14,
+        borderRadius: 8,
+        justifyContent: "center",
+    },
+    dropdownOptionSelected: {
+        backgroundColor: theme.colors.primary[20],
+    },
+    dropdownOptionText: {
+        ...typography.regular,
+        fontSize: 16,
+        color: theme.colors.carbon[100],
+    },
+    summaryContainer: {
+        marginTop: 24,
+        gap: 16,
+    },
+    summaryRow: {
+        flexDirection: "row",
         gap: 8,
     },
-    sectionLabel: {
-        fontSize: 14,
-        fontWeight: "400",
-        color: "#2F2F2F",
-        marginBottom: 12,
-    },
-    inputContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        backgroundColor: "#fff",
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: "#D5D5D5",
-        paddingHorizontal: 16,
-    },
-    inputContainerSelectedGreen: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        backgroundColor: "#FFFFFF",
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: "#16AA75",
-        paddingHorizontal: 16,
-    },
-    textInput: {
+    summaryLabel: {
+        ...typography.regular,
         fontSize: 16,
-        color: "#333",
-        paddingVertical: 16,
+        color: theme.colors.carbon[60],
+        width: "40%",
     },
-    frequencyContainer: {
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-start",
-        backgroundColor: "#fff",
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: "#D5D5D5",
-        padding: 4,
-        marginBottom: 12,
+    summaryValue: {
+        ...typography.regular,
+        fontSize: 16,
+        color: theme.colors.carbon[100],
+        flex: 1,
     },
-    frequencyOption: {
-        width: "100%",
-        borderRadius: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
+    summaryNotes: {
+        marginTop: 8,
+        gap: 8,
     },
-    frequencyOptionSelected: {
-        backgroundColor: "#E6E2FB",
+    summaryNote: {
+        ...typography.regular,
+        fontSize: 16,
+        color: theme.colors.carbon[100],
     },
-    button: {
-        paddingVertical: 16,
+    footer: {
+        paddingHorizontal: 24,
+        paddingBottom: 24,
+        paddingTop: 16,
+        flexDirection: "row",
+        gap: 12,
+    },
+    backButton: {
+        width: "27%",
+        backgroundColor: theme.colors.carbon[20],
         borderRadius: 12,
+        paddingVertical: 16,
         alignItems: "center",
+        justifyContent: "center",
+        shadowColor: theme.colors.carbon[50],
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 1,
         shadowRadius: 0,
         elevation: 4,
     },
-    createButton: {
+    backButtonText: {
+        ...typography.semiBold,
+        fontSize: 16,
+        color: theme.colors.carbon[80],
+    },
+    continueButton: {
+        flex: 1,
+        borderRadius: 12,
+        paddingVertical: 16,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    continueButtonActive: {
+        backgroundColor: theme.colors.primary[100],
         shadowColor: "#4E31CF",
-        backgroundColor: "#846DED",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 4,
     },
-    backButton: {
-        width: "27%",
-        backgroundColor: "#D5D5D5",
-        shadowColor: "#979797",
+    continueButtonDisabled: {
+        backgroundColor: theme.colors.carbon[20],
+        elevation: 0,
     },
-    createButtonDisabled: {
-        backgroundColor: "#ccc",
-        shadowColor: "transparent",
+    continueButtonText: {
+        ...typography.bold,
+        fontSize: 20,
+        color: theme.colors.white,
     },
-    createButtonText: {
-        fontSize: 16,
-        fontWeight: "600",
+    continueButtonTextDisabled: {
+        color: theme.colors.carbon[60],
     },
-    summaryContent: {
-        display: "flex",
-        flexDirection: "column",
-        gap: 12,
-        marginTop: 20,
-        justifyContent: "flex-start",
-    },
-    summaryContainer: {
-        display: "flex",
-        flexDirection: "row",
-        justifyContent: "flex-start",
-    },
-    summaryText: {
-        fontSize: 16,
-        color: "#2F2F2F",
-        fontWeight: "400",
-    },
-    summaryTextLight: {
-        color: "#828282",
-        fontSize: 16,
-        fontWeight: "400",
-        width: "35%",
-    },
-    footer: {
-        paddingBottom: 20,
-        paddingTop: 16,
-        display: "flex",
-        flexDirection: "row",
-        justifyContent: "space-between",
-    },
-})
+});
 
-export default AllowanceForm
+export default AllowanceForm;

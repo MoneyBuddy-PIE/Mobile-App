@@ -4,33 +4,37 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { BottomNavigation } from "@/components/BottomNavigation";
 
 export default function AppLayout() {
-	const pathname = usePathname();
+    const pathname = usePathname();
 
-	const hideBottomNav =
-		pathname.startsWith("/accounts") || (pathname.startsWith("/courses/") && pathname !== "/courses" && pathname !== "/courses/child");
+    const hideBottomNav =
+        pathname.startsWith("/accounts") ||
+        (pathname.startsWith("/chapters/") && pathname !== "/chapters" && pathname !== "/chapters/child-categories") ||
+        pathname === "/goals/transfer" ||
+        pathname === "/allowance" ||
+        pathname === "/children/add-money";
 
-	return (
-		<AuthGuard>
-			<View style={styles.container}>
-				<Stack screenOptions={{ headerShown: false }}>
-					<Stack.Screen name="accounts" />
-					<Stack.Screen name="children" />
-					<Stack.Screen name="courses" />
-					<Stack.Screen name="revenus" />
-					<Stack.Screen name="tasks" />
-					<Stack.Screen name="profile" />
-					<Stack.Screen name="home" />
-					<Stack.Screen name="goals" />
-				</Stack>
-				{!hideBottomNav && <BottomNavigation />}
-			</View>
-		</AuthGuard>
-	);
+    return (
+        <AuthGuard>
+            <View style={styles.container}>
+                <Stack screenOptions={{ headerShown: false }}>
+                    <Stack.Screen name="accounts" />
+                    <Stack.Screen name="children" />
+                    <Stack.Screen name="chapters" />
+                    <Stack.Screen name="revenus" />
+                    <Stack.Screen name="tasks" />
+                    <Stack.Screen name="profile" />
+                    <Stack.Screen name="home" />
+                    <Stack.Screen name="goals" />
+                </Stack>
+                {!hideBottomNav && <BottomNavigation />}
+            </View>
+        </AuthGuard>
+    );
 }
 
 const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: "#f8f9fa",
-	},
+    container: {
+        flex: 1,
+        backgroundColor: "#f8f9fa",
+    },
 });

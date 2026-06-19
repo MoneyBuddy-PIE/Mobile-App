@@ -1,207 +1,268 @@
-import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from "axios";
-import { TokenStorage } from "@/utils/storage";
-import { router } from "expo-router";
-import { logger } from "@/utils/logger";
+import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { TokenStorage, clear } from '@/utils/storage';
+import { router } from 'expo-router';
+import { logger } from '@/utils/logger';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
 interface RetryConfig extends InternalAxiosRequestConfig {
-	_retry?: boolean;
+    _retry?: boolean;
+}
+
+interface RefreshResponse {
+    token: string;
+    refreshToken?: string;
 }
 
 class ApiService {
-	private api: AxiosInstance;
-	private isRefreshing = false;
-	private failedQueue: Array<{
-		resolve: (value?: any) => void;
-		reject: (reason?: any) => void;
-	}> = [];
+    private api: AxiosInstance;
+    private isRefreshing = false;
+    private failedQueue: Array<{
+        resolve: (value?: any) => void;
+        reject: (reason?: any) => void;
+    }> = [];
+    private logoutCallback: (() => Promise<void>) | null = null;
 
-	constructor() {
-		this.api = axios.create({
-			baseURL: API_BASE_URL,
-			timeout: 10000,
-			headers: {
-				"Content-Type": "application/json",
-			},
-		});
+    constructor() {
+        this.api = axios.create({
+            baseURL: API_BASE_URL,
+            timeout: 10000,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
 
-		this.setupInterceptors();
-	}
+        this.setupInterceptors();
+    }
 
-	private processQueue(error: Error | null, token: string | null = null) {
-		this.failedQueue.forEach((prom) => {
-			if (error) {
-				prom.reject(error);
-			} else {
-				prom.resolve(token);
-			}
-		});
+    setLogoutCallback(callback: (() => Promise<void>) | null) {
+        this.logoutCallback = callback;
+    }
 
-		this.failedQueue = [];
-	}
+    private processQueue(error: Error | null, token: string | null = null) {
+        this.failedQueue.forEach((prom) => {
+            if (error) {
+                prom.reject(error);
+            } else {
+                prom.resolve(token);
+            }
+        });
 
-	private setupInterceptors() {
-		// Request interceptor - add auth token
-		this.api.interceptors.request.use(
-			async (config) => {
-				const isPublicEndpoint = config.url?.includes("/auth/login") || config.url?.includes("/auth/register");
+        this.failedQueue = [];
+    }
 
-				if (isPublicEndpoint) {
-					return config;
-				}
+    private setupInterceptors() {
+        this.api.interceptors.request.use(
+            async (config) => {
+                const isPublicEndpoint =
+                    config.url?.includes('/auth/login') ||
+                    config.url?.includes('/auth/register') ||
+                    config.url?.includes('/auth/forgot-password') ||
+                    config.url?.includes('/auth/refreshToken');
 
-				const tokenUrl = ["/auth/me", "/auth/subAccount/login"];
-				const token = tokenUrl.some((url) => config.url?.includes(url))
-					? await TokenStorage.getToken()
-					: await TokenStorage.getSubAccountToken();
+                if (isPublicEndpoint) {
+                    return config;
+                }
 
-				if (token) {
-					config.headers.Authorization = `Bearer ${token}`;
-				}
+                const mainTokenUrls = ['/auth/me', '/auth/subAccount/login'];
 
-				return config;
-			},
-			(error) => {
-				return Promise.reject(error);
-			}
-		);
+                let token: string | null;
+                if (mainTokenUrls.some((url) => config.url?.includes(url))) {
+                    token = await TokenStorage.getToken();
+                } else {
+                    token = await TokenStorage.getSubAccountToken();
+                }
 
-		this.api.interceptors.response.use(
-			(response) => response,
-			async (error: AxiosError) => {
-				const originalRequest = error.config as RetryConfig;
+                if (token) {
+                    config.headers.Authorization = `Bearer ${token}`;
+                }
 
-				if (!originalRequest) {
-					return Promise.reject(error);
-				}
+                return config;
+            },
+            (error) => {
+                return Promise.reject(error);
+            },
+        );
 
-				if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry) {
-					const currentPath = router.canGoBack() ? undefined : "/(auth)/login";
-					if (currentPath === "/(auth)/login") {
-						return Promise.reject(error);
-					}
+        this.api.interceptors.response.use(
+            (response) => response,
+            async (error: AxiosError) => {
+                const originalRequest = error.config as RetryConfig;
 
-					if (error.response?.status === 403) {
-						console.log("Token is forbidden (403). Logging out...");
-						return Promise.reject(error);
-					}
+                if (!originalRequest) {
+                    return Promise.reject(error);
+                }
 
-					if (this.isRefreshing) {
-						return new Promise((resolve, reject) => {
-							this.failedQueue.push({ resolve, reject });
-						})
-							.then((token) => {
-								if (originalRequest.headers) {
-									originalRequest.headers.Authorization = `Bearer ${token}`;
-								}
-								return this.api(originalRequest);
-							})
-							.catch((err) => {
-								return Promise.reject(err);
-							});
-					}
+                if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry) {
+                    const isAuthEndpoint =
+                        originalRequest.url?.includes('/auth/login') ||
+                        originalRequest.url?.includes('/auth/register') ||
+                        originalRequest.url?.includes('/auth/forgot-password') ||
+                        originalRequest.url?.includes('/auth/refreshToken');
+                    if (isAuthEndpoint) {
+                        return Promise.reject(error);
+                    }
 
-					originalRequest._retry = true;
-					this.isRefreshing = true;
+                    if (error.response?.status === 403) {
+                        return Promise.reject(error);
+                    }
 
-					try {
-						this.processQueue(new Error("Session expired"), null);
-						// await this.handleLogout();
-						return Promise.reject(error);
-					} catch (refreshError) {
-						this.processQueue(refreshError as Error, null);
-						// await this.handleLogout();
-						return Promise.reject(refreshError);
-					} finally {
-						this.isRefreshing = false;
-					}
-				}
+                    // Wrong PIN returns 401 with INVALID_PIN code — skip refresh, it's not an expired token
+                    const errorCode = (error.response?.data as any)?.code;
+                    if (errorCode === 'INVALID_PIN') {
+                        return Promise.reject(error);
+                    }
 
-				if (!error.response) {
-					logger.error("Network error:", error.message);
-					return Promise.reject({
-						message: "Network error. Please check your connection.",
-						isNetworkError: true,
-					});
-				}
+                    if (this.isRefreshing) {
+                        return new Promise((resolve, reject) => {
+                            this.failedQueue.push({ resolve, reject });
+                        })
+                            .then((token) => {
+                                if (originalRequest.headers) {
+                                    originalRequest.headers.Authorization = `Bearer ${token}`;
+                                }
+                                return this.api(originalRequest);
+                            })
+                            .catch((err) => {
+                                return Promise.reject(err);
+                            });
+                    }
 
-				logger.error("API Error:", {
-					status: error.response?.status,
-					data: error.response?.data,
-					url: error.config?.url,
-				});
+                    originalRequest._retry = true;
+                    this.isRefreshing = true;
 
-				return Promise.reject(error);
-			}
-		);
-	}
+                    try {
+                        const refreshToken = await TokenStorage.getRefreshToken();
+                        if (!refreshToken) {
+                            throw new Error('No refresh token available');
+                        }
 
-	private async handleLogout() {
-		try {
-			await TokenStorage.clear();
+                        // Direct axios call to avoid triggering this interceptor again
+                        const refreshResponse = await axios.post<RefreshResponse>(
+                            `${API_BASE_URL}/auth/refreshToken`,
+                            { refreshToken },
+                            { headers: { 'Content-Type': 'application/json' } },
+                        );
 
-			setTimeout(() => {
-				router.replace("/(auth)/login");
-			}, 0);
-		} catch (error) {
-			console.error("Logout error:", error);
-			setTimeout(() => {
-				router.replace("/(auth)/login");
-			}, 0);
-		}
-	}
+                        const newToken = refreshResponse.data.token;
+                        await TokenStorage.saveToken(newToken);
+                        if (refreshResponse.data.refreshToken) {
+                            await TokenStorage.saveRefreshToken(refreshResponse.data.refreshToken);
+                        }
 
-	async get<T>(url: string, params?: any): Promise<T> {
-		try {
-			const response = await this.api.get(url, { params });
-			return response.data;
-		} catch (error) {
-			this.handleApiError(error);
-			throw error;
-		}
-	}
+                        this.processQueue(null, newToken);
 
-	async post<T>(url: string, data?: any): Promise<T> {
-		try {
-			const response = await this.api.post(url, data);
-			return response.data;
-		} catch (error) {
-			logger.error("POST request error:", error);
-			this.handleApiError(error);
-			throw error;
-		}
-	}
+                        if (originalRequest.headers) {
+                            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+                        }
+                        return this.api(originalRequest);
+                    } catch (refreshError: any) {
+                        this.processQueue(refreshError as Error, null);
+                        // Only logout if the server explicitly rejected the refresh token.
+                        // A network error means the server was unreachable — the session may still be valid.
+                        const isAuthRejection =
+                            refreshError?.response?.status === 401 ||
+                            refreshError?.response?.status === 403 ||
+                            refreshError?.response?.status === 409 || // refresh token not found in DB
+                            refreshError?.response?.status === 417 || // refresh token expired
+                            refreshError?.message === 'No refresh token available';
+                        if (isAuthRejection) {
+                            await this.handleLogout();
+                        }
+                        return Promise.reject(refreshError);
+                    } finally {
+                        this.isRefreshing = false;
+                    }
+                }
 
-	async put<T>(url: string, data?: any): Promise<T> {
-		try {
-			const response = await this.api.put(url, data, {
-				validateStatus: (status) => {
-					return status < 400 || status === 409
-				}
-			});
-			return response.data;
-		} catch (error) {
-			this.handleApiError(error);
-			throw error;
-		}
-	}
+                if (!error.response) {
+                    console.log('[API] Network error detail:', {
+                        message: error.message,
+                        code: (error as any).code,
+                        config: { url: error.config?.url, baseURL: error.config?.baseURL, method: error.config?.method },
+                    });
+                    logger.error('Network error:', error.message);
+                    return Promise.reject({
+                        message: 'Network error. Please check your connection.',
+                        isNetworkError: true,
+                    });
+                }
 
-	async delete<T>(url: string): Promise<T> {
-		try {
-			const response = await this.api.delete(url);
-			return response.data;
-		} catch (error) {
-			this.handleApiError(error);
-			throw error;
-		}
-	}
+                if (error.response?.status !== 409) {
+                    logger.error('API Error:', {
+                        status: error.response?.status,
+                        data: error.response?.data,
+                        url: error.config?.url,
+                    });
+                }
 
-	private handleApiError(error: any) {
-		if (error.isNetworkError) {
-			console.error("Network connectivity issue");
-		}
-	}
+                return Promise.reject(error);
+            },
+        );
+    }
+
+    private async handleLogout() {
+        try {
+            if (this.logoutCallback) {
+                await this.logoutCallback();
+            } else {
+                await clear();
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            setTimeout(() => {
+                router.replace('/(auth)/login');
+            }, 0);
+        }
+    }
+
+    async get<T>(url: string, params?: any): Promise<T> {
+        try {
+            const response = await this.api.get(url, { params });
+            return response.data;
+        } catch (error) {
+            this.handleApiError(error);
+            throw error;
+        }
+    }
+
+    async post<T>(url: string, data?: any): Promise<T> {
+        try {
+            const response = await this.api.post(url, data);
+            return response.data;
+        } catch (error) {
+            logger.error('POST request error:', error);
+            this.handleApiError(error);
+            throw error;
+        }
+    }
+
+    async put<T>(url: string, data?: any): Promise<T> {
+        try {
+            const response = await this.api.put(url, data);
+            return response.data;
+        } catch (error) {
+            this.handleApiError(error);
+            throw error;
+        }
+    }
+
+    async delete<T>(url: string): Promise<T> {
+        try {
+            const response = await this.api.delete(url);
+            return response.data;
+        } catch (error) {
+            this.handleApiError(error);
+            throw error;
+        }
+    }
+
+    private handleApiError(error: any) {
+        if (error.isNetworkError) {
+            console.error('Network connectivity issue');
+        }
+    }
 }
 
 export const apiService = new ApiService();

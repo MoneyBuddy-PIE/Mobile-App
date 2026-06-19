@@ -1,458 +1,506 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, SafeAreaView, ScrollView } from "react-native";
+import React, { useState, useRef } from "react";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, FlatList } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useFonts } from "expo-font";
-import { DMSans_700Bold, DMSans_400Regular, DMSans_600SemiBold } from "@expo-google-fonts/dm-sans";
+import { SvgUri } from "react-native-svg";
 import { authService } from "@/services/authService";
-import { typography } from "@/styles/typography";
+import { SubAccountRole } from "@/types/Account";
+import { colors, spacing, typography, shadows } from "@/styles";
+import Cross from "@/components/Icons/Cross";
 
 interface RoleOption {
-	value: string;
-	label: string;
-	description: string;
-	icon: string;
-	color: string;
+    value: SubAccountRole;
+    label: string;
+    description: string;
+    icon: string;
+    color: string;
 }
 
 const roleOptions: RoleOption[] = [
-	{
-		value: "CHILD",
-		label: "Enfant",
-		description: "Apprendre et gérer son argent de poche",
-		icon: "school-outline",
-		color: "#00D4AA",
-	},
-	{
-		value: "PARENT",
-		label: "Parent",
-		description: "Superviser et enseigner la gestion financière",
-		icon: "person-outline",
-		color: "#4A90E2",
-	},
+    {
+        value: "CHILD",
+        label: "Enfant",
+        description: "Apprendre et gérer son argent de poche",
+        icon: "school-outline",
+        color: colors.aquamarine[100],
+    },
+    {
+        value: "PARENT",
+        label: "Parent",
+        description: "Superviser et enseigner la gestion financière",
+        icon: "person-outline",
+        color: colors.blue[100],
+    },
 ];
 
+const AVATAR_STYLES = [
+    { key: "bottts-neutral", label: "Robot" },
+    { key: "thumbs", label: "Pouces" },
+    { key: "dylan", label: "Dylan" },
+] as const;
+
+type AvatarStyle = (typeof AVATAR_STYLES)[number]["key"];
+
+const AVATAR_SEEDS = [
+    "Felix",
+    "Aneka",
+    "Lily",
+    "Max",
+    "Zoe",
+    "Leo",
+    "Mia",
+    "Noah",
+    "Emma",
+    "Liam",
+    "Sofia",
+    "Ethan",
+    "Chloe",
+    "Lucas",
+    "Nora",
+    "Oscar",
+];
+
+const getDicebearUrl = (style: AvatarStyle, seed: string) => `https://api.dicebear.com/9.x/${style}/svg?seed=${encodeURIComponent(seed)}`;
+
 export default function Create() {
-	const [name, setName] = useState("");
-	const [selectedRole, setSelectedRole] = useState<string>("");
-	const [pin, setPin] = useState("");
-	const [loading, setLoading] = useState(false);
+    const [name, setName] = useState("");
+    const [selectedRole, setSelectedRole] = useState<SubAccountRole | "">("");
+    const [pin, setPin] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [selectedAvatarStyle, setSelectedAvatarStyle] = useState<AvatarStyle>("bottts-neutral");
+    const [selectedAvatarSeed, setSelectedAvatarSeed] = useState<string>(AVATAR_SEEDS[0]);
+    const pinInputRef = useRef<TextInput>(null);
 
-	const [fontsLoaded] = useFonts({
-		DMSans_700Bold,
-		DMSans_400Regular,
-		DMSans_600SemiBold,
-	});
+    const handlePinChange = (value: string) => {
+        if (value.length <= 4 && /^\d*$/.test(value)) {
+            setPin(value);
+        }
+    };
 
-	const fontStylesTitle = fontsLoaded ? { fontFamily: "DMSans_700Bold" } : {};
-	const fontStylesRegular = fontsLoaded ? { fontFamily: "DMSans_400Regular" } : {};
-	const fontStylesSemiBold = fontsLoaded ? { fontFamily: "DMSans_600SemiBold" } : {};
+    const isFormValid = () => {
+        if (!name.trim() || !selectedRole) return false;
+        return pin.length === 4;
+    };
 
-	const handlePinChange = (value: string) => {
-		if (value.length <= 4 && /^\d*$/.test(value)) {
-			setPin(value);
-		}
-	};
+    const handleSubmit = async () => {
+        if (!isFormValid()) return;
 
-	const validateForm = () => {
-		if (!name.trim()) {
-			Alert.alert("Erreur", "Veuillez saisir un nom");
-			return false;
-		}
-		if (!selectedRole) {
-			Alert.alert("Erreur", "Veuillez sélectionner un rôle");
-			return false;
-		}
-		// PIN requis seulement pour les parents
-		if (pin.length !== 4) {
-			Alert.alert("Erreur", "Le code PIN doit contenir exactement 4 chiffres");
-			return false;
-		}
-		return true;
-	};
+        setLoading(true);
+        try {
+            await authService.subAccountRegister({
+                name: name.trim(),
+                role: selectedRole as SubAccountRole,
+                pin,
+                iconStyle: selectedAvatarStyle,
+                iconName: selectedAvatarSeed,
+            });
+            router.back();
+        } catch (error: any) {
+            console.error("Error creating sub-account:", error);
+            Alert.alert("Erreur", error.response?.data?.message || "Impossible de créer le compte");
+        } finally {
+            setLoading(false);
+        }
+    };
 
-	const handleSubmit = async () => {
-		if (!validateForm()) return;
+    return (
+        <SafeAreaView style={styles.container}>
+            {/* Header */}
+            <View style={styles.header}>
+                <Text style={styles.title}>Nouveau compte</Text>
+                <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
+                    <Cross width={24} height={24} />
+                </TouchableOpacity>
+            </View>
 
-		setLoading(true);
-		try {
-			await authService.subAccountRegister({
-				name: name.trim(),
-				role: selectedRole,
-				pin: pin
-			});
-			Alert.alert("Succès", "Compte créé avec succès", [{ text: "OK", onPress: () => router.back() }]);
-		} catch (error: any) {
-			console.error("Error creating sub-account:", error);
-			Alert.alert("Erreur", error.response?.data?.message || "Impossible de créer le compte");
-		} finally {
-			setLoading(false);
-		}
-	};
+            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+                {/* Nom */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionLabel}>Nom du profil</Text>
+                    <View style={[styles.inputContainer, name.trim() ? styles.inputContainerValid : null]}>
+                        <TextInput
+                            style={styles.textInput}
+                            placeholder="Ex: Emma, Papa, Maman..."
+                            value={name}
+                            onChangeText={setName}
+                            autoCapitalize="words"
+                            maxLength={50}
+                        />
+                        {name.trim() && <Ionicons name="checkmark-outline" size={18} color={colors.jadegreen[100]} />}
+                    </View>
+                </View>
 
-	const handleCancel = () => {
-		router.back();
-	};
+                {/* Sélection du rôle */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionLabel}>Type de compte</Text>
+                    <View style={styles.roleContainer}>
+                        {roleOptions.map((option) => (
+                            <TouchableOpacity
+                                key={option.value}
+                                style={[styles.roleCard, selectedRole === option.value && styles.roleCardSelected]}
+                                onPress={() => {
+                                    setSelectedRole(option.value);
+                                    setPin("");
+                                }}
+                                activeOpacity={0.7}
+                            >
+                                <View style={[styles.roleIconContainer, { backgroundColor: `${option.color}20` }]}>
+                                    <Ionicons name={option.icon as any} size={22} color={option.color} />
+                                </View>
+                                <View style={styles.roleInfo}>
+                                    <Text style={[styles.roleLabel, selectedRole === option.value && styles.roleLabelSelected]}>{option.label}</Text>
+                                    <Text style={styles.roleDescription}>{option.description}</Text>
+                                </View>
+                                <View style={[styles.radioCircle, selectedRole === option.value && styles.radioCircleSelected]}>
+                                    {selectedRole === option.value && <View style={styles.radioCircleInner} />}
+                                </View>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </View>
 
-	const selectedRoleOption = roleOptions.find((option) => option.value === selectedRole);
+                {/* Avatar */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionLabel}>Avatar</Text>
 
-	// Vérifier si le formulaire est valide
-	const isFormValid = () => {
-		if (!name.trim() || !selectedRole || pin.length !== 4) return false;
-		return true;
-	};
+                    {/* Aperçu */}
+                    <View style={styles.avatarPreviewContainer}>
+                        <View style={styles.avatarPreview}>
+                            <SvgUri uri={getDicebearUrl(selectedAvatarStyle, selectedAvatarSeed)} width={80} height={80} />
+                        </View>
+                        <Text style={styles.avatarPreviewLabel}>{selectedAvatarSeed}</Text>
+                    </View>
 
-	return (
-		<SafeAreaView style={styles.container}>
-			{/* Header */}
-			<View style={styles.header}>
-				<TouchableOpacity style={styles.backButton} onPress={handleCancel}>
-					<Ionicons name="arrow-back" size={20} color="#fff" />
-				</TouchableOpacity>
-				<Text style={[styles.headerTitle, fontStylesTitle]}>Nouveau compte</Text>
-				<View style={styles.placeholder} />
-			</View>
+                    {/* Sélection du style */}
+                    <View style={styles.styleTabsContainer}>
+                        {AVATAR_STYLES.map((style) => (
+                            <TouchableOpacity
+                                key={style.key}
+                                style={[styles.styleTab, selectedAvatarStyle === style.key && styles.styleTabSelected]}
+                                onPress={() => setSelectedAvatarStyle(style.key)}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={[styles.styleTabText, selectedAvatarStyle === style.key && styles.styleTabTextSelected]}>
+                                    {style.label}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
 
-			<ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-				{/* Description */}
-				<View style={styles.descriptionContainer}>
-					<Text style={[styles.subtitle, fontStylesRegular]}>
-						Créez un nouveau profil pour votre enfant ou un autre parent
-					</Text>
-				</View>
+                    {/* Grille des seeds */}
+                    <FlatList
+                        data={AVATAR_SEEDS}
+                        keyExtractor={(item) => item}
+                        numColumns={4}
+                        scrollEnabled={false}
+                        renderItem={({ item: seed }) => (
+                            <TouchableOpacity
+                                style={[styles.avatarOption, selectedAvatarSeed === seed && styles.avatarOptionSelected]}
+                                onPress={() => setSelectedAvatarSeed(seed)}
+                                activeOpacity={0.7}
+                            >
+                                <SvgUri uri={getDicebearUrl(selectedAvatarStyle, seed)} width={56} height={56} />
+                            </TouchableOpacity>
+                        )}
+                    />
+                </View>
 
-				{/* Nom */}
-				<View style={styles.section}>
-					<Text style={[styles.sectionLabel, fontStylesSemiBold]}>Nom du profil</Text>
-					<View style={styles.inputContainer}>
-						<TextInput
-							style={[styles.textInput, fontStylesRegular]}
-							placeholder="Ex: Emma, Papa, Maman..."
-							value={name}
-							onChangeText={setName}
-							autoCapitalize="words"
-							maxLength={50}
-						/>
-					</View>
-				</View>
+                {/* Code PIN */}
+                {selectedRole !== "" && (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionLabel}>Code de sécurité</Text>
+                        <Text style={styles.sectionDescription}>Choisissez un code à 4 chiffres pour protéger ce compte</Text>
 
-				{/* Sélection du rôle */}
-				<View style={styles.section}>
-					<Text style={[styles.sectionLabel, fontStylesSemiBold]}>Type de compte</Text>
-					<View style={styles.roleContainer}>
-						{roleOptions.map((option) => (
-							<TouchableOpacity
-								key={option.value}
-								style={[styles.roleCard, selectedRole === option.value && styles.roleCardSelected]}
-								onPress={() => {
-									setSelectedRole(option.value);
-									// Reset du PIN quand on change de rôle
-									setPin("");
-								}}
-								activeOpacity={0.7}
-							>
-								<View style={[styles.roleIconContainer, { backgroundColor: `${option.color}20` }]}>
-									<Ionicons name={option.icon as any} size={24} color={option.color} />
-								</View>
-								<View style={styles.roleInfo}>
-									<Text
-										style={[
-											styles.roleLabel,
-											fontStylesSemiBold,
-											selectedRole === option.value && styles.roleLabelSelected,
-										]}
-									>
-										{option.label}
-									</Text>
-									<Text
-										style={[
-											styles.roleDescription,
-											fontStylesRegular,
-											selectedRole === option.value && styles.roleDescriptionSelected,
-										]}
-									>
-										{option.description}
-									</Text>
-								</View>
-								{selectedRole === option.value && (
-									<View style={styles.selectedIndicator}>
-										<Ionicons name="checkmark-circle" size={24} color={option.color} />
-									</View>
-								)}
-							</TouchableOpacity>
-						))}
-					</View>
-				</View>
+                        <TouchableOpacity style={styles.pinContainer} onPress={() => pinInputRef.current?.focus()} activeOpacity={1}>
+                            <View style={styles.pinDisplay}>
+                                {[0, 1, 2, 3].map((index) => (
+                                    <View
+                                        key={index}
+                                        style={[
+                                            styles.pinBox,
+                                            pin.length > index && styles.pinBoxFilled,
+                                            pin.length === index && styles.pinBoxActive,
+                                        ]}
+                                    >
+                                        {pin.length > index && <Text style={styles.pinStar}>*</Text>}
+                                    </View>
+                                ))}
+                            </View>
+                            <TextInput
+                                ref={pinInputRef}
+                                style={styles.hiddenPinInput}
+                                value={pin}
+                                onChangeText={handlePinChange}
+                                keyboardType="number-pad"
+                                maxLength={4}
+                                secureTextEntry
+                                autoFocus
+                            />
+                        </TouchableOpacity>
+                    </View>
+                )}
 
-				{/* Code PIN  */}
-					<View style={styles.section}>
-						<Text style={[styles.sectionLabel, fontStylesSemiBold]}>Code de sécurité</Text>
-						<Text style={[styles.sectionDescription, fontStylesRegular]}>
-							Choisissez un code à 4 chiffres pour protéger ce compte
-						</Text>
+                <View style={styles.bottomPadding} />
+            </ScrollView>
 
-						<View style={styles.pinContainer}>
-							<TextInput
-								style={[styles.pinInput, fontStylesRegular]}
-								value={pin}
-								onChangeText={handlePinChange}
-								keyboardType="numeric"
-								maxLength={4}
-								secureTextEntry
-								textAlign="center"
-								placeholder="••••"
-								placeholderTextColor="#ccc"
-							/>
-
-							{/* Indicateurs de PIN */}
-							<View style={styles.pinIndicators}>
-								{[1, 2, 3, 4].map((i) => (
-									<View
-										key={i}
-										style={[
-											styles.pinDot,
-											pin.length >= i && styles.pinDotFilled,
-											selectedRoleOption && {
-												backgroundColor: pin.length >= i ? selectedRoleOption.color : "#e0e0e0",
-											},
-										]}
-									/>
-								))}
-							</View>
-						</View>
-					</View>
-
-				<View style={styles.bottomPadding} />
-			</ScrollView>
-
-			{/* Bouton de création */}
-			<View style={styles.footer}>
-				<TouchableOpacity
-					style={[
-						styles.createButton,
-						(!isFormValid() || loading) && styles.createButtonDisabled,
-						selectedRoleOption &&
-							!loading &&
-							isFormValid() && { backgroundColor: selectedRoleOption.color },
-					]}
-					onPress={handleSubmit}
-					disabled={!isFormValid() || loading}
-				>
-					<Text style={[styles.createButtonText, fontStylesSemiBold]}>
-						{loading ? "Création en cours..." : "Créer le compte"}
-					</Text>
-				</TouchableOpacity>
-			</View>
-		</SafeAreaView>
-	);
+            {/* Bouton de création */}
+            <View style={styles.footer}>
+                <TouchableOpacity
+                    style={[styles.createButton, (!isFormValid() || loading) && styles.createButtonDisabled]}
+                    onPress={handleSubmit}
+                    disabled={!isFormValid() || loading}
+                >
+                    <Text style={styles.createButtonText}>{loading ? "Création..." : "Créer le compte"}</Text>
+                </TouchableOpacity>
+            </View>
+        </SafeAreaView>
+    );
 }
 
 const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: "#f8f9fa",
-	},
-	header: {
-		flexDirection: "row",
-		justifyContent: "space-between",
-		alignItems: "center",
-		paddingHorizontal: 20,
-		paddingTop: 10,
-		paddingBottom: 20,
-		backgroundColor: "#fff",
-		borderBottomWidth: 1,
-		borderBottomColor: "#e0e0e0",
-	},
-	backButton: {
-		width: 44,
-		height: 44,
-		backgroundColor: "#333",
-		borderRadius: 12,
-		justifyContent: "center",
-		alignItems: "center",
-	},
-	headerTitle: {
-		fontSize: 18,
-		fontWeight: "bold",
-		color: "#333",
-	},
-	placeholder: {
-		width: 44,
-	},
-	content: {
-		flex: 1,
-		paddingHorizontal: 20,
-	},
-	descriptionContainer: {
-		paddingVertical: 24,
-		alignItems: "center",
-	},
-	subtitle: {
-		fontSize: 16,
-		color: "#666",
-		textAlign: "center",
-		lineHeight: 22,
-	},
-	section: {
-		marginBottom: 32,
-	},
-	sectionLabel: {
-		fontSize: 16,
-		fontWeight: "600",
-		color: "#333",
-		marginBottom: 8,
-	},
-	sectionDescription: {
-		fontSize: 14,
-		color: "#666",
-		marginBottom: 16,
-		lineHeight: 20,
-	},
-	inputContainer: {
-		backgroundColor: "#fff",
-		borderRadius: 12,
-		borderWidth: 1,
-		borderColor: "#e0e0e0",
-		shadowColor: "#BFD0EA",
-		shadowOffset: {
-			width: 0,
-			height: 2,
-		},
-		shadowOpacity: 0.6,
-		shadowRadius: 0,
-		elevation: 2,
-	},
-	textInput: {
-		fontSize: 16,
-		color: "#333",
-		paddingHorizontal: 16,
-		paddingVertical: 16,
-	},
-	roleContainer: {
-		gap: 12,
-	},
-	roleCard: {
-		backgroundColor: "#fff",
-		borderRadius: 12,
-		padding: 20,
-		flexDirection: "row",
-		alignItems: "center",
-		borderWidth: 2,
-		borderColor: "#e0e0e0",
-		shadowColor: "#BFD0EA",
-		shadowOffset: {
-			width: 0,
-			height: 2,
-		},
-		shadowOpacity: 0.6,
-		shadowRadius: 0,
-		elevation: 2,
-	},
-	roleCardSelected: {
-		borderColor: "#6C5CE7",
-		backgroundColor: "#f8f9ff",
-	},
-	roleIconContainer: {
-		width: 48,
-		height: 48,
-		borderRadius: 12,
-		justifyContent: "center",
-		alignItems: "center",
-		marginRight: 16,
-	},
-	roleInfo: {
-		flex: 1,
-	},
-	roleLabel: {
-		fontSize: 16,
-		fontWeight: "600",
-		color: "#333",
-		marginBottom: 4,
-	},
-	roleLabelSelected: {
-		color: "#6C5CE7",
-	},
-	roleDescription: {
-		fontSize: 14,
-		color: "#666",
-		lineHeight: 18,
-	},
-	roleDescriptionSelected: {
-		color: "#6C5CE7",
-	},
-	selectedIndicator: {
-		marginLeft: 12,
-	},
-	pinContainer: {
-		alignItems: "center",
-		gap: 16,
-	},
-	pinInput: {
-		backgroundColor: "#fff",
-		borderWidth: 2,
-		borderColor: "#e0e0e0",
-		borderRadius: 12,
-		paddingHorizontal: 16,
-		paddingVertical: 16,
-		fontSize: 24,
-		width: 120,
-		textAlign: "center",
-		letterSpacing: 8,
-		shadowColor: "#BFD0EA",
-		shadowOffset: {
-			width: 0,
-			height: 2,
-		},
-		shadowOpacity: 0.6,
-		shadowRadius: 0,
-		elevation: 2,
-	},
-	pinIndicators: {
-		flexDirection: "row",
-		gap: 12,
-	},
-	pinDot: {
-		width: 12,
-		height: 12,
-		borderRadius: 6,
-		backgroundColor: "#e0e0e0",
-	},
-	pinDotFilled: {
-		backgroundColor: "#6C5CE7",
-	},
-	bottomPadding: {
-		height: 40,
-	},
-	footer: {
-		paddingHorizontal: 20,
-		paddingBottom: 20,
-		paddingTop: 16,
-		backgroundColor: "#fff",
-		borderTopWidth: 1,
-		borderTopColor: "#e0e0e0",
-	},
-	createButton: {
-		backgroundColor: "#6C5CE7",
-		paddingVertical: 16,
-		borderRadius: 12,
-		alignItems: "center",
-		shadowColor: "#4E31CF",
-		shadowOffset: {
-			width: 0,
-			height: 4,
-		},
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 4,
-	},
-	createButtonDisabled: {
-		backgroundColor: "#ccc",
-		shadowOpacity: 0,
-		elevation: 0,
-	},
-	createButtonText: {
-		color: "#fff",
-		fontSize: 16,
-		fontWeight: "600",
-	},
+    container: {
+        flex: 1,
+        backgroundColor: colors.white,
+    },
+    header: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingHorizontal: spacing.xl,
+        paddingVertical: spacing.lg,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+    },
+    title: {
+        ...typography.lg,
+        ...typography.bold,
+        color: colors.carbon[100],
+    },
+    closeButton: {
+        width: 48,
+        height: 48,
+        backgroundColor: colors.carbon[100],
+        borderRadius: spacing.sm,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    content: {
+        flex: 1,
+        paddingHorizontal: spacing.xl,
+    },
+    section: {
+        marginTop: spacing.xl,
+    },
+    sectionLabel: {
+        ...typography.sm,
+        color: colors.carbon[100],
+        marginBottom: spacing.md,
+    },
+    sectionDescription: {
+        ...typography.sm,
+        color: colors.carbon[60],
+        marginBottom: spacing.md,
+        lineHeight: 20,
+    },
+    inputContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: colors.white,
+        borderRadius: spacing.sm,
+        borderWidth: 2,
+        borderColor: colors.carbon[20],
+        paddingHorizontal: spacing.base,
+        height: 53,
+    },
+    inputContainerValid: {
+        borderColor: colors.jadegreen[100],
+        borderWidth: 1,
+    },
+    textInput: {
+        flex: 1,
+        ...typography.md,
+        color: colors.carbon[100],
+    },
+    roleContainer: {
+        gap: spacing.md,
+    },
+    roleCard: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: colors.white,
+        borderRadius: spacing.sm,
+        borderWidth: 2,
+        borderColor: colors.carbon[20],
+        paddingLeft: spacing.lg,
+        paddingRight: spacing.md,
+        paddingVertical: spacing.md,
+    },
+    roleCardSelected: {
+        backgroundColor: colors.primary[10],
+        borderColor: colors.primary[100],
+    },
+    roleIconContainer: {
+        width: 44,
+        height: 44,
+        borderRadius: spacing.sm,
+        justifyContent: "center",
+        alignItems: "center",
+        marginRight: spacing.base,
+    },
+    roleInfo: {
+        flex: 1,
+    },
+    roleLabel: {
+        ...typography.md,
+        color: colors.carbon[100],
+        marginBottom: 2,
+    },
+    roleLabelSelected: {
+        ...typography.bold,
+    },
+    roleDescription: {
+        ...typography.sm,
+        color: colors.carbon[60],
+        lineHeight: 18,
+    },
+    radioCircle: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: colors.carbon[20],
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    radioCircleSelected: {
+        borderColor: colors.primary[100],
+    },
+    radioCircleInner: {
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        backgroundColor: colors.primary[100],
+    },
+    // Avatar
+    avatarPreviewContainer: {
+        alignItems: "center",
+        marginBottom: spacing.lg,
+    },
+    avatarPreview: {
+        width: 100,
+        height: 100,
+        borderRadius: spacing.sm,
+        backgroundColor: colors.primary[10],
+        borderWidth: 2,
+        borderColor: colors.primary[100],
+        justifyContent: "center",
+        alignItems: "center",
+        overflow: "hidden",
+    },
+    avatarPreviewLabel: {
+        ...typography.sm,
+        color: colors.carbon[60],
+        marginTop: spacing.sm,
+    },
+    styleTabsContainer: {
+        flexDirection: "row",
+        gap: spacing.sm,
+        marginBottom: spacing.base,
+    },
+    styleTab: {
+        flex: 1,
+        paddingVertical: spacing.sm,
+        borderRadius: spacing.sm,
+        backgroundColor: colors.carbon[10],
+        borderWidth: 1.5,
+        borderColor: colors.carbon[20],
+        alignItems: "center",
+    },
+    styleTabSelected: {
+        backgroundColor: colors.primary[20],
+        borderColor: colors.primary[100],
+    },
+    styleTabText: {
+        ...typography.sm,
+        color: colors.carbon[60],
+    },
+    styleTabTextSelected: {
+        ...typography.bold,
+        color: colors.carbon[100],
+    },
+    avatarOption: {
+        flex: 1,
+        aspectRatio: 1,
+        margin: spacing.xs,
+        borderRadius: spacing.sm,
+        backgroundColor: colors.carbon[10],
+        borderWidth: 1.5,
+        borderColor: colors.carbon[20],
+        justifyContent: "center",
+        alignItems: "center",
+        overflow: "hidden",
+    },
+    avatarOptionSelected: {
+        borderColor: colors.primary[100],
+        backgroundColor: colors.primary[20],
+    },
+    // PIN
+    pinContainer: {
+        alignItems: "center",
+        gap: spacing.base,
+    },
+    pinDisplay: {
+        flexDirection: "row",
+        gap: spacing.base,
+    },
+    pinBox: {
+        width: 64,
+        height: 64,
+        borderRadius: spacing.sm,
+        backgroundColor: colors.white,
+        borderWidth: 2,
+        borderColor: colors.carbon[20],
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    pinBoxActive: {
+        borderColor: colors.primary[100],
+    },
+    pinBoxFilled: {
+        borderColor: colors.primary[100],
+    },
+    pinStar: {
+        ...typography.xl,
+        color: colors.carbon[100],
+        fontWeight: "bold",
+    },
+    hiddenPinInput: {
+        position: "absolute",
+        left: -9999,
+        opacity: 0,
+    },
+    bottomPadding: {
+        height: 100,
+    },
+    footer: {
+        paddingHorizontal: spacing.xl,
+        paddingBottom: spacing.lg,
+        paddingTop: spacing.base,
+    },
+    createButton: {
+        backgroundColor: colors.primary[100],
+        paddingVertical: spacing.md,
+        borderRadius: spacing.sm,
+        alignItems: "center",
+        ...shadows.md,
+    },
+    createButtonDisabled: {
+        backgroundColor: colors.carbon[30],
+        ...shadows.none,
+    },
+    createButtonText: {
+        color: colors.white,
+        ...typography.button,
+    },
 });

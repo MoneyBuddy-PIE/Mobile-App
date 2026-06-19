@@ -1,353 +1,319 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Alert } from "react-native";
-import { useFonts } from "expo-font";
-import { DMSans_700Bold, DMSans_400Regular, DMSans_600SemiBold } from "@expo-google-fonts/dm-sans";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { UserStorage } from "@/utils/storage";
+import { formatMoney } from "@/utils/money";
 import { SubAccount } from "@/types/Account";
-import { Link, router } from "expo-router";
-import AccountCard from "@/components/AccountCard";
+import { Link } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { colors, typography, spacing, shadows } from "@/styles";
+
+const getAvatarUri = (iconStyle: string, iconName: string) =>
+    `https://api.dicebear.com/9.x/${iconStyle}/png?seed=${iconName}`;
 
 export default function Profile() {
-	const { user, logout } = useAuthContext();
-	const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
+    const { user, logout } = useAuthContext();
+    const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
 
-	const [fontsLoaded] = useFonts({
-		DMSans_700Bold,
-		DMSans_400Regular,
-		DMSans_600SemiBold,
-	});
+    useEffect(() => {
+        UserStorage.getSubAccount().then(setSubAccount).catch(console.error);
+    }, []);
 
-	const fontStylesTitle = fontsLoaded ? { fontFamily: "DMSans_700Bold" } : {};
-	const fontStylesRegular = fontsLoaded ? { fontFamily: "DMSans_400Regular" } : {};
-	const fontStylesSemiBold = fontsLoaded ? { fontFamily: "DMSans_600SemiBold" } : {};
+    const handleLogout = () => {
+        Alert.alert("Déconnexion", "Êtes-vous sûr de vouloir vous déconnecter ?", [
+            { text: "Annuler", style: "cancel" },
+            { text: "Déconnexion", style: "destructive", onPress: logout },
+        ]);
+    };
 
-	useEffect(() => {
-		loadSubAccount();
-	}, [router]);
+    const isChildAccount = subAccount?.role === "CHILD";
 
-	const loadSubAccount = async () => {
-		try {
-			const subAccountData = await UserStorage.getSubAccount();
-			setSubAccount(subAccountData);
-		} catch (error) {
-			console.error("Error loading sub-account:", error);
-		}
-	};
+    const getRoleLabel = (role: string) => {
+        switch (role?.toUpperCase()) {
+            case "OWNER": return "Parent principal";
+            case "PARENT": return "Parent";
+            case "CHILD": return "Enfant";
+            case "ADMIN": return "Administrateur";
+            default: return role || "Utilisateur";
+        }
+    };
 
-	const handleLogout = async () => {
-		Alert.alert("Déconnexion", "Êtes-vous sûr de vouloir vous déconnecter ?", [
-			{ text: "Annuler", style: "cancel" },
-			{ text: "Déconnexion", style: "destructive", onPress: logout },
-		]);
-	};
+    const getRoleBadgeColor = (role: string) => {
+        switch (role?.toUpperCase()) {
+            case "OWNER":
+            case "PARENT": return colors.primary[100];
+            case "CHILD": return colors.jadegreen[100];
+            case "ADMIN": return colors.tertiary[100];
+            default: return colors.carbon[60];
+        }
+    };
 
-	const isChildAccount = subAccount?.role === "CHILD";
+    return (
+        <SafeAreaView style={styles.container}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
 
-	return (
-		<SafeAreaView style={styles.container}>
-			<ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-				{/* Header */}
-				<View style={styles.header}>
-					<Text style={[styles.title, fontStylesTitle]}>Mon profil</Text>
-					<Text style={[styles.subtitle, fontStylesRegular]}>Gérez votre compte et vos préférences</Text>
-				</View>
+                <Text style={styles.pageTitle}>Mon profil</Text>
 
-				{/* Profil actuel */}
-				{subAccount && (
-					<View style={styles.section}>
-                        <AccountCard account={subAccount} onPress={() => {}} isRow />
+                {/* Profile Card */}
+                {subAccount && (
+                    <View style={styles.profileCard}>
+                        <View style={styles.avatarRow}>
+                            {subAccount.iconStyle && subAccount.iconName ? (
+                                <Image
+                                    style={styles.avatar}
+                                    source={{ uri: getAvatarUri(subAccount.iconStyle, subAccount.iconName) }}
+                                />
+                            ) : (
+                                <View style={styles.avatarFallback}>
+                                    <Ionicons name="person" size={32} color={colors.primary[100]} />
+                                </View>
+                            )}
+                            <View style={styles.profileInfo}>
+                                <Text style={styles.profileName}>{subAccount.name}</Text>
+                                <View style={[styles.roleBadge, { backgroundColor: getRoleBadgeColor(subAccount.role) }]}>
+                                    <Text style={styles.roleText}>{getRoleLabel(subAccount.role)}</Text>
+                                </View>
+                            </View>
+                        </View>
+
+                        {isChildAccount && (
+                            <View style={styles.moneyBanner}>
+                                <Text style={styles.moneyLabel}>Argent de poche</Text>
+                                <Text style={styles.moneyAmount}>{formatMoney(subAccount.money ?? 0)} €</Text>
+                            </View>
+                        )}
                     </View>
-				)}
+                )}
 
-				{/* Informations du compte principal */}
-				{!isChildAccount && user && (
-					<View style={styles.section}>
-						<Text style={[styles.sectionTitle, fontStylesTitle]}>Compte principal</Text>
-						<View style={styles.infoCard}>
-							<View style={styles.infoRow}>
-								<Text style={[styles.infoLabel, fontStylesRegular]}>Email</Text>
-								<Text style={[styles.infoValue, fontStylesSemiBold]}>{user.email}</Text>
-							</View>
-							<View style={styles.infoRow}>
-								<Text style={[styles.infoLabel, fontStylesRegular]}>Plan</Text>
-								<Text style={[styles.infoValue, fontStylesSemiBold]}>{user.planType || "Gratuit"}</Text>
-							</View>
-							<View style={styles.infoRow}>
-								<Text style={[styles.infoLabel, fontStylesRegular]}>Sous-comptes</Text>
-								<Text style={[styles.infoValue, fontStylesSemiBold]}>
-									{user.subAccounts?.length || 0}
-								</Text>
-							</View>
-							<View style={styles.infoRow}>
-								<Text style={[styles.infoLabel, fontStylesRegular]}>Membre depuis</Text>
-								<Text style={[styles.infoValue, fontStylesSemiBold]}>
-									{new Date(user.createdAt).toLocaleDateString("fr-FR")}
-								</Text>
-							</View>
-						</View>
-					</View>
-				)}
+                {/* Account info — parents only */}
+                {!isChildAccount && user && (
+                    <>
+                        <Text style={styles.sectionTitle}>Compte principal</Text>
+                        <View style={styles.card}>
+                            <InfoRow label="Email" value={user.email} />
+                            <InfoRow label="Plan" value={user.planType || "Gratuit"} />
+                            <InfoRow label="Sous-comptes" value={String(user.subAccounts?.length ?? 0)} />
+                            <InfoRow
+                                label="Membre depuis"
+                                value={new Date(user.createdAt).toLocaleDateString("fr-FR")}
+                                last
+                            />
+                        </View>
+                    </>
+                )}
 
-				{/* Actions */}
-				<View style={styles.section}>
-					<Text style={[styles.sectionTitle, fontStylesTitle]}>Actions</Text>
-					<View style={styles.actionsContainer}>
-						{!isChildAccount && (
-							<Link href="/accounts/create" asChild>
-								<TouchableOpacity style={styles.actionItem}>
-									<View style={styles.actionIcon}>
-										<Ionicons name="person-add" size={20} color="#6C5CE7" />
-									</View>
-									<Text style={[styles.actionText, fontStylesSemiBold]}>Créer un compte</Text>
-									<Ionicons name="chevron-forward" size={16} color="#999" />
-								</TouchableOpacity>
-							</Link>
-						)}
+                {/* Actions */}
+                <Text style={styles.sectionTitle}>Actions</Text>
+                <View style={styles.card}>
+                    {!isChildAccount && (
+                        <Link href="/accounts/create" asChild>
+                            <ActionRow icon="person-add-outline" label="Créer un compte" />
+                        </Link>
+                    )}
+                    <Link href="/accounts" asChild replace>
+                        <ActionRow icon="swap-horizontal-outline" label="Changer de compte" />
+                    </Link>
+                    <Link href="/profile/profileForm" asChild>
+                        <ActionRow icon="pencil-outline" label="Modifier le profil" />
+                    </Link>
+                    <Link href="/plans" asChild push>
+                        <ActionRow icon="card-outline" label="Voir les plans" last />
+                    </Link>
+                </View>
 
-						<Link href="/accounts" asChild replace>
-							<TouchableOpacity style={styles.actionItem}>
-								<View style={styles.actionIcon}>
-									<Ionicons name="swap-horizontal" size={20} color="#6C5CE7" />
-								</View>
-								<Text style={[styles.actionText, fontStylesSemiBold]}>Changer de compte</Text>
-								<Ionicons name="chevron-forward" size={16} color="#999" />
-							</TouchableOpacity>
-						</Link>
+                {/* Logout */}
+                <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.8}>
+                    <Ionicons name="log-out-outline" size={20} color={colors.tertiary[100]} />
+                    <Text style={styles.logoutText}>Se déconnecter</Text>
+                </TouchableOpacity>
 
-                        <Link href="/profile/profileForm" asChild>
-							<TouchableOpacity style={styles.actionItem}>
-								<View style={styles.actionIcon}>
-									<Ionicons name="man-sharp" size={20} color="#6C5CE7" />
-								</View>
-								<Text style={[styles.actionText, fontStylesSemiBold]}>Modifer le profil</Text>
-								<Ionicons name="chevron-forward" size={16} color="#999" />
-							</TouchableOpacity>
-						</Link>
-					</View>
-				</View>
+                <Text style={styles.version}>MoneyBuddy v1.0.0</Text>
+            </ScrollView>
+        </SafeAreaView>
+    );
+}
 
-				{/* Zone de déconnexion */}
-				<View style={styles.logoutSection}>
-					<TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-						<Ionicons name="log-out" size={20} color="#FF6B6B" />
-						<Text style={[styles.logoutText, fontStylesSemiBold]}>Se déconnecter</Text>
-					</TouchableOpacity>
-				</View>
+function InfoRow({ label, value, last }: { label: string; value: string; last?: boolean }) {
+    return (
+        <View style={[styles.row, !last && styles.rowDivider]}>
+            <Text style={styles.rowLabel}>{label}</Text>
+            <Text style={styles.rowValue}>{value}</Text>
+        </View>
+    );
+}
 
-				{/* Version */}
-				<View style={styles.versionContainer}>
-					<Text style={[styles.versionText, fontStylesRegular]}>MoneyBuddy v1.0.0</Text>
-				</View>
-
-				<View style={styles.bottomPadding} />
-			</ScrollView>
-		</SafeAreaView>
-	);
+function ActionRow({ icon, label, last, onPress }: { icon: string; label: string; last?: boolean; onPress?: () => void }) {
+    return (
+        <TouchableOpacity style={[styles.row, !last && styles.rowDivider]} onPress={onPress} activeOpacity={0.7}>
+            <View style={styles.actionIconBox}>
+                <Ionicons name={icon as any} size={18} color={colors.primary[100]} />
+            </View>
+            <Text style={styles.actionLabel}>{label}</Text>
+            <Ionicons name="chevron-forward" size={16} color={colors.carbon[30]} />
+        </TouchableOpacity>
+    );
 }
 
 const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: "#f8f9fa",
-	},
-	content: {
-		flex: 1,
-		paddingHorizontal: 20,
-	},
-	header: {
-		paddingTop: 60,
-		paddingBottom: 30,
-	},
-	title: {
-		fontSize: 32,
-		fontWeight: "bold",
-		color: "#333",
-		marginBottom: 8,
-	},
-	subtitle: {
-		fontSize: 16,
-		color: "#666",
-		lineHeight: 22,
-	},
-	profileCard: {
-		backgroundColor: "#fff",
-		borderRadius: 8,
-		padding: 20,
-		marginBottom: 30,
-		shadowColor: "#BFD0EA",
-		shadowOffset: {
-			width: 0,
-			height: 3.89,
-		},
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 4,
-	},
-	profileHeader: {
-		flexDirection: "row",
-		alignItems: "center",
-		marginBottom: 16,
-	},
-	avatarContainer: {
-		width: 60,
-		height: 60,
-		borderRadius: 8,
-		backgroundColor: "#f0f8ff",
-		justifyContent: "center",
-		alignItems: "center",
-		marginRight: 16,
-	},
-	avatarIcon: {
-		fontSize: 28,
-	},
-	profileInfo: {
-		flex: 1,
-	},
-	profileName: {
-		fontSize: 24,
-		fontWeight: "bold",
-		color: "#333",
-		marginBottom: 8,
-	},
-	roleBadge: {
-		paddingHorizontal: 12,
-		paddingVertical: 6,
-		borderRadius: 4,
-		alignSelf: "flex-start",
-	},
-	roleText: {
-		color: "#fff",
-		fontSize: 14,
-		fontWeight: "600",
-	},
-	moneyContainer: {
-		backgroundColor: "#f8f9fa",
-		borderRadius: 8,
-		padding: 16,
-		alignItems: "center",
-	},
-	moneyLabel: {
-		fontSize: 14,
-		color: "#666",
-		marginBottom: 4,
-	},
-	moneyAmount: {
-		fontSize: 24,
-		fontWeight: "bold",
-		color: "#6C5CE7",
-	},
-	section: {
-		marginBottom: 30,
-	},
-	sectionTitle: {
-		fontSize: 20,
-		fontWeight: "bold",
-		color: "#333",
-		marginBottom: 16,
-	},
-	infoCard: {
-		backgroundColor: "#fff",
-		borderRadius: 8,
-		padding: 20,
-		shadowColor: "#BFD0EA",
-		shadowOffset: {
-			width: 0,
-			height: 3.89,
-		},
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 4,
-	},
-	infoRow: {
-		flexDirection: "row",
-		justifyContent: "space-between",
-		alignItems: "center",
-		paddingVertical: 12,
-		borderBottomWidth: 1,
-		borderBottomColor: "#f0f0f0",
-	},
-	infoLabel: {
-		fontSize: 14,
-		color: "#666",
-	},
-	infoValue: {
-		fontSize: 14,
-		fontWeight: "600",
-		color: "#333",
-	},
-	actionsContainer: {
-		backgroundColor: "#fff",
-		borderRadius: 8,
-		overflow: "hidden",
-		shadowColor: "#BFD0EA",
-		shadowOffset: {
-			width: 0,
-			height: 3.89,
-		},
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 4,
-	},
-	actionItem: {
-		flexDirection: "row",
-		alignItems: "center",
-		padding: 16,
-		borderBottomWidth: 1,
-		borderBottomColor: "#f0f0f0",
-	},
-	actionIcon: {
-		width: 40,
-		height: 40,
-		borderRadius: 20,
-		backgroundColor: "#f0f8ff",
-		justifyContent: "center",
-		alignItems: "center",
-		marginRight: 12,
-	},
-	actionText: {
-		flex: 1,
-		fontSize: 16,
-		fontWeight: "500",
-		color: "#333",
-	},
-	logoutSection: {
-		marginBottom: 30,
-	},
-	logoutButton: {
-		backgroundColor: "#fff",
-		borderRadius: 8,
-		padding: 16,
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "center",
-		gap: 12,
-		borderWidth: 1,
-		borderColor: "#FFE5E5",
-		shadowColor: "#BFD0EA",
-		shadowOffset: {
-			width: 0,
-			height: 3.89,
-		},
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 4,
-	},
-	logoutText: {
-		fontSize: 16,
-		fontWeight: "600",
-		color: "#FF6B6B",
-	},
-	versionContainer: {
-		alignItems: "center",
-		marginBottom: 20,
-	},
-	versionText: {
-		fontSize: 12,
-		color: "#999",
-	},
-	bottomPadding: {
-		height: 20,
-	},
+    container: {
+        flex: 1,
+        backgroundColor: colors.screenBackground,
+    },
+    content: {
+        paddingHorizontal: spacing.xl,
+        paddingTop: spacing["5xl"],
+        paddingBottom: spacing["3xl"],
+    },
+    pageTitle: {
+        ...typography["3xl"],
+        ...typography.bold,
+        color: colors.carbon[100],
+        marginBottom: spacing["2xl"],
+    },
+
+    // Profile card
+    profileCard: {
+        backgroundColor: colors.white,
+        borderRadius: 4,
+        padding: spacing.base,
+        marginBottom: spacing["2xl"],
+        ...shadows.md,
+        gap: spacing.base,
+    },
+    avatarRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: spacing.base,
+    },
+    avatar: {
+        width: 64,
+        height: 64,
+        borderRadius: 4,
+        borderWidth: 3,
+        borderColor: colors.primary[20],
+    },
+    avatarFallback: {
+        width: 64,
+        height: 64,
+        borderRadius: 4,
+        backgroundColor: colors.primary[20],
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    profileInfo: {
+        flex: 1,
+        gap: spacing.sm,
+    },
+    profileName: {
+        ...typography["2xl"],
+        ...typography.bold,
+        color: colors.carbon[100],
+    },
+    roleBadge: {
+        alignSelf: "flex-start",
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.xs,
+        borderRadius: 4,
+    },
+    roleText: {
+        ...typography.xs,
+        ...typography.semiBold,
+        color: colors.white,
+    },
+    moneyBanner: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        backgroundColor: colors.screenBackground,
+        borderRadius: 4,
+        paddingHorizontal: spacing.base,
+        paddingVertical: spacing.md,
+    },
+    moneyLabel: {
+        ...typography.body,
+        color: colors.carbon[60],
+    },
+    moneyAmount: {
+        ...typography["2xl"],
+        ...typography.bold,
+        color: colors.primary[100],
+    },
+
+    // Section
+    sectionTitle: {
+        ...typography.xl,
+        ...typography.bold,
+        color: colors.carbon[100],
+        marginBottom: spacing.md,
+    },
+    card: {
+        backgroundColor: colors.white,
+        borderRadius: 4,
+        marginBottom: spacing["2xl"],
+        ...shadows.md,
+        overflow: "hidden",
+    },
+
+    // Rows
+    row: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: spacing.base,
+        paddingVertical: spacing.base,
+        gap: spacing.md,
+    },
+    rowDivider: {
+        borderBottomWidth: 1,
+        borderBottomColor: colors.carbon[10],
+    },
+    rowLabel: {
+        ...typography.body,
+        color: colors.carbon[60],
+        flex: 1,
+    },
+    rowValue: {
+        ...typography.body,
+        ...typography.semiBold,
+        color: colors.carbon[100],
+    },
+    actionIconBox: {
+        width: 36,
+        height: 36,
+        borderRadius: 4,
+        backgroundColor: colors.primary[20],
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    actionLabel: {
+        ...typography.body,
+        ...typography.semiBold,
+        color: colors.carbon[100],
+        flex: 1,
+    },
+
+    // Logout
+    logoutButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: spacing.md,
+        backgroundColor: colors.white,
+        borderRadius: 4,
+        paddingVertical: spacing.base,
+        marginBottom: spacing.xl,
+        borderWidth: 1,
+        borderColor: colors.tertiary[20],
+        ...shadows.md,
+    },
+    logoutText: {
+        ...typography.button,
+        color: colors.tertiary[100],
+    },
+
+    version: {
+        ...typography.caption,
+        textAlign: "center",
+        color: colors.carbon[40],
+    },
 });

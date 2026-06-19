@@ -1,42 +1,36 @@
-import { Goal, GoalStatus } from "@/types/Goal";
-import { apiService } from "./api";
+import { Goal, GoalStatus, CreateGoalRequest, GoalMoneyRequest } from '@/types/Goal';
+import { apiService } from './api';
 
 type GetGoalParams = {
     childId?: string;
     status?: GoalStatus;
-    type?: string;
-}
-
-export type CreateGoalRequest = {
-    name: string;
-    amount: number;
-    emoji: string;
-    subaccountIdChild: string;
-}
+};
 
 export type UpdateGoalRequest = {
     name?: string;
     amount?: number;
     emoji?: string;
-}
-
-export type DepositToGoalRequest = {
-    depositAmount: number;
-}
+};
 
 export const goalsService = {
-
     async getAllGoals(params: GetGoalParams): Promise<Goal[]> {
-        const { childId, status, type } = params;
+        const { childId, status } = params;
         const queryParams = new URLSearchParams();
-        if (childId) queryParams.append("childId", childId);
-        if (status) queryParams.append("status", status);
-        if (type) queryParams.append("type", type);
+        if (childId) queryParams.append('childId', childId);
+        if (status) queryParams.append('goalStatus', status);
         return apiService.get<Goal[]>(`/goals?${queryParams.toString()}`);
     },
 
-    async createGoal(data: CreateGoalRequest): Promise<Goal> {
-        return apiService.post<Goal>("/goals", data);
+    async getGoals(childId?: string, goalStatus?: GoalStatus): Promise<Goal[]> {
+        return goalsService.getAllGoals({ childId, status: goalStatus });
+    },
+
+    async getGoalById(id: string): Promise<Goal> {
+        return apiService.get<Goal>(`/goals/${id}`);
+    },
+
+    async createGoal(data: CreateGoalRequest): Promise<void> {
+        return apiService.post<void>('/goals', data);
     },
 
     async updateGoal(id: string, data: UpdateGoalRequest): Promise<Goal> {
@@ -47,15 +41,15 @@ export const goalsService = {
         return apiService.delete<void>(`/goals/${id}`);
     },
 
-    async depositToGoal(id: string, data: DepositToGoalRequest): Promise<Goal> {
-        return apiService.put<Goal>(`/goals/${id}/deposit`, data);
+    async addMoneyToGoal(id: string, data: GoalMoneyRequest): Promise<string> {
+        return apiService.post<string>(`/goals/add/${id}`, data);
     },
 
-    async completeGoal(id: string): Promise<Goal> {
-        return apiService.put<Goal>(`/goals/${id}/complete`, {});
+    async removeMoneyFromGoal(id: string, data: GoalMoneyRequest): Promise<string> {
+        return apiService.post<string>(`/goals/remove/${id}`, data);
     },
 
-    async useGoal(id: string): Promise<Goal> {
-        return apiService.put<Goal>(`/goals/${id}/use`, {});
+    async transferGoal(id: string): Promise<string> {
+        return apiService.post<string>(`/goals/transfer/${id}`, {});
     },
 };

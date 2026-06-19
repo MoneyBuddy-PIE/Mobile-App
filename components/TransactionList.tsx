@@ -1,76 +1,81 @@
-import { Transaction, TransactionType } from "@/types/Transaction"
-import { StyleSheet, FlatList, View, Text, TouchableOpacity } from "react-native"
+import { Transaction, TransactionType } from "@/types/Transaction";
+import { StyleSheet, FlatList, View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { formatMoney } from "@/utils/money";
 
-const GetIcon = ({transactionType}: {transactionType: TransactionType}) => {
-    const backgroundColor = transactionType === TransactionType.CREDIT ? "#9BFFE2" : "#FD618C"
-    const iconColor = transactionType === TransactionType.CREDIT ? "#16AA75" : "#D1325E"
+const GetIcon = ({ transactionType }: { transactionType: TransactionType }) => {
+    const backgroundColor = transactionType === TransactionType.CREDIT ? "#9BFFE2" : "#FD618C";
+    const iconColor = transactionType === TransactionType.CREDIT ? "#16AA75" : "#D1325E";
 
     return (
-        <View style={[styles.iconContainer, {backgroundColor}]}>
-            <Ionicons name={transactionType === TransactionType.CREDIT ? "wallet-outline" : "wallet-sharp"} color={iconColor} size={24}/>
+        <View style={[styles.iconContainer, { backgroundColor }]}>
+            <Ionicons name={transactionType === TransactionType.CREDIT ? "wallet-outline" : "wallet-sharp"} color={iconColor} size={24} />
         </View>
-    )
-}
+    );
+};
 
 const ButtonFullList = () => {
-
     return (
-        <TouchableOpacity
-            onPress={() => router.push("/(app)/transactions")}
-            style={styles.buttonContainer}
-        >
+        <TouchableOpacity onPress={() => router.push("/(app)/transactions")} style={styles.buttonContainer}>
             <Text style={styles.buttonTitle}>Voir tout</Text>
-            <Ionicons name="arrow-forward" color={"#FFFFFF"} size={24}/>
+            <Ionicons name="arrow-forward" color={"#FFFFFF"} size={24} />
         </TouchableOpacity>
-    )
-}
-
+    );
+};
 
 type IProps = {
-    transactions: Transaction[]
-    lilList?: boolean
-}
+    transactions: Transaction[];
+    lilList?: boolean;
+};
 
-const TransactionList = ({transactions, lilList = false}: IProps) => {
-    const transactionList = lilList ? transactions.slice(0, 4) : transactions
+const TransactionList = ({ transactions, lilList = false }: IProps) => {
+    const transactionList = lilList ? transactions.slice(0, 4) : transactions;
 
     return (
         <FlatList
             scrollEnabled={false}
             data={transactionList}
-            keyExtractor={transaction => transaction.id}
-            renderItem={({item, index}) => {
-                const isAdd = item.type === TransactionType.CREDIT
-                const radius = lilList && index === 0 
-                    ? {borderTopRightRadius: 8, borderTopLeftRadius: 8} 
-                    : lilList && transactionList?.length - 1 === index? {borderBottomRightRadius: 8, borderBottomLeftRadius: 8} 
-                    : lilList ? {} : {borderRadius: 8, marginTop: 8}
+            keyExtractor={(transaction) => transaction.id}
+            renderItem={({ item, index }) => {
+                const isAdd = item.type === TransactionType.CREDIT;
+                const radius =
+                    lilList && index === 0
+                        ? { borderTopRightRadius: 8, borderTopLeftRadius: 8 }
+                        : lilList && transactionList?.length - 1 === index
+                          ? { borderBottomRightRadius: 8, borderBottomLeftRadius: 8 }
+                          : lilList
+                            ? {}
+                            : { borderRadius: 8, marginTop: 8 };
 
                 return (
                     <View style={[styles.transactionFullContainer, radius]}>
                         <View style={styles.transactionContainer}>
-                            <View style={{display: "flex", flexDirection: "row", alignItems: "center", gap: 12}}>
-                                <GetIcon transactionType={item.type}/>
-                                <View style={{display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 2}}>
-                                    <Text style={[styles.transactionTitle, {fontSize: 16, color: "2F2F2F"}]}>{item.description.substring(0, 18)}</Text>
-                                    <Text style={styles.transactionText}>{new Date(item.createdAt).toLocaleString("fr-FR", { day: "2-digit", month: "long", year: "numeric"})}</Text>
+                            <View style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 12, flex: 1 }}>
+                                <GetIcon transactionType={item.type} />
+                                <View style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 2, flex: 1 }}>
+                                    <Text style={[styles.transactionTitle, { fontSize: 16, color: "2F2F2F" }]} numberOfLines={1} ellipsizeMode="tail">
+                                        {item.description}
+                                    </Text>
+                                    <Text style={styles.transactionText}>
+                                        {new Date(item.createdAt).toLocaleString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })}
+                                    </Text>
                                 </View>
                             </View>
                             <View>
-                                <Text  style={[styles.transactionTitle, {fontSize: 20, color: isAdd ? "#16AA75" : "#FD618C"}]}>
-                                    {isAdd ? "+" : "-"}{Number(item.amount).toFixed(2)}€
+                                <Text style={[styles.transactionTitle, { fontSize: 20, color: isAdd ? "#16AA75" : "#FD618C" }]}>
+                                    {isAdd ? "+" : "-"}
+                                    {formatMoney(item.amount)}€
                                 </Text>
                             </View>
                         </View>
                         {lilList && transactionList?.length - 1 === index && <ButtonFullList />}
                     </View>
-                )
+                );
             }}
         />
-    )
-}
+    );
+};
 
 const styles = StyleSheet.create({
     transactionFullContainer: {
@@ -84,7 +89,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         gap: 24,
-        width: "100%"
+        width: "100%",
     },
     transactionContainer: {
         display: "flex",
@@ -92,7 +97,7 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         gap: 12,
         alignItems: "center",
-        width: "100%"
+        width: "100%",
     },
     transactionTitle: {
         fontWeight: 700,
@@ -100,11 +105,11 @@ const styles = StyleSheet.create({
     transactionText: {
         fontWeight: 400,
         fontSize: 14,
-        color: "#6E6E6E"
+        color: "#6E6E6E",
     },
     iconContainer: {
         borderRadius: 4,
-        padding: 4
+        padding: 4,
     },
     buttonContainer: {
         backgroundColor: "#ACACAC",
@@ -120,13 +125,13 @@ const styles = StyleSheet.create({
         shadowOpacity: 1,
         shadowRadius: 0,
         elevation: 4,
-        width: "100%"
+        width: "100%",
     },
     buttonTitle: {
         fontWeight: 700,
         fontSize: 16,
-        color: "#FFFFFF"
+        color: "#FFFFFF",
     },
-})
+});
 
-export default TransactionList
+export default TransactionList;

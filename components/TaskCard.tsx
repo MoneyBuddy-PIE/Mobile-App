@@ -1,4 +1,4 @@
-import { StyleSheet, View, Text, TouchableOpacity, Image } from "react-native"
+import { StyleSheet, View, Text, TouchableOpacity, Image } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
 import { Task, TaskStatus, TaskType } from "@/types/Task";
@@ -16,17 +16,17 @@ const guessTaskType = (type: TaskType) => {
         default:
             return "Ponctuelle";
     }
-}
+};
 
 type IProps = {
-    task: Task
-    child?: SubAccount
-}
+    task: Task;
+    child?: SubAccount;
+};
 
-const TaskCard = ({task, child}: IProps) => {
-    const url = `https://api.dicebear.com/9.x/${child?.iconStyle}/png?seed=${child?.iconName}`
-    const isCompleted = task.status === TaskStatus.COMPLETED
-    const isPending = task.status === TaskStatus.PENDING
+const TaskCard = ({ task, child }: IProps) => {
+    const url = `https://api.dicebear.com/9.x/${child?.iconStyle}/png?seed=${child?.iconName}`;
+    const isCompleted = task.status === TaskStatus.COMPLETED;
+    const isPending = task.status === TaskStatus.PENDING;
 
     const handleValidateTask = (taskId: string) => {
         console.log("Validate task:", taskId);
@@ -35,81 +35,76 @@ const TaskCard = ({task, child}: IProps) => {
     const renderRightActions = (task: Task) => {
         return (
             <View style={styles.swipeActionsContainer}>
-                <TouchableOpacity 
+                <TouchableOpacity
                     style={[styles.actionButton, styles.refuseButton]}
-                    onPress={() => {router.push({
-                        pathname: "/(app)/children/create-task",
-                        params: {
-                            childId: task.subaccountIdChild,
-                            type: task.type,
-                            task:  JSON.stringify(task),
-                        },
-                    })}}
+                    onPress={() => {
+                        router.push({
+                            pathname: "/(app)/children/create-task",
+                            params: {
+                                childId: task.subaccountIdChild,
+                                type: task.type,
+                                task: JSON.stringify(task),
+                            },
+                        });
+                    }}
                 >
                     <Ionicons name="create-outline" size={24} color="#FFFFFF" />
                 </TouchableOpacity>
-                
+
                 <TaskDelete taskId={task.id} shadow={false} />
             </View>
         );
     };
 
-
     return (
         <>
-        <Swipeable
-            renderRightActions={() => renderRightActions(task)}
-            overshootRight={true}
-            containerStyle={styles.swipeableContainer}
-        >
-            <View 
-                style={[styles.taskCard, isCompleted ? {backgroundColor: "#D1DEF1"} : {backgroundColor: "#FFFFFF"}]}
-            >
-                <View style={styles.taskContent}>
-                    <View style={styles.badgesRow}>
-                        <View style={[styles.taskBadge, styles.typeBadge]}>
-                            <Text style={styles.taskBadgeText}>{guessTaskType(task.type)}</Text>
-                        </View>
-                        
-                        {task.coinReward &&
-                            <View style={[styles.taskBadge, styles.rewardBadge]}>
-                                <Text style={styles.taskBadgeText}>+{task.coinReward?.toString()}</Text>
-                                <Ionicons name="ellipse" size={12} color="#2F2F2F" />
+            <Swipeable renderRightActions={() => renderRightActions(task)} overshootRight={true} containerStyle={styles.swipeableContainer}>
+                <View style={[styles.taskCard, isCompleted ? { backgroundColor: "#D1DEF1" } : { backgroundColor: "#FFFFFF" }]}>
+                    <View style={styles.taskContent}>
+                        <View style={styles.badgesRow}>
+                            <View style={[styles.taskBadge, styles.typeBadge]}>
+                                <Text style={styles.taskBadgeText}>{guessTaskType(task.type)}</Text>
                             </View>
-                        }
 
-                        {task.moneyReward &&
-                            <View style={[styles.taskBadge, styles.rewardBadge]}>
-                                <Text style={styles.taskBadgeText}>+{task.moneyReward?.toString()}</Text>
-                                <Ionicons name="logo-euro" size={12} color="#2F2F2F" />
+                            {task.coinReward && (
+                                <View style={[styles.taskBadge, styles.rewardBadge]}>
+                                    <Text style={styles.taskBadgeText}>+{task.coinReward?.toString()}</Text>
+                                    <Ionicons name="ellipse" size={12} color="#2F2F2F" />
+                                </View>
+                            )}
+
+                            {task.moneyReward && (
+                                <View style={[styles.taskBadge, styles.rewardBadge]}>
+                                    <Text style={styles.taskBadgeText}>+{task.moneyReward?.toString()}</Text>
+                                    <Ionicons name="logo-euro" size={12} color="#2F2F2F" />
+                                </View>
+                            )}
+                        </View>
+
+                        <Text style={[styles.taskDescription, { textDecorationLine: isCompleted ? "line-through" : "none" }]}>
+                            {task.description}
+                        </Text>
+
+                        {child?.id && (
+                            <View style={[styles.taskBadge, { backgroundColor: "#EBF2FB" }]}>
+                                <Image source={{ uri: url }} style={styles.imageContainer} />
+                                <Text style={styles.taskBadgeText}>{child.name}</Text>
                             </View>
-                        }
+                        )}
                     </View>
 
-                    <Text style={[styles.taskDescription, { textDecorationLine: isCompleted? "line-through" : "none" }]}>
-                        {task.description}
-                    </Text>
-
-                    { child?.id && 
-                        <View style={[styles.taskBadge, {backgroundColor: "#EBF2FB"}]}>
-                            <Image source={{ uri: url }} style={styles.imageContainer} />
-                            <Text style={styles.taskBadgeText}>{child.name}</Text>
-                        </View>
-                    }
+                    <TouchableOpacity
+                        style={[styles.actionButton, isPending ? { backgroundColor: "#CEC5F8" } : { backgroundColor: "#846DED" }]}
+                        onPress={() => handleValidateTask(task.id)}
+                    >
+                        {task.status === TaskStatus.PRE_VALIDATE && <Ionicons name="remove-outline" size={24} color="#fff" />}
+                        {isCompleted && <Ionicons name="checkmark-outline" size={24} color="#fff" />}
+                    </TouchableOpacity>
                 </View>
-
-                <TouchableOpacity 
-                    style={[styles.actionButton, isPending ? {backgroundColor: "#CEC5F8"} : {backgroundColor: "#846DED"}]}
-                    onPress={() => handleValidateTask(task.id)}
-                >
-                    {task.status === TaskStatus.PRE_VALIDATE && <Ionicons name="remove-outline" size={24} color="#fff" />}
-                    {isCompleted && <Ionicons name="checkmark-outline" size={24} color="#fff" />}
-                </TouchableOpacity>
-            </View>
-        </Swipeable>
+            </Swipeable>
         </>
-    )
-}
+    );
+};
 
 const styles = StyleSheet.create({
     swipeableContainer: {
@@ -193,9 +188,9 @@ const styles = StyleSheet.create({
         backgroundColor: "#FF5C7C",
     },
     imageContainer: {
-		width: 15,
-		height: 15,
-	},
-})
+        width: 15,
+        height: 15,
+    },
+});
 
-export default TaskCard
+export default TaskCard;

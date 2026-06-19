@@ -1,23 +1,26 @@
+export type GoalStatus = 'ACTIVATED' | 'DONE' | 'USED';
+export const GoalStatus = { ACTIVATED: 'ACTIVATED' as GoalStatus, DONE: 'DONE' as GoalStatus, USED: 'USED' as GoalStatus };
 
-
-export enum GoalStatus {
-    ACTIVATED = "ACTIVATED",
-    DONE = "DONE",
-    USED = "USED"
+export interface Goal {
+    id: string;
+    name: string;
+    amount: number;
+    emoji: string;
+    depositStatement: number;
+    goalStatus: GoalStatus;
+    progression: number;
+    subaccountIdChild: string;
+    accountId: string;
+    createdAt: string;
+    updatedAt: string | null;
 }
 
-export type Goal = {
-    id: string
-    subaccountIdChild: string
-    accountId: string
-    
-    name: string
-    amount: number
-    emoji: string
-    depositStatement: number
-    goalStatus: GoalStatus
-    progression: number
-    createdAt: string
-    updatedAt: string
-  }
-  
+export interface CreateGoalRequest {
+    name: string;
+    amount: number;
+    emoji?: string;
+}
+
+export interface GoalMoneyRequest {
+    transferMoney: number;
+}
