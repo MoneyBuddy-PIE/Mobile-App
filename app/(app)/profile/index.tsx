@@ -9,8 +9,7 @@ import { Link } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors, typography, spacing, shadows } from "@/styles";
 
-const getAvatarUri = (iconStyle: string, iconName: string) =>
-    `https://api.dicebear.com/9.x/${iconStyle}/png?seed=${iconName}`;
+const getAvatarUri = (iconStyle: string, iconName: string) => `https://api.dicebear.com/9.x/${iconStyle}/png?seed=${iconName}`;
 
 export default function Profile() {
     const { user, logout } = useAuthContext();
@@ -31,28 +30,36 @@ export default function Profile() {
 
     const getRoleLabel = (role: string) => {
         switch (role?.toUpperCase()) {
-            case "OWNER": return "Parent principal";
-            case "PARENT": return "Parent";
-            case "CHILD": return "Enfant";
-            case "ADMIN": return "Administrateur";
-            default: return role || "Utilisateur";
+            case "OWNER":
+                return "Parent principal";
+            case "PARENT":
+                return "Parent";
+            case "CHILD":
+                return "Enfant";
+            case "ADMIN":
+                return "Administrateur";
+            default:
+                return role || "Utilisateur";
         }
     };
 
     const getRoleBadgeColor = (role: string) => {
         switch (role?.toUpperCase()) {
             case "OWNER":
-            case "PARENT": return colors.primary[100];
-            case "CHILD": return colors.jadegreen[100];
-            case "ADMIN": return colors.tertiary[100];
-            default: return colors.carbon[60];
+            case "PARENT":
+                return colors.primary[100];
+            case "CHILD":
+                return colors.jadegreen[100];
+            case "ADMIN":
+                return colors.tertiary[100];
+            default:
+                return colors.carbon[60];
         }
     };
 
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-
                 <Text style={styles.pageTitle}>Mon profil</Text>
 
                 {/* Profile Card */}
@@ -60,10 +67,7 @@ export default function Profile() {
                     <View style={styles.profileCard}>
                         <View style={styles.avatarRow}>
                             {subAccount.iconStyle && subAccount.iconName ? (
-                                <Image
-                                    style={styles.avatar}
-                                    source={{ uri: getAvatarUri(subAccount.iconStyle, subAccount.iconName) }}
-                                />
+                                <Image style={styles.avatar} source={{ uri: getAvatarUri(subAccount.iconStyle, subAccount.iconName) }} />
                             ) : (
                                 <View style={styles.avatarFallback}>
                                     <Ionicons name="person" size={32} color={colors.primary[100]} />
@@ -94,11 +98,7 @@ export default function Profile() {
                             <InfoRow label="Email" value={user.email} />
                             <InfoRow label="Plan" value={user.planType || "Gratuit"} />
                             <InfoRow label="Sous-comptes" value={String(user.subAccounts?.length ?? 0)} />
-                            <InfoRow
-                                label="Membre depuis"
-                                value={new Date(user.createdAt).toLocaleDateString("fr-FR")}
-                                last
-                            />
+                            <InfoRow label="Membre depuis" value={new Date(user.createdAt).toLocaleDateString("fr-FR")} last />
                         </View>
                     </>
                 )}

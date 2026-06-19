@@ -5,7 +5,14 @@ import { router } from "expo-router";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { typography } from "@/styles/typography";
 import Svg, { Path, G, FeFlood, FeColorMatrix, FeGaussianBlur, FeComposite, FeBlend, Filter, Defs, FeOffset } from "react-native-svg";
-import Reanimated, { useSharedValue, useAnimatedProps, withTiming, withDelay, Easing as ReanimatedEasing, ReduceMotion } from "react-native-reanimated";
+import Reanimated, {
+    useSharedValue,
+    useAnimatedProps,
+    withTiming,
+    withDelay,
+    Easing as ReanimatedEasing,
+    ReduceMotion,
+} from "react-native-reanimated";
 
 const { width, height } = Dimensions.get("window");
 
