@@ -1,525 +1,550 @@
-import React, { useEffect, useState, useCallback } from "react";
-import {
-	View,
-	Text,
-	StyleSheet,
-	ScrollView,
-	SafeAreaView,
-	ActivityIndicator,
-	TouchableOpacity,
-	RefreshControl,
-	Alert,
-} from "react-native";
-import { Link, router } from "expo-router";
-import { UserStorage } from "@/utils/storage";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Image, Animated, PanResponder, Dimensions, ScrollView } from "react-native";
+import AddExpenseSheet from "@/components/AddExpenseSheet";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { router } from "expo-router";
 import { SubAccount } from "@/types/Account";
 import { tasksService } from "@/services/tasksService";
+import { userService } from "@/services/userService";
+import { transactionService } from "@/services/transactionService";
+import { goalsService } from "@/services/goalService";
 import { Task } from "@/types/Task";
-import { typography } from "@/styles/typography";
+import { Transaction } from "@/types/Transaction";
+import { Goal } from "@/types/Goal";
+import { typography, colors, spacing } from "@/styles";
 import { Ionicons } from "@expo/vector-icons";
 import { logger } from "@/utils/logger";
+import { formatMoney } from "@/utils/money";
+import { CoinIcon } from "@/components/Icons/CoinIcon";
+import { TreasureChest } from "@/components/Icons/TreasureChest";
+import { LightningIcon } from "@/components/Icons/LightningIcon";
+import MoneyBill from "@/components/Icons/MoneyBill";
+import ListCheck from "@/components/Icons/ListCheck";
+import MoneyFly from "@/components/Icons/MoneyFly";
+import Pig from "@/components/Icons/Pig";
+import { PiggyBankIcon } from "@/components/Icons/PiggyBankIcon";
+
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+
+// Dragon height scales with screen so the earnings card stays visible
+const DRAGON_HEIGHT = Math.min(370, SCREEN_HEIGHT * 0.44);
+// Approximate heights of background content (topBar + dragon + earnings card)
+const TOPBAR_HEIGHT = 80;
+const EARNINGS_HEIGHT = 100;
 
 export default function ChildHome() {
-	const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
-	const [tasks, setTasks] = useState<Task[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [refreshing, setRefreshing] = useState(false);
+    const { top: topInset } = useSafeAreaInsets();
 
-	const loadData = useCallback(async () => {
-		try {
-			const accountData = await UserStorage.getSubAccount();
-			setSubAccount(accountData);
+    const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [goals, setGoals] = useState<Goal[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [showAddExpense, setShowAddExpense] = useState(false);
 
-			if (accountData) {
-				const childTasks = await tasksService.getAllTasks({});
-				setTasks(childTasks);
-			}
-		} catch (error) {
-			console.error("Error loading child home data:", error);
-		} finally {
-			setLoading(false);
-		}
-	}, []);
+    const snapCollapsed = useRef(topInset + TOPBAR_HEIGHT + DRAGON_HEIGHT + EARNINGS_HEIGHT + 24);
+    const snapExpanded = useRef(topInset + TOPBAR_HEIGHT + 10);
 
-	useEffect(() => {
-		loadData();
-	}, [loadData]);
+    const translateY = useRef(new Animated.Value(snapCollapsed.current)).current;
+    const currentSnapY = useRef(snapCollapsed.current);
+    const gestureStartY = useRef(snapCollapsed.current);
 
-	const onRefresh = useCallback(async () => {
-		setRefreshing(true);
-		try {
-			await loadData();
-		} finally {
-			setRefreshing(false);
-		}
-	}, [loadData]);
+    const onEarningsLayout = useCallback(
+        (e: { nativeEvent: { layout: { y: number; height: number } } }) => {
+            const { y, height } = e.nativeEvent.layout;
+            const newSnap = y + height + 24;
+            snapCollapsed.current = newSnap;
+            currentSnapY.current = newSnap;
+            translateY.setValue(newSnap);
+        },
+        [translateY],
+    );
 
-	const handleCompleteTask = async (taskId: string) => {
-		try {
-			await tasksService.completeTask(taskId);
-			Alert.alert("Bravo ! 🎉", "Tu as terminé cette tâche !", [{ text: "Super !", onPress: () => loadData() }]);
-		} catch (error) {
-			console.error("Error completing task:", error);
-			Alert.alert("Erreur", "Impossible de terminer la tâche");
-		}
-	};
+    const panResponder = useRef(
+        PanResponder.create({
+            // Don't claim on touch-start so button taps still fire
+            onStartShouldSetPanResponder: () => false,
+            onStartShouldSetPanResponderCapture: () => false,
+            // Claim once the user is clearly dragging vertically
+            onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dy) > 8 && Math.abs(gs.dy) > Math.abs(gs.dx),
+            onMoveShouldSetPanResponderCapture: () => false,
+            onPanResponderGrant: () => {
+                gestureStartY.current = currentSnapY.current;
+            },
+            onPanResponderMove: (_, gs) => {
+                const clamped = Math.max(snapExpanded.current, Math.min(snapCollapsed.current, gestureStartY.current + gs.dy));
+                translateY.setValue(clamped);
+            },
+            onPanResponderRelease: (_, gs) => {
+                const pos = gestureStartY.current + gs.dy;
+                const mid = (snapExpanded.current + snapCollapsed.current) / 2;
+                const target = gs.vy < -0.3 || pos < mid ? snapExpanded.current : snapCollapsed.current;
+                currentSnapY.current = target;
+                Animated.spring(translateY, {
+                    toValue: target,
+                    useNativeDriver: true,
+                    tension: 65,
+                    friction: 11,
+                }).start();
+            },
+        }),
+    ).current;
 
-	if (loading) {
-		return (
-			<View style={[styles.container, styles.center]}>
-				<ActivityIndicator size="large" color="#6C5CE7" />
-				<Text style={[styles.loadingText, typography.body]}>Chargement...</Text>
-			</View>
-		);
-	}
+    const loadData = useCallback(async () => {
+        try {
+            const [accountData, pendingTasks, completedTasks] = await Promise.all([
+                userService.getSubAccount(),
+                tasksService.getAllTasks(),
+                tasksService.getAllTasks({ status: "COMPLETED" }),
+            ]);
+            setSubAccount(accountData);
+            setTasks([...pendingTasks, ...completedTasks]);
 
-	const completedTasks = tasks.filter((task) => task.done);
-	const pendingTasks = tasks.filter((task) => !task.done);
-	const currentBalance = parseFloat(subAccount?.money || "0");
-	const totalEarned = completedTasks.reduce((sum, task) => sum + parseFloat(task.moneyReward || "0"), 0);
-	const potentialEarnings = pendingTasks.reduce((sum, task) => sum + parseFloat(task.moneyReward || "0"), 0);
-	const completionRate = tasks.length > 0 ? Math.round((completedTasks.length / tasks.length) * 100) : 0;
+            const [childTransactions, childGoals] = await Promise.allSettled([
+                transactionService.getTransactionsBySubAccount(accountData.id),
+                goalsService.getGoals(accountData.id),
+            ]);
+            setTransactions(childTransactions.status === "fulfilled" ? childTransactions.value : []);
+            setGoals(childGoals.status === "fulfilled" ? childGoals.value : []);
 
-	const getGreeting = () => {
-		const hour = new Date().getHours();
-		if (hour < 12) return "Bonjour";
-		if (hour < 18) return "Bon après-midi";
-		return "Bonsoir";
-	};
+            if (childTransactions.status === "rejected") logger.error("Error loading child transactions:", childTransactions.reason);
+            if (childGoals.status === "rejected") logger.error("Error loading child goals:", childGoals.reason);
+        } catch (error) {
+            console.error("Error loading child home data:", error);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
-	return (
-		<SafeAreaView style={styles.container}>
-			<ScrollView
-				style={styles.content}
-				showsVerticalScrollIndicator={false}
-				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6C5CE7" />}
-			>
-				{/* Header */}
-				<View style={styles.header}>
-					<Text style={[styles.greeting, typography.greeting]}>{getGreeting()}</Text>
-					<Text style={[styles.childName, typography.title]}>{subAccount?.name || "Mon petit"} !</Text>
-					<Text style={[styles.motivationText, typography.subtitle]}>
-						{pendingTasks.length > 0
-							? `Tu as ${pendingTasks.length} tâche${
-									pendingTasks.length > 1 ? "s" : ""
-							  } à faire aujourd'hui`
-							: "Bravo ! Tu as tout terminé ! 🎉"}
-					</Text>
-				</View>
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
-				{/* Solde et stats */}
-				<View style={styles.statsContainer}>
-					<View style={[styles.balanceCard, styles.card]}>
-						<Text style={styles.balanceIcon}>💰</Text>
-						<Text style={[styles.balanceAmount, typography.heading]}>{currentBalance.toFixed(2)}€</Text>
-						<Text style={[styles.balanceLabel, typography.caption]}>Mon argent de poche</Text>
-					</View>
+    if (loading) {
+        return (
+            <View style={[styles.container, styles.center]}>
+                <ActivityIndicator size="large" color={colors.primary[100]} />
+                <Text style={[styles.loadingText, typography.md]}>Chargement...</Text>
+            </View>
+        );
+    }
 
-					<View style={styles.miniStatsContainer}>
-						<View style={[styles.miniStatCard, styles.card]}>
-							<Text style={[styles.miniStatValue, typography.subheading]}>{completedTasks.length}</Text>
-							<Text style={[styles.miniStatLabel, typography.caption]}>Tâches faites</Text>
-						</View>
-						<View style={[styles.miniStatCard, styles.card]}>
-							<Text style={[styles.miniStatValue, typography.subheading]}>{totalEarned.toFixed(0)}€</Text>
-							<Text style={[styles.miniStatLabel, typography.caption]}>Gagné</Text>
-						</View>
-					</View>
-				</View>
+    const completedTasks = tasks.filter((t) => t.status === "COMPLETED");
+    const currentBalance = subAccount?.money ?? 0;
+    const totalEarned = completedTasks.reduce((sum, t) => sum + t.moneyReward, 0);
+    const completionRate = tasks.length > 0 ? Math.round((completedTasks.length / tasks.length) * 100) : 0;
 
-				{/* Progression */}
-				{tasks.length > 0 && (
-					<View style={styles.section}>
-						<Text style={[styles.sectionTitle, typography.heading]}>Ma progression</Text>
-						<View style={[styles.progressCard, styles.card]}>
-							<View style={styles.progressHeader}>
-								<Text style={[styles.progressTitle, typography.subheading]}>Tâches complétées</Text>
-								<Text style={[styles.progressPercentage, typography.subheading]}>
-									{completionRate}%
-								</Text>
-							</View>
-							<View style={styles.progressBarContainer}>
-								<View style={styles.progressBar}>
-									<View style={[styles.progressFill, { width: `${completionRate}%` }]} />
-								</View>
-								<Text style={[styles.progressLabel, typography.caption]}>
-									{completedTasks.length}/{tasks.length}
-								</Text>
-							</View>
-						</View>
-					</View>
-				)}
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-				{/* Mes tâches à faire */}
-				{pendingTasks.length > 0 && (
-					<View style={styles.section}>
-						<Text style={[styles.sectionTitle, typography.heading]}>Mes tâches à faire</Text>
-						{pendingTasks.slice(0, 3).map((task) => (
-							<TouchableOpacity
-								key={task.id}
-								style={[styles.taskCard, styles.card]}
-								onPress={() => handleCompleteTask(task.id)}
-								activeOpacity={0.7}
-							>
-								<View style={styles.taskInfo}>
-									<Text style={[styles.taskDescription, typography.subheading]}>
-										{task.description}
-									</Text>
-									<View style={styles.taskMeta}>
-										<View
-											style={[
-												styles.categoryBadge,
-												task.category === "REGULAR"
-													? styles.regularCategory
-													: styles.punctualCategory,
-											]}
-										>
-											<Text style={[styles.taskCategory, typography.caption]}>
-												{task.category === "REGULAR" ? "Régulière" : "Ponctuelle"}
-											</Text>
-										</View>
-										<Text style={[styles.taskReward, typography.caption]}>+{task.moneyReward}€</Text>
-									</View>
-								</View>
-								<View style={styles.taskAction}>
-									<View style={[styles.actionButton, task.done && styles.actionButtonCompleted]}>
-										{task.done ?? <Ionicons name="checkmark-outline" size={24} color="#FFF" />}
-									</View>
-								</View>
-							</TouchableOpacity>
-						))}
+    const monthlyTx = transactions.filter((t) => {
+        const d = new Date(t.createdAt);
+        return d >= startOfMonth && d <= endOfMonth;
+    });
 
-						{pendingTasks.length > 3 && (
-							<TouchableOpacity style={styles.viewMoreButton} onPress={() => router.replace("/tasks")}>
-								<Text style={[styles.viewMoreText, typography.body]}>
-									Voir {pendingTasks.length - 3} autres tâches
-								</Text>
-								<Ionicons name="chevron-forward" size={16} color="#6C5CE7" />
-							</TouchableOpacity>
-						)}
-					</View>
-				)}
+    const moneyDebited = monthlyTx.reduce((s, t) => (t.type !== "DEBIT" ? s : s + parseFloat(t.amount)), 0);
+    const moneyCredited = monthlyTx.reduce((s, t) => (t.type !== "CREDIT" ? s : s + parseFloat(t.amount)), 0);
+    const goalMoneySaved = goals.reduce((s, g) => s + g.progression, 0);
 
-				{/* Message motivant */}
-				<View style={[styles.motivationCard, styles.card]}>
-					<Text style={styles.motivationIcon}>
-						{pendingTasks.length === 0 ? "🎉" : potentialEarnings > 0 ? "💪" : "🌟"}
-					</Text>
-					<Text style={[styles.motivationTitle, typography.subheading]}>
-						{pendingTasks.length === 0
-							? "Excellent travail !"
-							: potentialEarnings > 0
-							? "Continue comme ça !"
-							: "Tu es formidable !"}
-					</Text>
-					<Text style={[styles.motivationDescription, typography.body]}>
-						{pendingTasks.length === 0
-							? "Tu as terminé toutes tes tâches ! Tu peux être fier de toi."
-							: potentialEarnings > 0
-							? `Tu peux encore gagner ${potentialEarnings.toFixed(2)}€ en finissant tes tâches.`
-							: "Demande à tes parents de t'ajouter des tâches pour gagner de l'argent de poche !"}
-					</Text>
-				</View>
+    return (
+        // paddingTop pushes the background content below the status bar
+        <View style={[styles.container, { paddingTop: topInset }]}>
+            {/* Background layer — topBar + dragon + earnings card */}
+            <View style={styles.topBar}>
+                <View style={styles.topBarPin}>
+                    <CoinIcon width={24} height={24} />
+                    <Text style={typography.heading}>{formatMoney(currentBalance)}€</Text>
+                </View>
+                <View style={styles.topBarPin}>
+                    <LightningIcon width={24} height={24} color="#FFD700" />
+                    <Text style={typography.heading}>0/5</Text>
+                </View>
+            </View>
 
-				<View style={styles.bottomPadding} />
-			</ScrollView>
-		</SafeAreaView>
-	);
+            <View pointerEvents="none">
+                <Image
+                    source={require("@/assets/images/child/dragonchild.png")}
+                    style={[styles.dragonImage, { height: DRAGON_HEIGHT }]}
+                    resizeMode="contain"
+                />
+            </View>
+
+            <View style={styles.allEarningsCard} onLayout={onEarningsLayout}>
+                <View>
+                    <View style={styles.allEarningsHeader}>
+                        <View style={styles.allEarningsIcon}>
+                            <MoneyBill width={20} height={20} color="#16aa75" />
+                        </View>
+                        <Text style={typography.subheading}>Tu as accumulé</Text>
+                    </View>
+                    <Text style={styles.allEarningsAmount}>{formatMoney(totalEarned)}€</Text>
+                </View>
+                <TreasureChest width={64} height={64} />
+            </View>
+
+            {/* Draggable bottom sheet — absolutely positioned over the background */}
+            <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
+                {/* Drag zone: handle pill + action buttons — both trigger the swipe */}
+                <View {...panResponder.panHandlers}>
+                    <View style={styles.handleContainer}>
+                        <View style={styles.handle} />
+                    </View>
+                    <View style={styles.actionButtons}>
+                        <TouchableOpacity style={styles.depenserButton} onPress={() => setShowAddExpense(true)} activeOpacity={0.85}>
+                            <MoneyFly width={32} height={32} color="#fff" />
+                            <Text style={styles.actionButtonText}>Dépenser</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.economiserButton} onPress={() => router.push("/(app)/goals")} activeOpacity={0.85}>
+                            <PiggyBankIcon width={32} height={32} color="white" />
+                            <Text style={styles.actionButtonText}>Économiser</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                {/* Scrollable content */}
+                <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
+                    <View style={styles.sheetContent}>
+                        {/* Ce mois-ci */}
+                        <View style={styles.sheetSection}>
+                            <Text style={styles.sectionTitle}>Ce mois-ci</Text>
+                            <View style={styles.statsRow}>
+                                <View style={styles.statCard}>
+                                    <View style={styles.statCardHeader}>
+                                        <View style={[styles.statCardIcon, styles.debitIcon]}>
+                                            <MoneyFly width={20} height={20} color={colors.primary[100]} />
+                                        </View>
+                                        <Text style={styles.statCardAmount}>{formatMoney(moneyDebited)}€</Text>
+                                    </View>
+                                    <Text style={styles.statCardLabel}>Dépensés</Text>
+                                </View>
+                                <View style={styles.statCard}>
+                                    <View style={styles.statCardHeader}>
+                                        <View style={[styles.statCardIcon, styles.creditIcon]}>
+                                            <MoneyBill width={20} height={20} color={colors.jadegreen[100]} />
+                                        </View>
+                                        <Text style={styles.statCardAmount}>{formatMoney(moneyCredited)}€</Text>
+                                    </View>
+                                    <Text style={styles.statCardLabel}>Gagnés</Text>
+                                </View>
+                            </View>
+                            <View style={styles.statsRow}>
+                                <View style={styles.statCard}>
+                                    <View style={styles.statCardHeader}>
+                                        <View style={[styles.statCardIcon, styles.savingsIcon]}>
+                                            <Pig width={20} height={20} color={colors.pink[100]} />
+                                        </View>
+                                        <Text style={styles.statCardAmount}>{formatMoney(goalMoneySaved)}€</Text>
+                                    </View>
+                                    <Text style={styles.statCardLabel}>Économisés</Text>
+                                </View>
+                                <View style={styles.statCard}>
+                                    <View style={styles.statCardHeader}>
+                                        <View style={[styles.statCardIcon, styles.tasksIcon]}>
+                                            <ListCheck width={20} height={20} color={colors.blue[100]} />
+                                        </View>
+                                        <Text style={styles.statCardAmount}>{tasks.length > 0 ? completedTasks.length : "0"}</Text>
+                                    </View>
+                                    <Text style={styles.statCardLabel}>Tâches terminées</Text>
+                                </View>
+                            </View>
+                        </View>
+
+                        {/* Mes tâches */}
+                        <View style={styles.sheetSection}>
+                            <Text style={styles.sectionTitle}>Mes tâches</Text>
+                            <View style={styles.taskProgressCard}>
+                                <View style={styles.taskProgressHeader}>
+                                    <View style={styles.taskProgressIconBg}>
+                                        <Ionicons name="checkmark-circle" size={20} color="#16AA75" />
+                                    </View>
+                                    <Text style={styles.taskProgressPercent}>{completionRate}%</Text>
+                                </View>
+                                <View style={styles.progressTrack}>
+                                    <View style={[styles.progressFill, { width: `${completionRate}%` as any }]} />
+                                </View>
+                                <View style={styles.taskProgressFooter}>
+                                    <View style={styles.taskProgressRow}>
+                                        <Text style={styles.taskProgressLabel}>Tâches</Text>
+                                        <Text style={styles.taskProgressCount}>{tasks.length}</Text>
+                                    </View>
+                                    <View style={styles.taskProgressRow}>
+                                        <Text style={styles.taskProgressLabel}>Terminées</Text>
+                                        <Text style={styles.taskProgressCount}>{completedTasks.length}</Text>
+                                    </View>
+                                </View>
+                            </View>
+                        </View>
+                    </View>
+                </ScrollView>
+            </Animated.View>
+
+            <AddExpenseSheet visible={showAddExpense} onClose={() => setShowAddExpense(false)} onSuccess={() => loadData()} />
+        </View>
+    );
 }
 
+const cardShadow = {
+    shadowColor: "#BFD0EA",
+    shadowOffset: { width: 0, height: 3.887 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 3,
+};
+
 const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: "#f8f9fa",
-	},
-	content: {
-		flex: 1,
-		paddingHorizontal: 20,
-	},
-	center: {
-		justifyContent: "center",
-		alignItems: "center",
-	},
-	loadingText: {
-		marginTop: 12,
-		color: "#666",
-	},
-	header: {
-		paddingTop: 60,
-		paddingBottom: 30,
-	},
-	greeting: {
-		marginBottom: 4,
-	},
-	childName: {
-		marginBottom: 8,
-	},
-	motivationText: {
-		lineHeight: 22,
-	},
+    container: {
+        flex: 1,
+        backgroundColor: "#97C9FF",
+    },
+    center: {
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    loadingText: {
+        marginTop: spacing.md,
+        color: colors.carbon[60],
+    },
 
-	// Cards et composants réutilisables
-	card: {
-		backgroundColor: "#fff",
-		borderRadius: 8,
-		shadowColor: "#BFD0EA",
-		shadowOffset: {
-			width: 0,
-			height: 3.89,
-		},
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 4,
-	},
+    // Top bar
+    topBar: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        paddingHorizontal: 24,
+        paddingVertical: 20,
+    },
+    topBarPin: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#FFF",
+        borderRadius: 8,
+        padding: 8,
+        gap: 8,
+    },
 
-	// Stats
-	statsContainer: {
-		flexDirection: "row",
-		gap: 12,
-		marginBottom: 30,
-	},
-	balanceCard: {
-		flex: 2,
-		alignItems: "center",
-		backgroundColor: "#6C5CE7",
-		padding: 24,
-	},
-	balanceIcon: {
-		fontSize: 32,
-		marginBottom: 8,
-	},
-	balanceAmount: {
-		color: "#fff",
-		marginBottom: 4,
-	},
-	balanceLabel: {
-		color: "rgba(255, 255, 255, 0.8)",
-		textAlign: "center",
-	},
-	miniStatsContainer: {
-		flex: 1,
-		gap: 12,
-	},
-	miniStatCard: {
-		flex: 1,
-		padding: 16,
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	miniStatValue: {
-		color: "#333",
-		marginBottom: 4,
-	},
-	miniStatLabel: {
-		textAlign: "center",
-		color: "#666",
-	},
+    // Dragon
+    dragonImage: {
+        marginHorizontal: 70,
+        width: "auto",
+    },
 
-	// Sections
-	section: {
-		marginBottom: 30,
-	},
-	sectionTitle: {
-		color: "#333",
-		marginBottom: 16,
-	},
+    // All earnings card
+    allEarningsCard: {
+        padding: 12,
+        marginHorizontal: 24,
+        borderRadius: 8,
+        backgroundColor: "#FFF",
+        borderColor: "#EBF2FB",
+        borderWidth: 2,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
+    allEarningsHeader: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 4,
+        gap: 8,
+    },
+    allEarningsIcon: {
+        padding: 6,
+        borderRadius: 4,
+        backgroundColor: "#9bffe2",
+    },
+    allEarningsAmount: {
+        fontFamily: "DMSans_700Bold",
+        fontSize: 40,
+        color: "#2F2F2F",
+    },
+    chestImage: {
+        width: 64,
+        height: 64,
+    },
 
-	// Tâches
-	taskCard: {
-		padding: 16,
-		marginBottom: 12,
-		flexDirection: "row",
-		alignItems: "center",
-	},
-	taskInfo: {
-		flex: 1,
-	},
-	taskDescription: {
-		color: "#333",
-		marginBottom: 8,
-	},
-	taskMeta: {
-		flexDirection: "row",
-		// justifyContent: "space-between",
-		gap: 8,
-		alignItems: "center",
-	},
-	categoryBadge: {
-		flexDirection: "row",
-		alignItems: "center",
-		paddingHorizontal: 8,
-		paddingVertical: 4,
-		borderRadius: 4,
-	},
-	regularCategory: {
-		backgroundColor: "#E1FFF6",
-	},
-	punctualCategory: {
-		backgroundColor: "rgba(254, 160, 186, 0.4)",
-	},
-	categoryIcon: {
-		fontSize: 12,
-		marginRight: 4,
-	},
-	taskCategory: {
-		color: "#6C5CE7",
-	},
-	taskReward: {
-		backgroundColor: "#F3F0FD",
-		paddingHorizontal: 8,
-		borderRadius: 4,
+    // Bottom sheet
+    sheet: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        height: SCREEN_HEIGHT,
+        backgroundColor: "#EBF2FB",
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+    },
 
-		paddingVertical: 4,
-		fontWeight: "bold",
-	},
-	taskAction: {
-		alignItems: "center",
-		marginLeft: 16,
-	},
-	actionButton: {
-		width: 40,
-		height: 40,
-		backgroundColor: "#CEC5F8",
-		borderRadius: 10,
-		justifyContent: "center",
-		alignItems: "center",
-	},
-	actionButtonCompleted: {
-		backgroundColor: "#846DED",
-	},
+    // Handle
+    handleContainer: {
+        alignItems: "center",
+        paddingTop: 8,
+        paddingBottom: 12,
+    },
+    handle: {
+        width: 108,
+        height: 5,
+        backgroundColor: "#2F2F2F",
+        borderRadius: 24,
+    },
 
-	// Boutons et actions
-	viewMoreButton: {
-		backgroundColor: "#f8f9fa",
-		borderRadius: 8,
-		padding: 16,
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "center",
-		borderWidth: 1,
-		borderColor: "#e0e0e0",
-		borderStyle: "dashed",
-		gap: 8,
-	},
-	viewMoreText: {
-		color: "#6C5CE7",
-		fontWeight: "500",
-	},
+    // Action buttons
+    actionButtons: {
+        flexDirection: "row",
+        gap: 16,
+        paddingHorizontal: 24,
+        paddingBottom: 24,
+    },
+    depenserButton: {
+        flex: 1,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 12,
+        backgroundColor: "#846DED",
+        paddingVertical: 12,
+        borderRadius: 8,
+        shadowColor: "#4E31CF",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 4,
+    },
+    economiserButton: {
+        flex: 1,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 12,
+        backgroundColor: "#FD618C",
+        paddingVertical: 12,
+        borderRadius: 8,
+        shadowColor: "#D1325E",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 4,
+    },
+    actionButtonText: {
+        color: "#fff",
+        fontFamily: "DMSans_700Bold",
+        fontSize: 16,
+    },
 
-	// Progression
-	progressCard: {
-		padding: 20,
-	},
-	progressHeader: {
-		flexDirection: "row",
-		justifyContent: "space-between",
-		alignItems: "center",
-		marginBottom: 16,
-	},
-	progressTitle: {
-		color: "#333",
-	},
-	progressPercentage: {
-		color: "#4CAF50",
-	},
-	progressBarContainer: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 12,
-	},
-	progressBar: {
-		flex: 1,
-		height: 8,
-		backgroundColor: "#e0e0e0",
-		borderRadius: 4,
-		overflow: "hidden",
-	},
-	progressFill: {
-		height: "100%",
-		backgroundColor: "#4CAF50",
-		borderRadius: 4,
-	},
-	progressLabel: {
-		color: "#666",
-		minWidth: 40,
-		textAlign: "right",
-	},
+    // Sheet content
+    sheetContent: {
+        paddingHorizontal: 24,
+        paddingBottom: 120,
+        gap: 24,
+    },
+    sheetSection: {
+        gap: 16,
+    },
+    sectionTitle: {
+        fontFamily: "DMSans_700Bold",
+        fontSize: 20,
+        color: "#2F2F2F",
+    },
 
-	// Tâches complétées
-	completedTaskCard: {
-		backgroundColor: "#E8F5E8",
-		padding: 16,
-		marginBottom: 8,
-		flexDirection: "row",
-		alignItems: "center",
-	},
-	completedTaskDescription: {
-		color: "#333",
-		marginBottom: 4,
-	},
-	completedTaskDate: {
-		color: "#666",
-	},
-	completedReward: {
-		alignItems: "center",
-		gap: 4,
-	},
-	completedIcon: {
-		width: 24,
-		height: 24,
-		backgroundColor: "#4CAF50",
-		borderRadius: 12,
-		justifyContent: "center",
-		alignItems: "center",
-	},
-	completedAmount: {
-		color: "#4CAF50",
-		fontWeight: "bold",
-	},
+    // Stats grid
+    statsRow: {
+        flexDirection: "row",
+        gap: 16,
+    },
+    statCard: {
+        flex: 1,
+        backgroundColor: colors.white,
+        padding: 12,
+        borderRadius: 4,
+        gap: spacing.sm,
+        ...cardShadow,
+    },
+    statCardHeader: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+    },
+    statCardIcon: {
+        width: 32,
+        height: 32,
+        borderRadius: 4,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    debitIcon: {
+        backgroundColor: colors.primary[20],
+    },
+    creditIcon: {
+        backgroundColor: colors.aquamarine[60],
+    },
+    savingsIcon: {
+        backgroundColor: "rgba(254, 160, 186, 0.4)",
+    },
+    tasksIcon: {
+        backgroundColor: "rgba(151, 201, 255, 0.4)",
+    },
+    statCardAmount: {
+        fontFamily: "DMSans_700Bold",
+        fontSize: 24,
+        color: "#2F2F2F",
+        flexShrink: 1,
+    },
+    statCardLabel: {
+        fontSize: 14,
+        color: "#2F2F2F",
+    },
 
-	// Actions rapides
-	quickActions: {
-		flexDirection: "row",
-		gap: 12,
-	},
-	actionCard: {
-		flex: 1,
-		padding: 20,
-		alignItems: "center",
-	},
-	actionButtonIcon: {
-		fontSize: 32,
-		marginBottom: 8,
-	},
-	actionButtonText: {
-		color: "#333",
-		fontWeight: "600",
-		textAlign: "center",
-	},
-
-	// Motivation
-	motivationCard: {
-		backgroundColor: "#FFF8E1",
-		padding: 24,
-		alignItems: "center",
-		marginBottom: 20,
-	},
-	motivationIcon: {
-		fontSize: 40,
-		marginBottom: 12,
-	},
-	motivationTitle: {
-		color: "#333",
-		marginBottom: 8,
-		textAlign: "center",
-	},
-	motivationDescription: {
-		color: "#666",
-		textAlign: "center",
-		lineHeight: 20,
-	},
-
-	bottomPadding: {
-		height: 20,
-	},
+    // Task progress card
+    taskProgressCard: {
+        backgroundColor: colors.white,
+        padding: 12,
+        borderRadius: 4,
+        gap: 8,
+        ...cardShadow,
+    },
+    taskProgressHeader: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+    },
+    taskProgressIconBg: {
+        width: 32,
+        height: 32,
+        borderRadius: 4,
+        backgroundColor: "#E1FFF6",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    taskProgressPercent: {
+        fontFamily: "DMSans_700Bold",
+        fontSize: 24,
+        color: "#2F2F2F",
+    },
+    progressTrack: {
+        height: 8,
+        backgroundColor: "#EBF2FB",
+        borderRadius: 40,
+        overflow: "hidden",
+    },
+    progressFill: {
+        height: "100%",
+        backgroundColor: "#16AA75",
+        borderRadius: 37,
+    },
+    taskProgressFooter: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+    },
+    taskProgressRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+    },
+    taskProgressLabel: {
+        fontSize: 14,
+        color: "#828282",
+    },
+    taskProgressCount: {
+        fontSize: 14,
+        fontFamily: "DMSans_700Bold",
+        color: "#828282",
+    },
 });

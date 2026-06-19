@@ -1,32 +1,32 @@
-import { apiService } from "./api";
-import { Account, SubAccount } from "@/types/Account";
+import { apiService } from './api';
+import { Account, SubAccount } from '@/types/Account';
 
 export const userService = {
-	async getAccount(): Promise<Account> {
-		return apiService.get<Account>("/auth/me");
-	},
+    async getAccount(): Promise<Account> {
+        return apiService.get<Account>('/auth/me');
+    },
 
-	async getSubAccount(): Promise<SubAccount> {
-		return apiService.get<SubAccount>("/auth/subAccount/me");
-	},
+    async getSubAccount(): Promise<SubAccount> {
+        return apiService.get<SubAccount>('/auth/subAccount/me');
+    },
 
-	async verifyUser(): Promise<boolean> {
-		try {
-			await this.getAccount();
+    async verifyUser(): Promise<boolean> {
+        try {
+            await this.getAccount();
 
-			return true;
-		} catch (error: any) {
-			console.log("Token verification failed:", error.response?.status);
+            return true;
+        } catch (error: any) {
+            console.log('Token verification failed:', error.response?.status);
 
-			if (error.response?.status === 401 || error.response?.status === 403) {
-				return false;
-			}
+            if (error.response?.status === 401 || error.response?.status === 403) {
+                return false;
+            }
 
-			return false;
-		}
-	},
+            return false;
+        }
+    },
 
-	async updateSubAccount(data: { name: string; iconStyle: string, iconName: string }): Promise<SubAccount> {
-		return apiService.put<SubAccount>("/auth/subAccount", data);
-	}
+    async updateSubAccount(data: { name: string; iconStyle: string; iconName: string }): Promise<SubAccount> {
+        return apiService.put<SubAccount>('/auth/subAccount', data);
+    },
 };

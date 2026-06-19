@@ -1,160 +1,162 @@
-import getIconFromCategory, { categories } from "@/utils/fn/getIconFromCategory"
-import { useState } from "react"
-import { SafeAreaView, ScrollView, StyleSheet, View, Text, TextInput, TouchableOpacity, Alert } from "react-native"
-import { Ionicons } from "@expo/vector-icons"
-import DatePickerInput from "../DatePickerInput"
-import { moneyService } from "@/services/moneyService"
-import SpendReceipt from "../SpendReceipt"
-
+import getIconFromCategory, { categories, CATEGORY_ICONS } from "@/utils/fn/getIconFromCategory";
+import { useState } from "react";
+import { SafeAreaView, ScrollView, StyleSheet, View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import DatePickerInput from "../DatePickerInput";
+import { moneyService } from "@/services/moneyService";
+import SpendReceipt from "../SpendReceipt";
 
 type IProps = {
-    subAccountId: string
-    onFn?: () => void
-}
+    subAccountId: string;
+    onFn?: () => void;
+};
 
-const SpendForm = ({subAccountId, onFn}: IProps ) => {
-    const [step, setStep] = useState<"Form" | "ValidateForm">("Form")
+const SpendForm = ({ subAccountId, onFn }: IProps) => {
+    const [step, setStep] = useState<"Form" | "ValidateForm">("Form");
 
-    const [amount, setAmount] = useState<string>("0.00")
-    const [category, setCategory] = useState<string>(categories[0].value)
-    const [date, setDate] = useState<Date | null>(null)
-    const [details, setDetails] = useState<string>("")
+    const [amount, setAmount] = useState<string>("0.00");
+    const [category, setCategory] = useState<string>(categories[0].value);
+    const [date, setDate] = useState<Date | null>(null);
+    const [details, setDetails] = useState<string>("");
 
-    const [loading, setLoading] = useState<boolean>(false)
+    const [loading, setLoading] = useState<boolean>(false);
 
-    const handleForm = async() => {
-        setLoading(true)
+    const handleForm = async () => {
+        setLoading(true);
         try {
-            await moneyService.addMoney({subAccountId, amount: Number(amount), description: details, emoji: category}, "false")
+            await moneyService.addMoney({ subAccountId, amount: Number(amount), description: details, emoji: category });
             Alert.alert("Succès", "Dépense enregistré !", [{ text: "OK" }]);
-        } catch (error: any){
+        } catch (error: any) {
             console.error("Error creating task:", error);
-			const errorMessage = error?.response?.data?.message || "Impossible d'enregistrer la dépense";
-			Alert.alert("Erreur", errorMessage);
+            const errorMessage = error?.response?.data?.message || "Impossible d'enregistrer la dépense";
+            Alert.alert("Erreur", errorMessage);
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
-    }
+    };
 
     const handleFistStep = () => {
-        if (Boolean(Number(amount) && category && date)) {
-            setStep('ValidateForm')
-            onFn && onFn()
+        if (Boolean(Number(amount) && category && date)) {
+            setStep("ValidateForm");
+            onFn && onFn();
         }
-    }
-
+    };
 
     return (
-        <SafeAreaView style={[styles.container, {backgroundColor: step === "Form" ? "#FFFFFF" : "#ecf2fb"}]}>
-            <ScrollView
-                style={styles.content}
-                showsVerticalScrollIndicator={false}
-            >
-
+        <SafeAreaView style={[styles.container, { backgroundColor: step === "Form" ? "#FFFFFF" : "#ecf2fb" }]}>
+            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
                 {/* Content - First Step*/}
-                { step === "Form" && (
-                <View>
-                    {/* Montant affiché */}
-                    <View style={styles.customAmountContainer}>
-                        <TextInput
-                            style={[Number(amount) > 0 ? styles.customAmountInputSelected : styles.customAmountInputNonSelected]}
-                            value={amount}
-                            onChangeText={setAmount}
-                            keyboardType="decimal-pad"
-                            autoFocus
-                        />
-                        <Text style={styles.customAmountInputSelected}>€</Text>
-                    </View>
-
-                    {/* Expense type */}        
-                    <View style={styles.section}>
-                        <Text style={styles.sectionLabel}>Quel type de dépense est-ce-que c’est ?</Text>
-                        <View style={{display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 12}}>
-                            {categories.map((cat, index) => {
-                                const selected = cat.value === category
-                                return (
-                                    <TouchableOpacity
-                                        key={`${cat.value}-${index}`}
-                                        onPress={() => setCategory(cat.value)}
-                                        style={[selected ? styles.categoryContainerSelected : styles.categoryContainer, {width: "22%"}]}
-                                    >
-                                        <Ionicons name={getIconFromCategory(cat.value) as keyof typeof Ionicons.glyphMap} size={24} color={selected ? "#2F2F2F" : "#6E6E6E"} />
-                                        <Text style={[selected ? styles.categoryLabelSelected : styles.categoryLabel]}>{cat.label}</Text>
-                                    </TouchableOpacity>
-                                )
-                            })}
-                        </View>
-                    </View>
-
-                    {/* Date Input */}
-                    <View style={styles.section}>
-                        <DatePickerInput 
-                            value={date}
-                            onChange={setDate}
-                            placeholder="Choisir une date de début"
-                        />
-                    </View>
-
-                
-                    {/* Date Input */}
-                    <View style={styles.section}>
-                        <Text style={styles.sectionLabel}>Détails</Text>
-                        <View style={styles.inputContainer}> 
-                            <TextInput
-                                placeholder="Ajoute un petit détail si tu veux !"
-                                autoCapitalize="sentences"
-                                value={details}
-                                onChangeText={setDetails}
-                                style={styles.textInput}
-                            />
-                            <Ionicons name="wallet" size={18} color="#979797" />
-                        </View>
-                    </View>
-                    
-                    {/* Footer - Button */}
-                    <View style={[styles.footer]}>
-                        <TouchableOpacity
-                            onPress={() => {handleFistStep()}}
-                            style={[styles.button, Boolean(Number(amount) && category && date) ? styles.buttonSelected : {backgroundColor: "#D5D5D5"}, { width: "100%"}]}
-                            disabled={!Boolean(Number(amount) && category && date)}
-                        >
-                            <Text style={[styles.buttonText, {color: Boolean(Number(amount) && category && date) ? "#FFFFFF" : "#828282"} ]}>Enregistrer</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-                )}
-
-                {/* Content - First Step*/}
-                { step === "ValidateForm" && Boolean(Number(amount) && category && date) && (
-                <View>
-                    {/* Summary */}
+                {step === "Form" && (
                     <View>
-                        <SpendReceipt amount={amount}  categoryEmoji={category} description={details} date={date as Date} />
-                    </View>
+                        {/* Montant affiché */}
+                        <View style={styles.customAmountContainer}>
+                            <TextInput
+                                style={[Number(amount) > 0 ? styles.customAmountInputSelected : styles.customAmountInputNonSelected]}
+                                value={amount}
+                                onChangeText={setAmount}
+                                keyboardType="decimal-pad"
+                                autoFocus
+                            />
+                            <Text style={styles.customAmountInputSelected}>€</Text>
+                        </View>
 
-                    {/* Footer - Button */}
-                    <View style={[styles.footer]}>
-                        <TouchableOpacity
-                            onPress={() => {setStep("Form")}}
-                            style={[styles.button, styles.buttonBack, {width: "24%"}]}
-                        >
-                            <Ionicons name="arrow-back" color={"#2F2F2F"} size={16}/>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={() => {handleForm()}}
-                            style={[styles.button, styles.buttonSelected, {width: "74%"} ]}
-                        >
-                            <Text style={[styles.buttonText, {color: "#FFFFFF"} ]}>Valider</Text>
-                        </TouchableOpacity>
+                        {/* Expense type */}
+                        <View style={styles.section}>
+                            <Text style={styles.sectionLabel}>Quel type de dépense est-ce-que c’est ?</Text>
+                            <View style={{ display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+                                {categories.map((cat, index) => {
+                                    const selected = cat.value === category;
+                                    return (
+                                        <TouchableOpacity
+                                            key={`${cat.value}-${index}`}
+                                            onPress={() => setCategory(cat.value)}
+                                            style={[selected ? styles.categoryContainerSelected : styles.categoryContainer, { width: "22%" }]}
+                                        >
+                                            {(() => {
+                                                const Icon = CATEGORY_ICONS[cat.value];
+                                                return Icon ? <Icon width={24} height={24} /> : null;
+                                            })()}
+                                            <Text style={[selected ? styles.categoryLabelSelected : styles.categoryLabel]}>{cat.label}</Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+                        </View>
+
+                        {/* Date Input */}
+                        <View style={styles.section}>
+                            <DatePickerInput value={date} onChange={setDate} placeholder="Choisir une date de début" />
+                        </View>
+
+                        {/* Date Input */}
+                        <View style={styles.section}>
+                            <Text style={styles.sectionLabel}>Détails</Text>
+                            <View style={styles.inputContainer}>
+                                <TextInput
+                                    placeholder="Ajoute un petit détail si tu veux !"
+                                    autoCapitalize="sentences"
+                                    value={details}
+                                    onChangeText={setDetails}
+                                    style={styles.textInput}
+                                />
+                                <Ionicons name="wallet" size={18} color="#979797" />
+                            </View>
+                        </View>
+
+                        {/* Footer - Button */}
+                        <View style={[styles.footer]}>
+                            <TouchableOpacity
+                                onPress={() => {
+                                    handleFistStep();
+                                }}
+                                style={[
+                                    styles.button,
+                                    Boolean(Number(amount) && category && date) ? styles.buttonSelected : { backgroundColor: "#D5D5D5" },
+                                    { width: "100%" },
+                                ]}
+                                disabled={!Boolean(Number(amount) && category && date)}
+                            >
+                                <Text style={[styles.buttonText, { color: Boolean(Number(amount) && category && date) ? "#FFFFFF" : "#828282" }]}>
+                                    Enregistrer
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
-                </View>
                 )}
 
+                {/* Content - First Step*/}
+                {step === "ValidateForm" && Boolean(Number(amount) && category && date) && (
+                    <View>
+                        {/* Summary */}
+                        <View>
+                            <SpendReceipt amount={amount} categoryEmoji={category} description={details} date={date as Date} />
+                        </View>
+
+                        {/* Footer - Button */}
+                        <View style={[styles.footer]}>
+                            <TouchableOpacity
+                                onPress={() => {
+                                    setStep("Form");
+                                }}
+                                style={[styles.button, styles.buttonBack, { width: "24%" }]}
+                            >
+                                <Ionicons name="arrow-back" color={"#2F2F2F"} size={16} />
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={() => {
+                                    handleForm();
+                                }}
+                                style={[styles.button, styles.buttonSelected, { width: "74%" }]}
+                            >
+                                <Text style={[styles.buttonText, { color: "#FFFFFF" }]}>Valider</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                )}
             </ScrollView>
         </SafeAreaView>
-
-    )
-}
+    );
+};
 
 const styles = StyleSheet.create({
     // General
@@ -171,34 +173,34 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     // Container
-	container: {
-		flex: 1,
-	},
-	content: {
-		flex: 1,
-        paddingHorizontal: 20
-	},
+    container: {
+        flex: 1,
+    },
+    content: {
+        flex: 1,
+        paddingHorizontal: 20,
+    },
     // Content - Amount Input
-	customAmountContainer: {
+    customAmountContainer: {
         display: "flex",
-		flexDirection: "row",
+        flexDirection: "row",
         justifyContent: "center",
-		alignItems: "center",
-		backgroundColor: "#EBF2FB",
-		borderRadius: 4,
-        paddingVertical: 12,        
-		marginTop: 16,
-	},
-	customAmountInputNonSelected: {
-		fontSize: 40,
-		color: "#979797",
-        fontWeight: 800
-	},
-	customAmountInputSelected: {
-		fontSize: 40,
-		color: "#2F2F2F",
-		fontWeight: 800,
-	},
+        alignItems: "center",
+        backgroundColor: "#EBF2FB",
+        borderRadius: 4,
+        paddingVertical: 12,
+        marginTop: 16,
+    },
+    customAmountInputNonSelected: {
+        fontSize: 40,
+        color: "#979797",
+        fontWeight: 800,
+    },
+    customAmountInputSelected: {
+        fontSize: 40,
+        color: "#2F2F2F",
+        fontWeight: 800,
+    },
     // Content - Expense type
     categoryContainer: {
         padding: 8,
@@ -225,74 +227,72 @@ const styles = StyleSheet.create({
     categoryLabel: {
         color: "#6E6E6E",
         fontWeight: 400,
-        fontSize: 12
+        fontSize: 12,
     },
     categoryLabelSelected: {
         color: "#2F2F2F",
         fontWeight: 600,
-        fontSize: 12
+        fontSize: 12,
     },
     // Input
     inputContainer: {
-		flexDirection: "row",
-		alignItems: "center",
-		backgroundColor: "#fff",
-		borderRadius: 8,
-		borderWidth: 1,
-		borderColor: "#D5D5D5",
-		paddingHorizontal: 16,
-	},
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#fff",
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#D5D5D5",
+        paddingHorizontal: 16,
+    },
     textInput: {
-		flex: 1,
-		fontSize: 16,
-		color: "#333",
-		paddingVertical: 16,
-	},
+        flex: 1,
+        fontSize: 16,
+        color: "#333",
+        paddingVertical: 16,
+    },
     // Footer
     footer: {
-		paddingBottom: 20,
-		paddingTop: 16,
+        paddingBottom: 20,
+        paddingTop: 16,
         display: "flex",
         flexDirection: "row",
         justifyContent: "space-between",
-        width: "100%"
-	},
+        width: "100%",
+    },
     button: {
         paddingVertical: 20,
         paddingHorizontal: 24,
         borderRadius: 8,
         display: "flex",
         alignItems: "center",
-        justifyContent: "center"
+        justifyContent: "center",
     },
     buttonSelected: {
         backgroundColor: "#16AA75",
         shadowColor: "#005C49",
-		shadowOffset: {
-			width: 0,
-			height: 4,
-		},
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 4,
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 4,
     },
     buttonBack: {
         backgroundColor: "#FFFFFF",
         shadowColor: "#EBF2FB",
-		shadowOffset: {
-			width: 0,
-			height: 4,
-		},
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 4,
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 4,
     },
     buttonText: {
         fontWeight: 700,
-        fontSize: 20
-    }
-})
+        fontSize: 20,
+    },
+});
 
-
-
-export default SpendForm
+export default SpendForm;

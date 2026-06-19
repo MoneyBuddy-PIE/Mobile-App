@@ -6,21 +6,17 @@ type IProps = {
     visible: boolean;
     onClose: () => void;
     backgroundColor?: string;
-    custom?: boolean
+    custom?: boolean;
     children: React.ReactNode;
-}
+};
 
-const ModalComponent = ({visible, onClose, children, backgroundColor = "#EBF2FB", custom}: IProps) => {
-
+const ModalComponent = ({ visible, onClose, children, backgroundColor = "#EBF2FB", custom }: IProps) => {
     return (
         <Modal transparent visible={visible} animationType="slide">
             <GestureHandlerRootView style={{ flex: 1 }}>
-                <Pressable
-                    style={styles.overlay}
-                    onPress={onClose}
-                >
+                <Pressable style={styles.overlay} onPress={onClose}>
                     <Pressable
-                        style={[styles.contentSetup, custom ? styles.contentSetupMargin : styles.height , {backgroundColor: backgroundColor}]}
+                        style={[styles.contentSetup, custom ? styles.contentSetupMargin : styles.height, { backgroundColor: backgroundColor }]}
                         onPress={(e) => e.stopPropagation()}
                     >
                         {/* Header */}
@@ -36,8 +32,8 @@ const ModalComponent = ({visible, onClose, children, backgroundColor = "#EBF2FB"
                 </Pressable>
             </GestureHandlerRootView>
         </Modal>
-    )
-}
+    );
+};
 
 const styles = StyleSheet.create({
     overlay: {
@@ -55,7 +51,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 20,
         marginBottom: 20,
         borderBottomLeftRadius: 24,
-        borderBottomRightRadius: 24
+        borderBottomRightRadius: 24,
     },
     height: {
         height: "75%",
@@ -76,6 +72,6 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
     },
-})
+});
 
 export default ModalComponent;

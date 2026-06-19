@@ -4,18 +4,18 @@
 
 ## 🔧 Type de changement
 
--   [ ] 🐛 Bug fix
--   [ ] ✨ Nouvelle fonctionnalité
--   [ ] 📚 Documentation
--   [ ] 🎨 Amélioration UI/UX
--   [ ] ♻️ Refactoring
--   [ ] ⚡ Performance
+- [ ] 🐛 Bug fix
+- [ ] ✨ Nouvelle fonctionnalité
+- [ ] 📚 Documentation
+- [ ] 🎨 Amélioration UI/UX
+- [ ] ♻️ Refactoring
+- [ ] ⚡ Performance
 
 ## 🧪 Tests effectués
 
--   [ ] Tests manuels sur iOS
--   [ ] Tests manuels sur Android
--   [ ] Tests des cas d'erreur
+- [ ] Tests manuels sur iOS
+- [ ] Tests manuels sur Android
+- [ ] Tests des cas d'erreur
 
 ## 📱 Screenshots/Vidéos
 
@@ -27,6 +27,6 @@
 
 ## ✅ Checklist
 
--   [ ] Le code compile sans erreur
--   [ ] Pas de console.log oubliés
--   [ ] Code testé manuellement
+- [ ] Le code compile sans erreur
+- [ ] Pas de console.log oubliés
+- [ ] Code testé manuellement

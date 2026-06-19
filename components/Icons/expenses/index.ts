@@ -1,0 +1,11 @@
+export { default as MealIcon } from './MealIcon';
+export { default as SnackIcon } from './SnackIcon';
+export { default as GamesIcon } from './GamesIcon';
+export { default as ClothingIcon } from './ClothingIcon';
+export { default as LeisureIcon } from './LeisureIcon';
+export { default as ReadingIcon } from './ReadingIcon';
+export { default as OutingIcon } from './OutingIcon';
+export { default as GiftIcon } from './GiftIcon';
+export { default as TransportIcon } from './TransportIcon';
+export { default as SchoolIcon } from './SchoolIcon';
+export { default as OtherIcon } from './OtherIcon';

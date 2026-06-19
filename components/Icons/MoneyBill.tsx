@@ -1,0 +1,18 @@
+import * as React from "react";
+import Svg, { G, Path, Defs, ClipPath, SvgProps } from "react-native-svg";
+const MoneyBill = (props: SvgProps) => (
+    <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" {...props}>
+        <G clipPath="url(#a)">
+            <Path
+                d="M8 12c0 2.206 1.794 4 4 4s4-1.794 4-4-1.794-4-4-4-4 1.794-4 4m6 0c0 1.103-.897 2-2 2s-2-.897-2-2 .897-2 2-2 2 .897 2 2M5.5 8a1.5 1.5 0 1 1-.001 3.001A1.5 1.5 0 0 1 5.5 8M20 14.5a1.5 1.5 0 1 1-3.001-.001A1.5 1.5 0 0 1 20 14.5M0 13V9c0-2.757 2.243-5 5-5h16.01l-1.24-1.314a1.001 1.001 0 0 1 1.457-1.372l2.244 2.381c.71.709.71 1.899-.021 2.63l-2.223 2.36a.997.997 0 0 1-1.414.042 1 1 0 0 1-.042-1.414l1.238-1.314H5c-1.654 0-3 1.346-3 3v4a1 1 0 0 1-2 0zm24-1.5V15c0 2.757-2.243 5-5 5H2.989l1.239 1.314a1.001 1.001 0 0 1-1.456 1.372L.528 20.305c-.71-.709-.71-1.899.021-2.63l2.223-2.36a1 1 0 1 1 1.456 1.372L2.99 18.001H19c1.654 0 3-1.346 3-3v-3.5a1 1 0 0 1 2 0z"
+                fill={props.color || "#fff"}
+            />
+        </G>
+        <Defs>
+            <ClipPath id="a">
+                <Path fill="#fff" d="M0 0h24v24H0z" />
+            </ClipPath>
+        </Defs>
+    </Svg>
+);
+export default MoneyBill;

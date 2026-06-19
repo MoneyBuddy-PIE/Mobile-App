@@ -1,56 +1,71 @@
-import { Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { Animated, Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useEffect, useRef } from "react";
 
 type IProps = {
-    title: string
-    subTitle: string
-    buttonText?: string
-    onClose?: () => void
-    image?: ImageSourcePropType
-    showHeader?: boolean
-}
+    title: string;
+    subTitle: string;
+    buttonText?: string;
+    onClose?: () => void;
+    image?: ImageSourcePropType;
+    showHeader?: boolean;
+    buttonColor?: string;
+    buttonShadowColor?: string;
+};
 
-const SuccessComponent =  ({
+const SuccessComponent = ({
     title,
     subTitle,
     buttonText = "Terminer",
     onClose,
     image = require("@/assets/images/pig_success.png"),
-    showHeader = false
-}:IProps) => {
+    showHeader = false,
+    buttonColor = "#16AA75",
+    buttonShadowColor = "#005C49",
+}: IProps) => {
+    const scaleAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        Animated.spring(scaleAnim, {
+            toValue: 1,
+            friction: 8,
+            tension: 100,
+            useNativeDriver: true,
+        }).start();
+    }, []);
 
     return (
-        <View style={styles.container} >
-            
+        <View style={styles.container}>
             {/* Header */}
-            {showHeader && 
+            {showHeader && (
                 <View style={styles.headerContainer}>
                     <TouchableOpacity style={styles.closeButton} onPress={() => onClose && onClose()}>
                         <Ionicons name="close" size={20} color="#fff" />
                     </TouchableOpacity>
                 </View>
-            }
-            
+            )}
+
             {/* Content */}
             <View style={styles.contentContainer}>
-                <Text style={styles.contentTitle} >{title}</Text>
-                <Text style={styles.contentSubTitle} >{subTitle}</Text>
-                <Image style={styles.contentImage} source={image} />
+                <Text style={styles.contentTitle}>{title}</Text>
+                <Text style={styles.contentSubTitle}>{subTitle}</Text>
+                <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+                    <Image style={styles.contentImage} source={image} />
+                </Animated.View>
             </View>
-            
+
             {/* Footer */}
-            <View style={styles.footer} >
+            <View style={styles.footer}>
                 <TouchableOpacity
-                    style={[styles.buttonContainer, {backgroundColor: "#16AA75"}]}
+                    style={[styles.buttonContainer, { backgroundColor: buttonColor, shadowColor: buttonShadowColor }]}
                     onPress={() => onClose && onClose()}
                 >
-                    <Text style={styles.buttonText} >{buttonText}</Text>
+                    <Text style={styles.buttonText}>{buttonText}</Text>
                 </TouchableOpacity>
-            
             </View>
         </View>
-    )
-}
+    );
+};
 
 const styles = StyleSheet.create({
     container: {
@@ -63,7 +78,7 @@ const styles = StyleSheet.create({
         paddingTop: 20,
         display: "flex",
         justifyContent: "flex-end",
-        alignItems: "flex-end"
+        alignItems: "flex-end",
     },
     closeButton: {
         width: 36,
@@ -80,23 +95,23 @@ const styles = StyleSheet.create({
         flexDirection: "column",
         gap: 16,
         justifyContent: "center",
-        alignItems: "center"
+        alignItems: "center",
     },
     contentTitle: {
         fontWeight: 700,
         fontSize: 24,
-        color: "#2F2F2F"
+        color: "#2F2F2F",
     },
     contentSubTitle: {
         fontWeight: 400,
         fontSize: 16,
         color: "#2F2F2F",
-        textAlign: "center"
+        textAlign: "center",
     },
     contentImage: {
-        marginTop: 24
+        marginTop: 24,
     },
-     // Footer
+    // Footer
     footer: {
         paddingHorizontal: 20,
         paddingBottom: 20,
@@ -117,6 +132,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "600",
     },
-})
+});
 
-export default SuccessComponent
+export default SuccessComponent;

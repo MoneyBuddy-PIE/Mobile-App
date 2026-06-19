@@ -9,6 +9,7 @@ MoneyBuddy combine apprentissage gamifié et gestion budgétaire personnalisée,
 ### Fonctionnalités principales
 
 #### Pour les parents 👨‍👩‍👧‍👦
+
 - **Tableau de bord familial** : Vue d'ensemble des comptes enfants
 - **Gestion de l'argent de poche** : Versements et suivi des soldes
 - **Création de tâches** : Attribution de missions avec récompenses
@@ -16,6 +17,7 @@ MoneyBuddy combine apprentissage gamifié et gestion budgétaire personnalisée,
 - **Suivi des progrès** : Statistiques et évolution des enfants
 
 #### Pour les enfants 🔸
+
 - **Interface ludique** : Design adapté et gamifié
 - **Gestion d'argent de poche** : Suivi du solde personnel
 - **Tâches et récompenses** : Missions à accomplir pour gagner de l'argent
@@ -60,33 +62,36 @@ MoneyBuddy combine apprentissage gamifié et gestion budgétaire personnalisée,
 ### Étapes d'installation
 
 1. **Cloner le repository**
-   ```bash
-   git clone [URL_DU_REPO]
-   cd moneybuddy-front
-   ```
+
+    ```bash
+    git clone [URL_DU_REPO]
+    cd moneybuddy-front
+    ```
 
 2. **Installer les dépendances**
-   ```bash
-   npm install
-   # ou
-   yarn install
-   ```
+
+    ```bash
+    npm install
+    # ou
+    yarn install
+    ```
 
 3. **Configuration de l'environnement**
-   ```bash
-   # Créer un fichier .env à la racine du projet
-   cp .env.example .env
-   
-   # Configurer l'URL de l'API
-   EXPO_PUBLIC_BASE_URL=https://votre-api.com
-   ```
+
+    ```bash
+    # Créer un fichier .env à la racine du projet
+    cp .env.example .env
+
+    # Configurer l'URL de l'API
+    EXPO_PUBLIC_BASE_URL=https://votre-api.com
+    ```
 
 4. **Lancer l'application**
-   ```bash
-   npm start
-   # ou
-   yarn start
-   ```
+    ```bash
+    npm start
+    # ou
+    yarn start
+    ```
 
 ## 📱 Utilisation
 
@@ -100,12 +105,14 @@ MoneyBuddy combine apprentissage gamifié et gestion budgétaire personnalisée,
 ### Workflow typique
 
 #### Parents
+
 1. Créer des tâches pour les enfants
 2. Verser de l'argent de poche
 3. Suivre les progrès via le tableau de bord
 4. Consulter les cours d'éducation financière
 
 #### Enfants
+
 1. Consulter les tâches à accomplir
 2. Marquer les tâches comme terminées
 3. Suivre son solde d'argent de poche
@@ -122,6 +129,7 @@ MoneyBuddy combine apprentissage gamifié et gestion budgétaire personnalisée,
 ## 🎨 Design
 
 L'application utilise :
+
 - **Polices personnalisées** : DM Sans, Corben, Plus Jakarta Sans
 - **Palette de couleurs** adaptée aux enfants et parents
 - **Composants Material Design** avec une touche personnalisée
@@ -152,6 +160,7 @@ EXPO_PUBLIC_BASE_URL=https://api.moneybuddy.com
 ### Configuration Expo
 
 Le fichier `app.json` contient la configuration Expo :
+
 - Nom de l'application : MoneyBuddy
 - Slug : moneybuddy
 - Icônes et splash screen personnalisés
@@ -172,9 +181,10 @@ Ce projet est sous licence [MIT](LICENSE).
 ## 📞 Support
 
 Pour toute question ou problème :
+
 - Créer une issue sur GitHub
 - Contacter l'équipe de développement
 
 ---
 
-**MoneyBuddy** - *Construisez l'avenir financier de votre enfant, 5 minutes par jour !* 🚀
+**MoneyBuddy** - _Construisez l'avenir financier de votre enfant, 5 minutes par jour !_ 🚀

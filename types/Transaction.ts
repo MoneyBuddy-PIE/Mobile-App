@@ -1,33 +1,45 @@
-import { Pagination } from "./api";
+import { Pagination } from './api';
 
-export enum TransactionType {
-	CREDIT = 'CREDIT',
-	DEBIT = "DEBIT"
-}
+export type TransactionType = 'CREDIT' | 'DEBIT';
+export const TransactionType = { CREDIT: 'CREDIT' as TransactionType, DEBIT: 'DEBIT' as TransactionType };
 
-export enum TransactionCategory {
-	COIN = 'COIN',
-	MONEY = "MONEY"
-}
+export type TransactionCategory = 'COIN' | 'MONEY';
+export const TransactionCategory = { COIN: 'COIN' as TransactionCategory, MONEY: 'MONEY' as TransactionCategory };
 
 export interface Transaction {
-	id: string;
-	childId: string;
-	parentId: string;
-	type: TransactionType;
-	category: TransactionCategory
-	createdAt: string;
-	updatedAt: string;
-	amount: string;
-	oldAmount: string;
-	newAmount: string;
-	description: string;
+    id: string;
+    accountId: string;
+    childId: string;
+    parentId: string | null;
+    goalId: string | null;
+    incomeId: string | null;
+    type: TransactionType;
+    category: TransactionCategory | null;
+    createdAt: string;
+    updatedAt: string | null;
+    amount: string;
+    oldAmount: string;
+    newAmount: string;
+    description: string;
+    emoji?: string;
 }
 
-export type Transactions = Pagination<Transaction>
+export type Transactions = Pagination<Transaction>;
 
 export interface AddExpenseRequest {
-	subAccountId: string;
-	amount: string;
-	description: string;
+    subAccountId: string;
+    amount: number;
+    emoji: string;
+    description?: string;
+}
+
+export interface AddMoney {
+    subAccountId: string;
+    amount: number;
+    description?: string;
+    goalId?: string;
+}
+
+export interface CollectAllIncome {
+    subAccountId: string;
 }

@@ -1,70 +1,62 @@
-import { apiService } from "./api";
-import { Task, CreateTaskRequest, TaskStatus } from "@/types/Task";
+import { logger } from '@/utils/logger';
+import { apiService } from './api';
+import { Task, CreateTaskRequest, TaskUpdate, TaskStatus, TaskHistory } from '@/types/Task';
 
 type GetTasksParams = {
     childId?: string;
-    status?: TaskStatus
+    status?: TaskStatus;
     type?: string;
-}
+};
 
 export const tasksService = {
-	// Récupérer toutes les tâches
-	async getAllTasks(params: GetTasksParams): Promise<Task[]> {
-		const { childId, status, type } = params;
-		const queryParams = new URLSearchParams();
+    async getAllTasks(params: GetTasksParams = {}): Promise<Task[]> {
+        const { childId, status, type } = params;
+        const queryParams = new URLSearchParams();
 
-		if (childId)
-			queryParams.append('childId', childId);
-		
-		if (status)
-			queryParams.append('status', status);
-		
-		if (type)
-			queryParams.append('type', type);
+        if (childId) queryParams.append('childId', childId);
+        if (status) queryParams.append('status', status);
+        if (type) queryParams.append('type', type);
 
-		return apiService.get<Task[]>(`/tasks?${queryParams.toString()}`);
-	},
+        const query = queryParams.toString();
+        return apiService.get<Task[]>(query ? `/tasks?${query}` : '/tasks');
+    },
 
-	// Créer une nouvelle tâche
-	async createTask(data: CreateTaskRequest): Promise<Task> {
-		return apiService.post<Task>("/tasks", data);
-	},
+    async getTasksByChild(
+        childId: string,
+        status?: 'PENDING' | 'PRE_VALIDATE' | 'COMPLETED' | 'REFUSED',
+        type?: 'PONCTUAL' | 'WEEKLY' | 'MONTHLY',
+    ): Promise<Task[]> {
+        const params = new URLSearchParams({ childId });
+        if (status) params.append('status', status);
+        if (type) params.append('type', type);
+        return apiService.get<Task[]>(`/tasks?${params.toString()}`);
+    },
 
-	// Récupérer une tâche par ID
-	async getTaskById(id: string): Promise<Task> {
-		return apiService.get<Task>(`/tasks/${id}`);
-	},
+    async createTask(data: CreateTaskRequest): Promise<Task> {
+        return apiService.post<Task>('/tasks', data);
+    },
 
-	// Mettre à jour une tâche
-	async updateTask(id: string, data: Partial<CreateTaskRequest>): Promise<Task> {
-		return apiService.put<Task>(`/tasks/${id}`, data);
-	},
+    async getTaskById(id: string): Promise<Task> {
+        return apiService.get<Task>(`/tasks/${id}`);
+    },
 
-	// Supprimer une tâche
-	async deleteTask(id: string): Promise<void> {
-		return apiService.delete(`/tasks/${id}`);
-	},
+    async updateTask(id: string, data: Partial<TaskUpdate>): Promise<Task> {
+        return apiService.put<Task>(`/tasks/${id}`, data);
+    },
 
-	// Marquer une tâche comme terminée
-	async completeTask(id: string): Promise<{ token: string; error: string }> {
-		return apiService.put<{ token: string; error: string }>(`/tasks/complete/${id}`);
-	},
+    async deleteTask(id: string): Promise<void> {
+        return apiService.delete(`/tasks/${id}`);
+    },
 
-	// Récupérer les tâches par catégorie
-	// async getTasksByCategory(category: string): Promise<Task[]> {
-	// 	const allTasks = await this.getAllTasks();
-	// 	return allTasks.filter((task) => task.category.toLowerCase() === category.toLowerCase());
-	// },
+    async completeTask(id: string, done?: boolean): Promise<{ token: string; error: string }> {
+        return apiService.put<{ token: string; error: string }>(`/tasks/complete/${id}`, { done: done ?? true });
+    },
 
-	// // Récupérer les tâches non terminées
-	// async getPendingTasks(): Promise<Task[]> {
-	// 	const allTasks = await this.getAllTasks();
-	// 	return allTasks.filter((task) => !task.done);
-	// },
+    async preValidateTask(id: string): Promise<void> {
+        return apiService.put(`/tasks/prevalidation/${id}`);
+    },
 
-	// // Récupérer les tâches terminées
-	// async getCompletedTasks(): Promise<Task[]> {
-	// 	const allTasks = await this.getAllTasks();
-	// 	return allTasks.filter((task) => task.done);
-	// },
+    async getTaskHistory(taskId: string): Promise<TaskHistory[]> {
+        return apiService.get<TaskHistory[]>(`/tasks/history/${taskId}`);
+    },
 };

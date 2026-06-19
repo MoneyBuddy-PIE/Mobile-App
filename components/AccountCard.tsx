@@ -1,106 +1,115 @@
 // components/AccountCard.tsx
 import React from "react";
-import { TouchableOpacity, Text, View, StyleSheet, Image } from "react-native";
+import { TouchableOpacity, Text, View, StyleSheet } from "react-native";
 import { SubAccount } from "@/types/Account";
+import { colors, spacing, shadows, typography } from "@/styles";
 
 interface AccountCardProps {
-	account: SubAccount;
-	onPress: () => void;
-	isRow?: boolean;
-	cardStyle?: object;
-	children?: React.ReactNode;
+    account: SubAccount;
+    onPress: () => void;
 }
 
-const AccountCard: React.FC<AccountCardProps> = ({ account, onPress, isRow = false, cardStyle, children }) => {
-	const url = `https://api.dicebear.com/9.x/${account.iconStyle}/png?seed=${account.iconName}`
+const AccountCard: React.FC<AccountCardProps> = ({ account, onPress }) => {
+    const getRoleIcon = (role: string) => {
+        switch (role.toUpperCase()) {
+            case "PARENT":
+                return "👨‍👩‍👧‍👦";
+            case "CHILD":
+                return "👶";
+            case "ADMIN":
+                return "👑";
+            default:
+                return "👤";
+        }
+    };
 
-	const getRoleColor = (role: string): {roleColor: string, role: string} => {
-		switch (role.toUpperCase()) {
-			case "CHILD":
-				return {roleColor: "#59FFCF", role: "Enfant"};
-			default:
-				return {roleColor: "#97C9FF", role: "Parent"};
-		}
-	};
+    const getRoleColor = (role: string) => {
+        switch (role.toUpperCase()) {
+            case "PARENT":
+                return colors.jadegreen[100];
+            case "CHILD":
+                return colors.blue[100];
+            case "ADMIN":
+                return colors.secondary[100];
+            default:
+                return colors.carbon[60];
+        }
+    };
 
-	const role = getRoleColor(account.role);
+    return (
+        <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+            <View style={styles.iconContainer}>
+                <Text style={styles.icon}>{getRoleIcon(account.role)}</Text>
+            </View>
 
-	return (
-		<TouchableOpacity style={{...styles.card, ...cardStyle, ...isRow ? styles.cardRow : styles.cardColumn}} onPress={onPress} activeOpacity={0.7}>
-			<Image source={{ uri: url }} style={styles.imageContainer} />
+            <View style={styles.content}>
+                <Text style={styles.name}>{account.name}</Text>
+                <View style={styles.roleContainer}>
+                    <View style={[styles.roleBadge, { backgroundColor: getRoleColor(account.role) }]}>
+                        <Text style={styles.roleText}>{account.role}</Text>
+                    </View>
+                </View>
+            </View>
 
-			<View style={{...styles.content, ...isRow ?  {alignItems: "flex-start"} : {alignItems: "center"}}}>
-				<Text style={styles.name}>{account.name}</Text>
-				<View style={styles.roleContainer}>
-					<View style={[styles.roleBadge, { backgroundColor: role.roleColor}]}>
-						<Text style={styles.roleText}>{role.role}</Text>
-					</View>
-				</View>
-			</View>
-
-			{children}
-		</TouchableOpacity>
-	);
+            <View style={styles.arrow}>
+                <Text style={styles.arrowText}>→</Text>
+            </View>
+        </TouchableOpacity>
+    );
 };
 
 const styles = StyleSheet.create({
-	card: {
-		backgroundColor: "#fff",
-		borderRadius: 16,
-		padding: 24,
-		display: "flex",
-		alignItems: "center",
-	},
-	cardColumn: {
-		flexDirection: "column",
-		justifyContent: "center",
-		minHeight: 160,
-				shadowColor: "#BFD0EA",
-		shadowOffset: {
-			width: 0,
-			height: 3.89,
-		},
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 4,
-	},
-	cardRow : {
-		flexDirection: "row",
-		justifyContent: "flex-start",
-		gap: 16,
-	},
-	imageContainer: {
-		width: 50,
-		height: 50,
-		marginBottom: 10,
-	},
-	icon: {
-		fontSize: 24,
-	},
-	content: {
-		display: "flex",
-		flexDirection: "column",
-		justifyContent: "center",
-	},
-	name: {
-		fontSize: 18,
-		fontWeight: "600",
-		color: "#333",
-		marginBottom: 4,
-	},
-	roleContainer: {
-		flexDirection: "row",
-	},
-	roleBadge: {
-		paddingHorizontal: 8,
-		paddingVertical: 4,
-		borderRadius: 6,
-	},
-	roleText: {
-		color: "#2F2F2F",
-		fontSize: 12,
-		fontWeight: "400",
-	},
+    card: {
+        backgroundColor: colors.white,
+        borderRadius: spacing.base,
+        padding: spacing.base,
+        flexDirection: "row",
+        alignItems: "center",
+        ...shadows.md,
+        marginBottom: spacing.md,
+    },
+    iconContainer: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        backgroundColor: colors.carbon[10],
+        justifyContent: "center",
+        alignItems: "center",
+        marginRight: spacing.base,
+    },
+    icon: {
+        fontSize: 24,
+    },
+    content: {
+        flex: 1,
+    },
+    name: {
+        ...typography.lg,
+        ...typography.semiBold,
+        color: colors.carbon[100],
+        marginBottom: spacing.xs,
+    },
+    roleContainer: {
+        flexDirection: "row",
+    },
+    roleBadge: {
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs,
+        borderRadius: 6,
+    },
+    roleText: {
+        color: colors.white,
+        ...typography.xs,
+        ...typography.semiBold,
+        textTransform: "uppercase",
+    },
+    arrow: {
+        marginLeft: spacing.md,
+    },
+    arrowText: {
+        fontSize: 20,
+        color: colors.carbon[50],
+    },
 });
 
 export default AccountCard;

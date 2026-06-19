@@ -1,17 +1,7 @@
 import { Goal } from "@/types/Goal";
 import { goalsService } from "@/services/goalService";
 import { useState } from "react";
-import {
-    View,
-    Text,
-    StyleSheet,
-    TextInput,
-    TouchableOpacity,
-    ScrollView,
-    Alert,
-    Pressable,
-    FlatList,
-} from "react-native";
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, FlatList } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import getRandomItemFromList from "@/utils/fn/getRandomItemFromList";
@@ -24,7 +14,7 @@ const PREDEFINED_AMOUNTS = ["10", "20", "50", "100"];
 type IProps = {
     childId: string;
     goal?: Goal | null;
-    onChange?: () => void
+    onChange?: () => void;
 };
 
 export default function GoalForm({ childId, goal, onChange }: IProps) {
@@ -32,10 +22,11 @@ export default function GoalForm({ childId, goal, onChange }: IProps) {
 
     const [name, setName] = useState(goal?.name ?? "");
     const [selectedEmoji, setSelectedEmoji] = useState(goal?.emoji ?? getRandomItemFromList(emojis));
+    const [emojiColor] = useState(() => getRandomItemFromList(colorList));
     const [amount, setAmount] = useState(goal?.amount?.toString() ?? "");
 
     const [loading, setLoading] = useState(false);
-    const [showModal, setShowModal] = useState(false)
+    const [showModal, setShowModal] = useState(false);
 
     async function handleSubmit() {
         setLoading(true);
@@ -46,15 +37,12 @@ export default function GoalForm({ childId, goal, onChange }: IProps) {
                     amount: parseFloat(amount),
                     emoji: selectedEmoji,
                 });
-                Alert.alert("Succès", "Objectif modifié avec succès", [
-                    { text: "OK", onPress: () => router.back() },
-                ]);
+                Alert.alert("Succès", "Objectif modifié avec succès", [{ text: "OK", onPress: () => router.back() }]);
             } else {
                 await goalsService.createGoal({
                     name: name.trim(),
                     amount: parseFloat(amount),
                     emoji: selectedEmoji,
-                    subaccountIdChild: childId,
                 });
             }
         } catch (error: any) {
@@ -62,32 +50,25 @@ export default function GoalForm({ childId, goal, onChange }: IProps) {
             Alert.alert("Erreur", msg);
         } finally {
             setLoading(false);
-            onChange && onChange()
+            onChange && onChange();
         }
     }
 
     return (
         <>
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-
                 {/* Emoji */}
-                <View style={[styles.section, {display: "flex", alignItems: "center"}]}>
-                    <TouchableOpacity style={[styles.imageContainer, {backgroundColor: getRandomItemFromList(colorList)}]} onPress={() => setShowModal(true)}>
-						<Text style={styles.emojiText}>{selectedEmoji}</Text>
+                <View style={[styles.section, { alignItems: "center" }]}>
+                    <TouchableOpacity style={[styles.imageContainer, { backgroundColor: emojiColor }]} onPress={() => setShowModal(true)}>
+                        <Text style={styles.emojiText}>{selectedEmoji}</Text>
                         <View style={styles.editIcon}>
                             <Ionicons name="pencil" size={12} color="#fff" />
                         </View>
-					</TouchableOpacity>
+                    </TouchableOpacity>
                 </View>
 
-                {showModal && 
-                    <ModalEmoji
-                        visible={showModal} 
-                        onClose={() => setShowModal(false)} 
-                        changeEmoji={(emoji) => setSelectedEmoji(emoji)} 
-                    />
-            }
-                
+                {showModal && <ModalEmoji visible={showModal} onClose={() => setShowModal(false)} changeEmoji={(emoji) => setSelectedEmoji(emoji)} />}
+
                 {/* Nom */}
                 <View style={styles.section}>
                     <Text style={styles.sectionLabel}>Nom de l’objectif</Text>
@@ -123,11 +104,11 @@ export default function GoalForm({ childId, goal, onChange }: IProps) {
             <View style={[styles.footer, isUpdate && styles.footerUpdate]}>
                 {isUpdate ? (
                     <View style={styles.footerRow}>
-                        <TouchableOpacity style={[styles.btnSecondary]} onPress={() => router.back()}>
+                        <TouchableOpacity style={[styles.btnSecondary, { flex: 1 }]} onPress={() => router.back()}>
                             <Text style={styles.btnSecondaryText}>Annuler</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={[styles.btnPrimary]}
+                            style={[styles.btnPrimary, { flex: 1 }]}
                             onPress={handleSubmit}
                             disabled={!Boolean(name?.trim()?.length > 2 && Number(amount) > 0) || loading}
                         >
@@ -140,7 +121,9 @@ export default function GoalForm({ childId, goal, onChange }: IProps) {
                         onPress={handleSubmit}
                         disabled={!Boolean(name?.trim()?.length > 2 && Number(amount) > 0) || loading}
                     >
-                        <Text style={[Boolean(name?.trim()?.length > 2 && Number(amount) > 0) ? styles.btnPrimaryText : styles.btnPrimaryTextDisabled]}>
+                        <Text
+                            style={[Boolean(name?.trim()?.length > 2 && Number(amount) > 0) ? styles.btnPrimaryText : styles.btnPrimaryTextDisabled]}
+                        >
                             {loading ? "Création..." : "Créer l'objectif"}
                         </Text>
                     </TouchableOpacity>
@@ -150,46 +133,44 @@ export default function GoalForm({ childId, goal, onChange }: IProps) {
     );
 }
 
-const ModalEmoji = ({ visible, onClose, changeEmoji }: { visible: boolean; onClose: () => void,  changeEmoji: (emoji: string) => void; }) => {
-
+const ModalEmoji = ({ visible, onClose, changeEmoji }: { visible: boolean; onClose: () => void; changeEmoji: (emoji: string) => void }) => {
     const handleEmoji = (emoji: string) => {
-        changeEmoji(emoji)
-        onClose()
-    }
+        changeEmoji(emoji);
+        onClose();
+    };
 
     return (
-        <ModalComponent
-            visible={visible}
-            onClose={onClose}
-        >
-            <ScrollView> 
-                <View style={{display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 12}}>
-                    {emojis.map((emoji) => (
-                        <TouchableOpacity 
-                            key={emoji}
-                            style={[styles.imageContainer, {backgroundColor: getRandomItemFromList(colorList), width: "22%"}]} 
-                            onPress={() => handleEmoji(emoji)}
-                        >
-                            <Text style={styles.emojiText}>{emoji}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            </ScrollView>
+        <ModalComponent visible={visible} onClose={onClose}>
+            <FlatList
+                data={emojis}
+                keyExtractor={(item) => item}
+                numColumns={4}
+                columnWrapperStyle={emojiGridStyles.row}
+                contentContainerStyle={emojiGridStyles.list}
+                renderItem={({ item: emoji, index }) => (
+                    <TouchableOpacity
+                        style={[emojiGridStyles.tile, { backgroundColor: colorList[index % colorList.length] }]}
+                        onPress={() => handleEmoji(emoji)}
+                    >
+                        <Text style={emojiGridStyles.emoji}>{emoji}</Text>
+                    </TouchableOpacity>
+                )}
+            />
         </ModalComponent>
-    )
-}
+    );
+};
 
 const styles = StyleSheet.create({
     content: {
         flex: 1,
-        paddingHorizontal: 20,
+        paddingHorizontal: 24,
     },
     section: {
-        marginTop: 24,
+        marginTop: 32,
     },
     sectionLabel: {
+        fontFamily: "DMSans_400Regular",
         fontSize: 14,
-        fontWeight: "400",
         color: "#2F2F2F",
         marginBottom: 12,
     },
@@ -200,7 +181,8 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         borderWidth: 1,
         borderColor: "#D5D5D5",
-        paddingHorizontal: 16,
+        paddingHorizontal: 14,
+        height: 53,
     },
     inputActive: {
         flexDirection: "row",
@@ -209,17 +191,19 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         borderWidth: 1,
         borderColor: "#16AA75",
-        paddingHorizontal: 16,
+        paddingHorizontal: 14,
+        height: 53,
     },
     textInput: {
         flex: 1,
+        fontFamily: "DMSans_400Regular",
         fontSize: 16,
-        color: "#333",
-        paddingVertical: 16,
+        color: "#2F2F2F",
     },
     // Content - Emoji
     imageContainer: {
-        display: "flex",
+        width: 80,
+        height: 80,
         justifyContent: "center",
         alignItems: "center",
         position: "relative",
@@ -227,55 +211,47 @@ const styles = StyleSheet.create({
     },
     editIcon: {
         position: "absolute",
-        bottom: -5,
-        right: -5,
+        bottom: -6,
+        right: -6,
         backgroundColor: "#846DED",
         borderRadius: 4,
         padding: 8,
         justifyContent: "center",
         alignItems: "center",
         shadowColor: "#4E31CF",
-		shadowOffset: {
-			width: 0,
-			height: 4,
-		},
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 4,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 4,
     },
     emojiText: {
-        fontSize: 48,
-        fontWeight: 700,
-        paddingHorizontal: 6,
-        paddingVertical: 3,
+        fontSize: 44,
     },
     // Content - Amount Input
-	customAmountContainer: {
-        display: "flex",
-		flexDirection: "row",
+    customAmountContainer: {
+        flexDirection: "row",
         justifyContent: "center",
-		alignItems: "center",
-		backgroundColor: "#EBF2FB",
-		borderRadius: 4,
-        paddingVertical: 12,        
-		marginTop: 16,
-	},
-	customAmountInputNonSelected: {
-		fontSize: 40,
-		color: "#979797",
-        fontWeight: 800
-	},
-	customAmountInputSelected: {
-		fontSize: 40,
-		color: "#2F2F2F",
-		fontWeight: 800,
-	},
+        alignItems: "center",
+        backgroundColor: "#EBF2FB",
+        borderRadius: 4,
+        paddingVertical: 12,
+    },
+    customAmountInputNonSelected: {
+        fontSize: 40,
+        fontFamily: "DMSans_700Bold",
+        color: "#979797",
+    },
+    customAmountInputSelected: {
+        fontSize: 40,
+        fontFamily: "DMSans_700Bold",
+        color: "#2F2F2F",
+    },
     // Footer
     footer: {
-        paddingHorizontal: 20,
-        paddingBottom: 20,
+        paddingHorizontal: 24,
+        paddingBottom: 24,
         paddingTop: 16,
-        backgroundColor: "#FFFFFF"
+        backgroundColor: "#FFFFFF",
     },
     footerUpdate: {
         borderTopWidth: 1,
@@ -288,8 +264,8 @@ const styles = StyleSheet.create({
     },
     btnPrimary: {
         backgroundColor: "#16AA75",
-        paddingVertical: 16,
-        borderRadius: 12,
+        paddingVertical: 20,
+        borderRadius: 8,
         alignItems: "center",
         shadowColor: "#005C49",
         shadowOffset: { width: 0, height: 4 },
@@ -299,24 +275,24 @@ const styles = StyleSheet.create({
     },
     btnPrimaryDisabled: {
         backgroundColor: "#D5D5D5",
-        paddingVertical: 16,
-        borderRadius: 12,
+        paddingVertical: 20,
+        borderRadius: 8,
         alignItems: "center",
     },
     btnPrimaryText: {
+        fontFamily: "DMSans_700Bold",
         color: "#FFFFFF",
-        fontSize: 16,
-        fontWeight: "600",
+        fontSize: 20,
     },
     btnPrimaryTextDisabled: {
+        fontFamily: "DMSans_700Bold",
         color: "#828282",
-        fontSize: 16,
-        fontWeight: "600",
+        fontSize: 20,
     },
     btnSecondary: {
         backgroundColor: "#D5D5D5",
-        paddingVertical: 16,
-        borderRadius: 12,
+        paddingVertical: 20,
+        borderRadius: 8,
         alignItems: "center",
         shadowColor: "#979797",
         shadowOffset: { width: 0, height: 4 },
@@ -325,8 +301,30 @@ const styles = StyleSheet.create({
         elevation: 4,
     },
     btnSecondaryText: {
+        fontFamily: "DMSans_700Bold",
         color: "#6A6A6A",
-        fontSize: 16,
-        fontWeight: "600",
+        fontSize: 20,
+    },
+});
+
+const emojiGridStyles = StyleSheet.create({
+    list: {
+        paddingHorizontal: 16,
+        paddingBottom: 24,
+        gap: 12,
+    },
+    row: {
+        gap: 12,
+        justifyContent: "space-between",
+    },
+    tile: {
+        flex: 1,
+        aspectRatio: 1,
+        borderRadius: 8,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    emoji: {
+        fontSize: 32,
     },
 });

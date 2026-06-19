@@ -1,148 +1,134 @@
-import React, { useCallback, useState } from "react"
-import {
-    View,
-    Text,
-    StyleSheet,
-    ScrollView,
-    SafeAreaView,
-    TouchableOpacity,
-    ActivityIndicator,
-    RefreshControl,
-    Alert,
-    Image,
-} from "react-native"
-import { router, useLocalSearchParams } from "expo-router"
-import { useFocusEffect } from "@react-navigation/native"
-import { Ionicons } from "@expo/vector-icons"
-import { incomeService } from "@/services/incomeService"
-import { tasksService } from "@/services/tasksService"
-import { Income, IncomeStatus } from "@/types/Income"
-import { Task, TaskType } from "@/types/Task"
-import { AllowanceFrequency } from "@/types/Allowance"
+import React, { useCallback, useState } from "react";
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, ActivityIndicator, RefreshControl, Alert, Image } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
+import { incomeService } from "@/services/incomeService";
+import { tasksService } from "@/services/tasksService";
+import { Task, TaskType } from "@/types/Task";
+import { Income, IncomeStatus } from "@/types/Income";
+import { AllowanceFrequency } from "@/types/Allowance";
+import { formatMoney } from "@/utils/money";
 
-const WEEKDAYS_FR = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"]
+const WEEKDAYS_FR = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
 
 const getNextPaymentLabel = (dateStr: string): string => {
-    const date = new Date(dateStr)
-    const today = new Date()
-    const diffDays = Math.ceil((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-    const dayName = WEEKDAYS_FR[date.getDay()]
-    if (diffDays <= 0) return "À verser aujourd'hui"
-    if (diffDays <= 7) return `À verser ce ${dayName}`
-    return `À verser le ${date.toLocaleDateString("fr-FR", { day: "2-digit", month: "long" })}`
-}
+    const date = new Date(dateStr);
+    const today = new Date();
+    const diffDays = Math.ceil((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const dayName = WEEKDAYS_FR[date.getDay()];
+    if (diffDays <= 0) return "À verser aujourd'hui";
+    if (diffDays <= 7) return `À verser ce ${dayName}`;
+    return `À verser le ${date.toLocaleDateString("fr-FR", { day: "2-digit", month: "long" })}`;
+};
 
 const getFrequencyLabel = (frequency: AllowanceFrequency): string => {
     switch (frequency) {
-        case AllowanceFrequency.WEEKLY: return "hebdomadaire"
-        case AllowanceFrequency.BIWEEKLY: return "quinzaine"
-        case AllowanceFrequency.MONTHLY: return "mensuel"
-        default: return ""
+        case AllowanceFrequency.WEEKLY:
+            return "hebdomadaire";
+        case AllowanceFrequency.BIWEEKLY:
+            return "quinzaine";
+        case AllowanceFrequency.MONTHLY:
+            return "mensuel";
+        default:
+            return "";
     }
-}
+};
 
 const getTaskTypeLabel = (type: TaskType): string => {
     switch (type) {
         case TaskType.WEEKLY:
-        case TaskType.MONTHLY: return "Régulière"
-        case TaskType.PONCTUAL: return "Ponctuelle"
-        default: return "Ponctuelle"
+        case TaskType.MONTHLY:
+            return "Régulière";
+        case TaskType.PONCTUAL:
+            return "Ponctuelle";
+        default:
+            return "Ponctuelle";
     }
-}
+};
 
 type EnrichedTaskIncome = {
-    income: Income
-    task: Task | null
-}
+    income: Income;
+    task: Task | null;
+};
 
 export default function ParentRevenus() {
-    const { childId, childName } = useLocalSearchParams<{ childId: string; childName: string }>()
+    const { childId, childName } = useLocalSearchParams<{ childId: string; childName: string }>();
 
-    const [incomes, setIncomes] = useState<Income[]>([])
-    const [tasks, setTasks] = useState<Task[]>([])
-    const [loading, setLoading] = useState(true)
-    const [refreshing, setRefreshing] = useState(false)
-    const [sending, setSending] = useState(false)
+    const [incomes, setIncomes] = useState<Income[]>([]);
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [sending, setSending] = useState(false);
 
-    const allowanceIncome = incomes.find((i) => i.allowance != null) ?? null
+    const allowanceIncome = incomes.find((i) => i.allowance != null) ?? null;
     const taskIncomes: EnrichedTaskIncome[] = incomes
         .filter((i) => i.task != null)
         .map((income) => ({
             income,
             task: tasks.find((t) => t.id === income.task) ?? null,
-        }))
+        }));
 
-    const totalAmount = incomes
-        .filter((i) => i.status === "PENDING")
-        .reduce((sum, i) => sum + (i.amount ?? 0), 0)
+    const totalAmount = incomes.filter((i) => i.status === "PENDING").reduce((sum, i) => sum + (i.amount ?? 0), 0);
 
-    const isEmpty = incomes.length === 0
+    const isEmpty = incomes.length === 0;
 
     const loadData = async () => {
-        if (!childId) return
+        if (!childId) return;
         try {
-            const [fetchedIncomes, fetchedTasks] = await Promise.all([
-                incomeService.getIncomes({ childId }),
-                tasksService.getAllTasks({ childId }),
-            ])
-            setIncomes(fetchedIncomes)
-            setTasks(fetchedTasks)
+            const [fetchedIncomes, fetchedTasks] = await Promise.all([incomeService.getIncomes({ childId }), tasksService.getAllTasks({ childId })]);
+            setIncomes(fetchedIncomes);
+            setTasks(fetchedTasks);
         } catch (error) {
-            console.error("Erreur chargement revenus:", error)
+            console.error("Erreur chargement revenus:", error);
         } finally {
-            setLoading(false)
-            setRefreshing(false)
+            setLoading(false);
+            setRefreshing(false);
         }
-    }
+    };
 
     useFocusEffect(
         useCallback(() => {
-            setLoading(true)
-            loadData()
-        }, [childId])
-    )
+            setLoading(true);
+            loadData();
+        }, [childId]),
+    );
 
     const onRefresh = () => {
-        setRefreshing(true)
-        loadData()
-    }
+        setRefreshing(true);
+        loadData();
+    };
 
     const handleSendIncome = async () => {
-        if (!childId || totalAmount <= 0) return
-        Alert.alert(
-            "Verser les revenus",
-            `Confirmer le versement de ${totalAmount.toFixed(2)}€ à ${childName} ?`,
-            [
-                { text: "Annuler", style: "cancel" },
-                {
-                    text: "Verser",
-                    style: "default",
-                    onPress: async () => {
-                        setSending(true)
-                        try {
-                            await incomeService.sendIncome(childId)
-                            await loadData()
-                        } catch {
-                            Alert.alert("Erreur", "Impossible de verser les revenus.")
-                        } finally {
-                            setSending(false)
-                        }
-                    },
+        if (!childId || totalAmount <= 0) return;
+        Alert.alert("Verser les revenus", `Confirmer le versement de ${formatMoney(totalAmount)}€ à ${childName} ?`, [
+            { text: "Annuler", style: "cancel" },
+            {
+                text: "Verser",
+                style: "default",
+                onPress: async () => {
+                    setSending(true);
+                    try {
+                        await incomeService.sendIncome(childId);
+                        await loadData();
+                    } catch {
+                        Alert.alert("Erreur", "Impossible de verser les revenus.");
+                    } finally {
+                        setSending(false);
+                    }
                 },
-            ]
-        )
-    }
+            },
+        ]);
+    };
 
     const handleUpdateStatus = async (incomeId: string, newStatus: IncomeStatus) => {
         try {
-            await incomeService.updateIncomeStatus(incomeId, newStatus)
-            setIncomes((prev) =>
-                prev.map((i) => (i.id === incomeId ? { ...i, status: newStatus } : i))
-            )
+            await incomeService.updateIncomeStatus(incomeId, newStatus);
+            setIncomes((prev) => prev.map((i) => (i.id === incomeId ? { ...i, status: newStatus } : i)));
         } catch {
-            Alert.alert("Erreur", "Impossible de mettre à jour le statut.")
+            Alert.alert("Erreur", "Impossible de mettre à jour le statut.");
         }
-    }
+    };
 
     if (loading) {
         return (
@@ -151,7 +137,7 @@ export default function ParentRevenus() {
                     <ActivityIndicator size="large" color="#846DED" />
                 </View>
             </SafeAreaView>
-        )
+        );
     }
 
     return (
@@ -167,28 +153,18 @@ export default function ParentRevenus() {
             <ScrollView
                 style={styles.scrollView}
                 showsVerticalScrollIndicator={false}
-                refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#846DED" />
-                }
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#846DED" />}
             >
                 {/* Section montant */}
                 <View style={styles.amountSection}>
-                    <Text style={styles.amountText}>
-                        {totalAmount.toFixed(2)}€
-                    </Text>
+                    <Text style={styles.amountText}>{formatMoney(totalAmount)}€</Text>
                     {allowanceIncome?.allowance?.nextExecution && (
-                        <Text style={styles.amountSubtitle}>
-                            {getNextPaymentLabel(allowanceIncome.allowance.nextExecution)}
-                        </Text>
+                        <Text style={styles.amountSubtitle}>{getNextPaymentLabel(allowanceIncome.allowance.nextExecution)}</Text>
                     )}
 
                     {/* Bouton verser si montant > 0 */}
                     {totalAmount > 0 && (
-                        <TouchableOpacity
-                            style={styles.sendButton}
-                            onPress={handleSendIncome}
-                            disabled={sending}
-                        >
+                        <TouchableOpacity style={styles.sendButton} onPress={handleSendIncome} disabled={sending}>
                             {sending ? (
                                 <ActivityIndicator size="small" color="#fff" />
                             ) : (
@@ -215,22 +191,15 @@ export default function ParentRevenus() {
                 >
                     {allowanceIncome?.allowance ? (
                         <>
-                            <Text style={styles.allowanceRowLabel}>
-                                Argent de poche{" "}
-                                {getFrequencyLabel(allowanceIncome.allowance.frequency)}
-                            </Text>
+                            <Text style={styles.allowanceRowLabel}>Argent de poche {getFrequencyLabel(allowanceIncome.allowance.frequency)}</Text>
                             <View style={styles.allowanceRowRight}>
-                                <Text style={styles.allowanceRowAmount}>
-                                    {allowanceIncome.allowance.amount.toFixed(2)}€
-                                </Text>
+                                <Text style={styles.allowanceRowAmount}>{formatMoney(allowanceIncome.allowance.amount)}€</Text>
                                 <Ionicons name="chevron-forward" size={16} color="#999" />
                             </View>
                         </>
                     ) : (
                         <>
-                            <Text style={styles.allowanceRowLabel}>
-                                Verser de l'argent de poche régulièrement
-                            </Text>
+                            <Text style={styles.allowanceRowLabel}>Verser de l'argent de poche régulièrement</Text>
                             <Ionicons name="chevron-forward" size={16} color="#999" />
                         </>
                     )}
@@ -242,12 +211,7 @@ export default function ParentRevenus() {
                 {taskIncomes.length > 0 && (
                     <View style={styles.taskList}>
                         {taskIncomes.map(({ income, task }) => (
-                            <TaskIncomeCard
-                                key={income.id}
-                                income={income}
-                                task={task}
-                                onUpdateStatus={handleUpdateStatus}
-                            />
+                            <TaskIncomeCard key={income.id} income={income} task={task} onUpdateStatus={handleUpdateStatus} />
                         ))}
                     </View>
                 )}
@@ -255,14 +219,8 @@ export default function ParentRevenus() {
                 {/* Empty state */}
                 {isEmpty && (
                     <View style={styles.emptyState}>
-                        <Image
-                            source={require("@/assets/moneybuddy_mascotte.png")}
-                            style={styles.emptyImage}
-                            resizeMode="contain"
-                        />
-                        <Text style={styles.emptyText}>
-                            Enseignez la valeur de l'effort en lui attribuant des petites tâches.
-                        </Text>
+                        <Image source={require("@/assets/moneybuddy_mascotte.png")} style={styles.emptyImage} resizeMode="contain" />
+                        <Text style={styles.emptyText}>Enseignez la valeur de l'effort en lui attribuant des petites tâches.</Text>
                     </View>
                 )}
 
@@ -284,47 +242,43 @@ export default function ParentRevenus() {
                 </TouchableOpacity>
             </View>
         </SafeAreaView>
-    )
+    );
 }
 
 type TaskIncomeCardProps = {
-    income: Income
-    task: Task | null
-    onUpdateStatus: (id: string, status: IncomeStatus) => void
-}
+    income: Income;
+    task: Task | null;
+    onUpdateStatus: (id: string, status: IncomeStatus) => void;
+};
 
 const TaskIncomeCard = ({ income, task, onUpdateStatus }: TaskIncomeCardProps) => {
-    const isPending = income.status === "PENDING"
-    const isAccepted = income.status === "ACCEPTED"
-    const isRefused = income.status === "REFUSED"
+    const isPending = income.status === "PENDING";
+    const isAccepted = income.status === "ACCEPTED";
+    const isRefused = income.status === "REFUSED";
 
-    const taskType = task?.type ?? TaskType.PONCTUAL
-    const isPonctual = taskType === TaskType.PONCTUAL
-    const description = task?.description ?? income.task ?? "Tâche"
-    const moneyReward = task ? parseFloat(task.moneyReward) : income.amount
-    const coinReward = task ? parseInt(task.coinReward) : 0
+    const taskType = task?.type ?? TaskType.PONCTUAL;
+    const isPonctual = taskType === TaskType.PONCTUAL;
+    const description = task?.description ?? income.task ?? "Tâche";
+    const moneyReward = task ? task.moneyReward : income.amount;
+    const coinReward = task ? task.coinReward : 0;
 
     const handlePress = () => {
         if (isPending) {
-            Alert.alert(
-                "Valider la tâche",
-                `Voulez-vous accepter ou refuser "${description}" ?`,
-                [
-                    { text: "Annuler", style: "cancel" },
-                    {
-                        text: "Refuser",
-                        style: "destructive",
-                        onPress: () => onUpdateStatus(income.id, "REFUSED"),
-                    },
-                    {
-                        text: "Accepter",
-                        style: "default",
-                        onPress: () => onUpdateStatus(income.id, "ACCEPTED"),
-                    },
-                ]
-            )
+            Alert.alert("Valider la tâche", `Voulez-vous accepter ou refuser "${description}" ?`, [
+                { text: "Annuler", style: "cancel" },
+                {
+                    text: "Refuser",
+                    style: "destructive",
+                    onPress: () => onUpdateStatus(income.id, "REFUSED"),
+                },
+                {
+                    text: "Accepter",
+                    style: "default",
+                    onPress: () => onUpdateStatus(income.id, "ACCEPTED"),
+                },
+            ]);
         }
-    }
+    };
 
     return (
         <View style={[styles.taskCard, isAccepted && styles.taskCardAccepted]}>
@@ -345,18 +299,14 @@ const TaskIncomeCard = ({ income, task, onUpdateStatus }: TaskIncomeCardProps) =
                     )}
                     {moneyReward > 0 && (
                         <View style={styles.badgeReward}>
-                            <Text style={styles.badgeRewardText}>+{moneyReward.toFixed(2)}€</Text>
+                            <Text style={styles.badgeRewardText}>+{formatMoney(moneyReward)}€</Text>
                         </View>
                     )}
                 </View>
 
                 {/* Description */}
                 <Text
-                    style={[
-                        styles.taskDescription,
-                        isAccepted && styles.taskDescriptionAccepted,
-                        isRefused && styles.taskDescriptionRefused,
-                    ]}
+                    style={[styles.taskDescription, isAccepted && styles.taskDescriptionAccepted, isRefused && styles.taskDescriptionRefused]}
                     numberOfLines={2}
                 >
                     {description}
@@ -378,8 +328,8 @@ const TaskIncomeCard = ({ income, task, onUpdateStatus }: TaskIncomeCardProps) =
                 {isRefused && <Ionicons name="close-outline" size={22} color="#fff" />}
             </TouchableOpacity>
         </View>
-    )
-}
+    );
+};
 
 const styles = StyleSheet.create({
     container: {
@@ -652,4 +602,4 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: "#fff",
     },
-})
+});

@@ -1,678 +1,482 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
-import {
-	View,
-	Text,
-	TouchableOpacity,
-	StyleSheet,
-	ScrollView,
-	ActivityIndicator,
-	RefreshControl,
-	SafeAreaView,
-	Image
-} from "react-native";
-import { useFonts } from "expo-font";
-import { DMSans_700Bold, DMSans_400Regular, DMSans_600SemiBold } from "@expo-google-fonts/dm-sans";
-import { Link, router } from "expo-router";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, RefreshControl, Image } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { UserStorage } from "@/utils/storage";
 import { SubAccount } from "@/types/Account";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { router } from "expo-router";
 import { tasksService } from "@/services/tasksService";
-import { Ionicons } from "@expo/vector-icons";
-import { Chapter } from "@/types/Chapter";
 import { chapterService } from "@/services/chapterService";
-import ManageTasksModal from "@/components/ManageTasksModal";
+import { colors, spacing, typography, shadows } from "@/styles";
+import { ValidateTasksModal } from "@/components/modal/ValidateTasksModal";
+import Bells from "@/components/Icons/Bells";
+import CheckMark from "@/components/Icons/CheckMark";
+import MoneyBill from "@/components/Icons/MoneyBill";
+import ListCheck from "@/components/Icons/ListCheck";
+import { Task } from "@/types/Task";
+import { ChapterWithoutCoursesWithProgress, CourseWithoutSectionsWithProgress } from "@/types/Chapter";
+import ChildCard from "@/components/ChildCard";
+import CourseCard from "@/components/CourseCard";
+import { logger } from "@/utils/logger";
+import { formatMoney } from "@/utils/money";
 
-interface ChildSummary {
-	child: SubAccount;
-	tasksCount: number;
-	completedTasksCount: number;
-	loading: boolean;
-}
-
-enum showModalTypes {
-	SHOW_CHILDREN_TASKS = "SHOW_CHILDREN_TASKS",
+export interface ChildSummary {
+    child: SubAccount;
+    tasksCount: number;
+    completedTasksCount: number;
+    preValidateTasksCount: number;
+    preValidateTasks?: Task[];
+    loading: boolean;
 }
 
 export default function ParentHome() {
-	const { user, refreshUserData } = useAuthContext();
-	const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
-	const [childrenSummary, setChildrenSummary] = useState<ChildSummary[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [refreshing, setRefreshing] = useState(false);
+    const { user, refreshUserData } = useAuthContext();
+    const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
+    const [childrenSummary, setChildrenSummary] = useState<ChildSummary[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [chapters, setChapters] = useState<ChapterWithoutCoursesWithProgress[]>([]);
+    const [currentCourse, setCurrentCourse] = useState<CourseWithoutSectionsWithProgress | null>(null);
+    const [currentChapter, setCurrentChapter] = useState<ChapterWithoutCoursesWithProgress | null>(null);
 
-	const [chapter, setChapter] = useState<Chapter | null>();
-	const [progressBarWidth, setProgressBarWidth] = useState(0);
-	const [showModal, setShowModal] = useState<showModalTypes | null>(null);
+    const childAccounts = useMemo(() => user?.subAccounts?.filter((account) => account.role === "CHILD") || [], [user?.subAccounts]);
 
-	const [fontsLoaded] = useFonts({
-		DMSans_700Bold,
-		DMSans_400Regular,
-		DMSans_600SemiBold,
-	});
+    const loadData = useCallback(async () => {
+        try {
+            const accountData = await UserStorage.getSubAccount();
+            setSubAccount(accountData);
+        } catch (error) {
+            console.error("Error loading account:", error);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
-	const fontStylesTitle = fontsLoaded ? { fontFamily: "DMSans_700Bold" } : {};
-	const fontStylesRegular = fontsLoaded ? { fontFamily: "DMSans_400Regular" } : {};
-	const fontStylesSemiBold = fontsLoaded ? { fontFamily: "DMSans_600SemiBold" } : {};
+    const loadChildrenData = useCallback(async () => {
+        if (childAccounts.length === 0) return;
 
-	const childAccounts = useMemo(
-		() => user?.subAccounts?.filter((account) => account.role === "CHILD") || [],
-		[user?.subAccounts]
-	);
+        // Initialiser le state avec les enfants
+        const initialSummaries: ChildSummary[] = childAccounts.map((child) => ({
+            child,
+            tasksCount: 0,
+            completedTasksCount: 0,
+            preValidateTasksCount: 0,
+            loading: true,
+        }));
+        setChildrenSummary(initialSummaries);
 
-	const loadData = useCallback(async () => {
-		try {
-			const accountData = await UserStorage.getSubAccount();
-			setSubAccount(accountData);
+        // Charger les tâches pour chaque enfant
+        for (let i = 0; i < childAccounts.length; i++) {
+            const child = childAccounts[i];
+            try {
+                const tasks = await tasksService.getTasksByChild(child.id);
+                const completedTasks = tasks.filter((task) => task.status === "COMPLETED");
+                const preValidateTasks = tasks.filter((task) => task.status === "PRE_VALIDATE");
+                setChildrenSummary((prev) =>
+                    prev.map((summary, index) =>
+                        index === i
+                            ? {
+                                  ...summary,
+                                  tasksCount: tasks.length,
+                                  completedTasksCount: completedTasks.length,
+                                  preValidateTasksCount: preValidateTasks.length,
+                                  preValidateTasks: preValidateTasks,
+                                  loading: false,
+                              }
+                            : summary,
+                    ),
+                );
+            } catch (error) {
+                console.error(`Error loading tasks for child ${child.id}:`, error);
+                setChildrenSummary((prev) => prev.map((summary, index) => (index === i ? { ...summary, loading: false } : summary)));
+            }
+        }
+    }, [childAccounts]);
 
-			const chapterData = await chapterService.getChaptersByCategory();
-			const currentChapter = chapterData.find((chap) => !chap.isCompleted) ?? null
-			setChapter(currentChapter);
-	        if (currentChapter?.id) {
-				const courses = await chapterService.getChapterCourses(currentChapter.id);
-				const completed = courses.filter((course) => course.completed).length;
-				setProgressBarWidth(Math.round((completed / courses.length) * 100));
-			}
-		} catch (error) {
-			console.error("Error loading account:", error);
-		} finally {
-			setLoading(false);
-		}
-	}, []);
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
-	const loadChildrenData = useCallback(async () => {
-		if (childAccounts.length === 0) return;
+    useEffect(() => {
+        if (childAccounts.length > 0) {
+            loadChildrenData();
+        } else {
+            setChildrenSummary([]);
+        }
+    }, [childAccounts.length, loadChildrenData]);
 
-		// Initialiser le state avec les enfants
-		const initialSummaries: ChildSummary[] = childAccounts.map((child) => ({
-			child,
-			tasksCount: 0,
-			completedTasksCount: 0,
-			loading: true,
-		}));
-		setChildrenSummary(initialSummaries);
+    useEffect(() => {
+        const fetchChapters = async () => {
+            try {
+                // Récupérer les chapitres pour le rôle PARENT
+                const parentChapters = await chapterService.getAllChapters();
+                setChapters(parentChapters);
 
-		// Charger les tâches pour chaque enfant
-		for (let i = 0; i < childAccounts.length; i++) {
-			const child = childAccounts[i];
-			try {
-				const tasks = await tasksService.getAllTasks({childId: child.id});
-				const completedTasks = tasks.filter((task) => task.done);
+                if (parentChapters.length > 0) {
+                    // Récupérer les cours de tous les chapitres
+                    const coursesData = await Promise.all(
+                        parentChapters.map(async (chapter) => {
+                            return await chapterService.getChapterCourses(chapter.id);
+                        }),
+                    );
+                    // coursesData[i] corresponds to parentChapters[i]
+                    const flattenedCoursesWithChapter = coursesData.flatMap((courses, i) =>
+                        courses.map((course) => ({ course, chapter: parentChapters[i] })),
+                    );
 
-				setChildrenSummary((prev) =>
-					prev.map((summary, index) =>
-						index === i
-							? {
-									...summary,
-									tasksCount: tasks.length,
-									completedTasksCount: completedTasks.length,
-									loading: false,
-							  }
-							: summary
-					)
-				);
-			} catch (error) {
-				console.error(`Error loading tasks for child ${child.id}:`, error);
-				setChildrenSummary((prev) =>
-					prev.map((summary, index) => (index === i ? { ...summary, loading: false } : summary))
-				);
-			}
-		}
-	}, [childAccounts]);
+                    // Priorité : cours en cours → premier débloqué non terminé → premier cours
+                    const best =
+                        flattenedCoursesWithChapter.find(({ course: c }) => !c.locked && !c.completed && c.progressPercentage > 0) ??
+                        flattenedCoursesWithChapter.find(({ course: c }) => !c.locked && !c.completed) ??
+                        flattenedCoursesWithChapter[0] ??
+                        null;
 
-	useEffect(() => {
-		loadData();
-	}, [loadData]);
+                    setCurrentCourse(best?.course ?? null);
+                    setCurrentChapter(best?.chapter ?? null);
+                }
+            } catch (error) {
+                console.error("Error loading chapters:", error);
+            }
+        };
 
-	useEffect(() => {
-		if (childAccounts.length > 0) {
-			loadChildrenData();
-		} else {
-			setChildrenSummary([]);
-		}
-	}, [childAccounts.length, loadChildrenData]);
+        fetchChapters();
+    }, []);
 
-	const onRefresh = useCallback(async () => {
-		setRefreshing(true);
-		try {
-			await refreshUserData();
-		} finally {
-			setRefreshing(false);
-		}
-	}, [refreshUserData]);
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        try {
+            await refreshUserData();
+        } finally {
+            setRefreshing(false);
+        }
+    }, [refreshUserData]);
 
-	const getGreeting = () => {
-		const hour = new Date().getHours();
-		if (6 <= hour || hour < 18) return "Bonjour";
-		return "Bonsoir";
-	};
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return "Bonjour";
+        if (hour < 18) return "Bon après-midi";
+        return "Bonsoir";
+    };
 
-	const getTotalMoney = () => {
-		return childAccounts.reduce((total, child) => {
-			return total + parseFloat(child.money || "0");
-		}, 0);
-	};
+    const getTotalMoney = () => {
+        return childAccounts.reduce((total, child) => {
+            return total + (child.income ?? 0);
+        }, 0);
+    };
 
-	const getTotalIncome = () => {
-		return childAccounts.reduce((total, child) => {
-			return total + parseFloat(child.income?.toString() || "0");
-		}, 0);
-	}
+    const getTotalTasks = () => {
+        return childrenSummary.reduce((total, summary) => {
+            return total + summary.tasksCount;
+        }, 0);
+    };
 
-	const getTotalTasks = () => {
-		return childrenSummary.reduce((total, summary) => {
-			return total + summary.tasksCount;
-		}, 0);
-	};
+    const getTotalCompletedTasks = () => {
+        return childrenSummary.reduce((total, summary) => {
+            return total + summary.completedTasksCount;
+        }, 0);
+    };
 
-	const getTotalCompletedTasks = () => {
-		return childrenSummary.reduce((total, summary) => {
-			return total + summary.completedTasksCount;
-		}, 0);
-	};
+    const getTotalPreValidateTasks = () => {
+        return childrenSummary.reduce((total, summary) => {
+            return total + summary.preValidateTasksCount;
+        }, 0);
+    };
 
-	const renderChildCard = (summary: ChildSummary) => {
-		const { child, tasksCount, completedTasksCount, loading: childLoading } = summary;
-		const url = `https://api.dicebear.com/9.x/${child.iconStyle}/png?seed=${child.iconName}`
-		const money = parseFloat(child.money || "0");
-		const completionRate = tasksCount > 0 ? Math.round((completedTasksCount / tasksCount) * 100) : 0;
+    if (loading) {
+        return (
+            <View style={[styles.container, styles.center]}>
+                <ActivityIndicator size="large" color={colors.primary[100]} />
+                <Text style={[styles.loadingText, typography.regular]}>Chargement...</Text>
+            </View>
+        );
+    }
 
-		return (
-			<TouchableOpacity 
-				key={child.id} 
-				style={styles.childCard} 
-				onPress={() => router.push({
-    				pathname: "/(app)/children",
-    				params: { id: child.id }
-					})}
-				>
-				<View style={styles.childCardContainer}>
-					<View style={styles.childCardContainer}>
-						<Image source={{ uri: url }} style={styles.childCardImg} />
-						<View style={styles.childCardContainerCol}>
-							<Text style={{...styles.childCardTitle, ...{fontSize: 16}}}>{child.name}</Text>
-							<View style={{...styles.iconContainer, ...styles.childCardContainer, ...{backgroundColor: "#97C9FF66", paddingHorizontal: 5, paddingVertical: 3}}}>
-								<Ionicons name="wallet-outline" size={15} color="#52A5FF" style={styles.icon} />
-								<Text style={{...styles.childCardTitle, ...{fontSize: 12, paddingHorizontal: 5, paddingVertical: 3}}}>{child.money}€</Text>
-							</View>
-						</View>
-					</View>
-					<Ionicons name="arrow-back" size={24} color="#2F2F2F" style={[styles.icon, {transform: [{rotate: "180deg"}]}]} />
-				</View>
+    return (
+        <ScrollView
+            style={styles.content}
+            showsVerticalScrollIndicator={false}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary[100]} />}
+        >
+            <View style={{ backgroundColor: colors.screenBackground }}>
+                {/* Header */}
+                <View style={styles.header}>
+                    <Text style={[styles.nameText, typography.bold]}>
+                        {getGreeting()}, {subAccount?.name || "Parent"} !
+                    </Text>
+                    <TouchableOpacity style={styles.notifsIcon}>
+                        <Bells />
+                    </TouchableOpacity>
+                </View>
 
-				<View style={styles.childCardContainer}>
-					<View style={styles.childCardIconContainer}>
-						<View style={styles.iconContainer}>
-							<Ionicons name="wallet-outline" size={20} color={"#6A6A6A"} style={styles.icon}/>
-						</View>
-						<Text style={styles.childCardIconText}>Verser</Text>
-					</View>
+                {/* Infos */}
+                <View style={styles.infosContainer}>
+                    <Text style={styles.infosTitle}>Vous avez ...</Text>
+                    <View style={styles.infoCardsContainer}>
+                        {/* Taches à valider */}
+                        <View style={styles.infosCard}>
+                            <View style={styles.infoCardHeader}>
+                                <View style={[styles.infoCardHeaderIcon, styles.preValidateTasksCardIcon]}>
+                                    <CheckMark width={20} height={20} />
+                                </View>
+                            </View>
+                            <View style={{ flexDirection: "column", gap: spacing.xs }}>
+                                <Text style={styles.infoCardHeaderTitle}>{getTotalPreValidateTasks()}</Text>
+                                <Text style={styles.infoCardSubtitle}>Tâches en attente de validation</Text>
+                            </View>
+                            <TouchableOpacity style={styles.preValidateTasksCardButton} onPress={() => setModalVisible(true)}>
+                                <Text>Voir les tâches</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <View style={{ flex: 1, display: "flex", flexDirection: "column", gap: spacing.base }}>
+                            <View style={styles.infosCard}>
+                                <View style={styles.infoCardHeader}>
+                                    <View style={[styles.infoCardHeaderIcon, styles.moneyCardIcon]}>
+                                        <MoneyBill color={colors.primary[100]} width={20} height={20} />
+                                    </View>
+                                    <Text style={styles.infoCardHeaderTitle}>{formatMoney(getTotalMoney())} €</Text>
+                                </View>
+                                <Text style={styles.infoCardSubtitle}>A verser samedi</Text>
+                            </View>
+                            <View style={styles.infosCard}>
+                                <View style={styles.infoCardHeader}>
+                                    <View style={[styles.infoCardHeaderIcon, styles.completedTasksCardIcon]}>
+                                        <ListCheck width={20} height={20} />
+                                    </View>
+                                    <Text style={styles.infoCardHeaderTitle}>
+                                        {getTotalCompletedTasks()}/{getTotalTasks()}
+                                    </Text>
+                                </View>
+                                <Text style={styles.infoCardSubtitle}>Tâches terminées</Text>
+                            </View>
+                        </View>
+                    </View>
+                </View>
 
-					<View style={styles.childCardIconContainer}>
-						<View style={styles.iconContainer}>
-							<Ionicons name="ticket-outline" size={20} color={"#6A6A6A"} style={styles.icon}/>
-						</View>
-						<Text style={styles.childCardIconText}>Dépensé</Text>
-					</View>
+                {/* Message */}
+                <View style={styles.messageContainer}>
+                    <View style={{ flexDirection: "row", gap: spacing.md }}>
+                        <Image source={require("@/assets/images/home/money-bag.png")} style={styles.messageImage} />
+                        <View style={{ flex: 1, flexShrink: 1, gap: spacing.xs }}>
+                            <Text style={styles.messageText}>Créez un rituel clair d'argent de poche ! 💸</Text>
+                            <Text style={styles.messageSubtext}>
+                                Un versement régulier aide votre enfant à planifier et comprendre la valeur de l'argent.
+                            </Text>
+                        </View>
+                    </View>
+                    <View style={{ flexDirection: "row", gap: spacing.md, marginTop: spacing.base }}>
+                        <Text style={{ color: colors.carbon[80], ...typography.bold, paddingVertical: spacing.md, paddingHorizontal: spacing.base }}>
+                            Ignorer
+                        </Text>
+                        <TouchableOpacity
+                            style={{
+                                backgroundColor: colors.primary[100],
+                                paddingVertical: spacing.md,
+                                paddingHorizontal: spacing.base,
+                                borderRadius: 4,
+                                flex: 1,
+                                justifyContent: "center",
+                                alignItems: "center",
+                            }}
+                        >
+                            <Text style={{ color: colors.white, ...typography.bold }} onPress={() => router.push("/allowance")}>
+                                Configurer le versement
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
 
-					<View style={styles.childCardIconContainer}>
-						<View style={{...styles.iconContainer, ...{display: "flex", flexDirection: "row", gap: 2, alignItems: "center"}}}>
-							<Ionicons name="list-outline" size={20} color={"#6A6A6A"} style={styles.icon}/>
-							{tasksCount ? 
-								<Text style={styles.childCardIconText}> {completedTasksCount} / {tasksCount}</Text> 
-								: <Text style={styles.childCardIconText}>0</Text>
-							}
-						</View>
-						<Text style={styles.childCardIconText}>Tâches faites</Text>
-					</View>
-				</View>
-			</TouchableOpacity>
-		);
-	};
+                {/* Children Cards */}
+                {childrenSummary.length > 0 && (
+                    <View style={styles.childrenCardsContainer}>
+                        <Text style={[styles.infosTitle, { paddingHorizontal: spacing.xl }]}>Mes enfants</Text>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            style={{ marginTop: spacing.base, paddingHorizontal: spacing.xl }}
+                            contentContainerStyle={{ gap: spacing.base, paddingRight: spacing.xl, paddingVertical: spacing.xs }}
+                        >
+                            {childrenSummary.map((childSummary) => (
+                                <ChildCard key={childSummary.child.id} childSummary={childSummary} />
+                            ))}
+                        </ScrollView>
+                    </View>
+                )}
+                {/* Cours */}
+                <View style={styles.coursesContainer}>
+                    <Text style={styles.infosTitle}>Continuez votre progression !</Text>
+                    {currentCourse && (
+                        <View style={styles.courseCardWrapper}>
+                            <CourseCard
+                                course={currentCourse}
+                                chapterImageUrl={currentChapter?.imageUrl}
+                                onPress={() => router.push(`/chapters/courses/${currentCourse.id}`)}
+                            />
+                        </View>
+                    )}
+                </View>
 
-	if (loading) {
-		return (
-			<View style={[styles.container, styles.center]}>
-				<ActivityIndicator size="large" color="#6C5CE7" />
-				<Text style={[styles.loadingText, fontStylesRegular]}>Chargement...</Text>
-			</View>
-		);
-	}
-
-	return (
-		<SafeAreaView style={styles.container}>
-			{ showModal === showModalTypes.SHOW_CHILDREN_TASKS 
-				&& <ManageTasksModal visible={showModal === showModalTypes.SHOW_CHILDREN_TASKS} onClose={() => setShowModal(null)} />}
-			<ScrollView
-				style={styles.content}
-				showsVerticalScrollIndicator={false}
-				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6C5CE7" />}
-			>
-				{/* Header */}
-				<View style={styles.header}>
-					<Text style={[styles.nameText, fontStylesTitle]}>
-						{`${getGreeting()}, ${subAccount?.name || "Parent"} !`}
-					</Text>
-					<View style={styles.headerNotificationContainer}>
-						<Ionicons name="notifications-outline" size={20} color="#846DED" style={styles.headerNotification} />
-					</View>
-				</View>
-
-				{/* Stats générales */}
-				<View style={styles.contentSetup}>
-					<Text style={{...styles.cardTitle, ...{paddingBottom: 20}}}>Vous avez ...</Text>
-					<View style={styles.generalStats}>
-						<View style={styles.statCard}>
-							<View style={{...styles.iconContainer, ...{backgroundColor: "#E1FFF6"}}}>
-								<Ionicons name="checkmark-circle-outline" size={20} color={"#16AA75"} style={styles.icon}/>
-							</View>
-							<Text style={styles.cardTitle}>{getTotalTasks() - getTotalCompletedTasks()}</Text>
-							<Text style={styles.cardText}>Tâches en attente de validation</Text>
-							<TouchableOpacity
-								style={{width: "100%"}}
-								onPress={() => {
-									setShowModal(showModalTypes.SHOW_CHILDREN_TASKS);
-								}}
-							>
-								<View style={styles.generalStatsButton}>
-									<Text style={styles.generalStatsButtonText}>Voir tout</Text>
-								</View>
-							</TouchableOpacity>
-						</View>
-
-						<View style={styles.generalStatsSecondary}>
-							<View style={styles.statCard}>
-								<View style={styles.cardTitleContainer}>
-									<View style={{...styles.iconContainer, ...{backgroundColor: "#E6E2FB"}}}>
-										<Ionicons name="wallet-outline" size={20} color={"#846DED"} style={styles.icon} />
-									</View>
-									<Text style={styles.cardTitle}>{getTotalIncome()}€</Text>
-								</View>
-								<Text style={styles.cardText}>À verser samedi</Text>
-							</View>
-
-							<View style={styles.statCard}>
-								<View style={styles.cardTitleContainer}>
-									<View style={{...styles.iconContainer, ...{backgroundColor: "#97C9FF66"}}}>
-										<Ionicons name="list-outline" size={20} color={"#52A5FF"} style={styles.icon} />
-									</View>
-									<Text style={styles.cardTitle}>{getTotalCompletedTasks()} / {getTotalTasks()}</Text>
-								</View>
-								<Text style={styles.cardText}>Tâches terminées</Text>
-							</View>
-						</View>
-					</View>
-				</View>
-				
-				
-				{/* Section Reminder - Rappel Versement */}
-				<View style={styles.contentSetup}>
-					<View style={styles.reminderSection}>
-						<View style={styles.reminderContainer}>
-							<Image 
-								source={require('@/assets/images/reminder/image_8.png')}
-							/>
-							<View style={{display: "flex", flexDirection: "column", gap: 10, maxWidth: "70%"}}>
-								<Text style={styles.reminderTitle}>
-									Créez un rituel clair d’argent de poche ! 💸
-								</Text>
-								<Text style={styles.reminderText}>
-									Un versement régulier aide votre enfant à planifier et comprendre la valeur de l’argent.
-								</Text>
-							</View>
-						</View>
-						<View style={styles.reminderContainer}>
-							<TouchableOpacity>
-								<Text style={styles.reminderIgnore}>Ignorer</Text>
-							</TouchableOpacity>
-							<TouchableOpacity
-								style={styles.reminderButtonContainer}
-							>
-								<Text style={styles.reminderButtonText}>Configurer le versement</Text>
-							</TouchableOpacity>
-						</View>
-					</View>
-				</View>
-
-
-				{/* Section Enfants */}
-				{childAccounts.length > 0 && (
-					<View style={styles.contentSetup}>
-						<Text style={{...styles.cardTitle, ...{paddingBottom: 20}}}>Mes enfants</Text>
-						<ScrollView
-							horizontal
-							showsHorizontalScrollIndicator={false}
-							contentContainerStyle={styles.childList}
-						>
-							{childAccounts.map((child, index) => renderChildCard(childrenSummary[index]))}
-						</ScrollView>
-					</View>
-				)}
-
-				{/* Get to course */}
-				{
-					chapter &&(
-						<View style={styles.contentSetup}>
-							<Text style={{...styles.cardTitle, ...{paddingBottom: 20}}}>Continuez votre progression !</Text>
-							<View style={styles.getCourseContainer}>
-								<Image 
-									style={styles.getCourseImage}
-									source={{uri: `https://pub-ce5bc62138bd4218b56745b7ccca587e.r2.dev/${chapter.imageUrl}`}}
-								/>
-								<Text style={styles.getCourseTitle}>{chapter.title}</Text>
-								<View style={styles.progressContainer}>
-									<View style={styles.progressBar}>
-										<View 
-										style={[
-											styles.progressFill, 
-											{ width: `${progressBarWidth}%` }
-										]} 
-										/>
-									</View>
-									<Text style={styles.progressText}>{progressBarWidth}%</Text>
-								</View>
-								<TouchableOpacity
-									style={{...styles.reminderButtonContainer, ...styles.getCourseButton}}
-									onPress={() => router.push(`/(app)/courses/${chapter.id}`)}
-								>
-									<Text style={styles.reminderButtonText}>Reprendre le cours</Text>
-								</TouchableOpacity>
-							</View>
-						</View>
-				
-				)}
-
-				<View style={styles.bottomPadding} />
-			</ScrollView>
-		</SafeAreaView>
-	);
+                <ValidateTasksModal
+                    visible={modalVisible}
+                    tasks={childrenSummary.flatMap((child) => child.preValidateTasks || [])}
+                    children={childAccounts}
+                    onClose={() => setModalVisible(false)}
+                    onValidateTask={async (task, done) => {
+                        await tasksService.completeTask(task.id, done);
+                        await loadChildrenData();
+                    }}
+                    onDeleteTask={async (task) => {
+                        await tasksService.deleteTask(task.id);
+                        await loadChildrenData();
+                    }}
+                />
+            </View>
+        </ScrollView>
+    );
 }
 
 const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: "#fff",
-	},
-	content: {
-		flex: 1,
-	},
-	center: {
-		justifyContent: "center",
-		alignItems: "center",
-	},
-	loadingText: {
-		marginTop: 12,
-		fontSize: 16,
-		color: "#666",
-	},
-	header: {
-		backgroundColor: "#fff",
-		display: "flex",
-		flexDirection: "row",
-		justifyContent: "space-between",
-		alignItems: "center",
-		paddingHorizontal: 20,
-		paddingTop: 20,
-		paddingBottom: 10,
-		borderBottomColor: "#BFD0EA",
-		borderBottomWidth: 1
-	},
-	headerNotification: {
-		padding: 4,
-	},
-	headerNotificationContainer: {
-		borderColor: "#BFD0EA",
-		borderWidth: 1,
-		borderRadius: 3
-	},
-	nameText: {
-		fontSize: 28,
-		fontWeight: "bold",
-		color: "#333",
-		marginBottom: 4,
-	},
-	roleText: {
-		fontSize: 16,
-		color: "#6C5CE7",
-		fontWeight: "500",
-	},
-	contentSetup : {
-		backgroundColor: "#EBF2FB",
-		paddingHorizontal: 20,
-		paddingVertical: 20,
-	},
-	generalStats: {
-		display: "flex",
-		flexDirection: "row",
-		gap: 20,
-	},
-	card: {
-		fontSize: 16,
-		fontWeight: "600",
-		color: "#333",
-	},
-	generalStatsSecondary: {
-		display: "flex",
-		flexDirection: "column",
-		gap: 20,
-		maxWidth: "47%"
-	},
-	generalStatsButton: {
-		paddingHorizontal: 16,
-		paddingVertical: 8,
-		borderRadius: 4,
-		backgroundColor: "#EBF2FB",
-		alignItems: "center",
-	},
-	generalStatsButtonText: {
-		fontSize: 16,
-		fontWeight: "300",
-		color: "#6A6A6A"
-	},
-	statCard: {
-		flex: 1,
-		display: "flex",
-		flexDirection: "column",
-		gap: 8,
-		justifyContent: "space-between",
-		backgroundColor: "#fff",
-		borderRadius: 4,
-		paddingVertical: 12,
-		paddingHorizontal: 12,
-		alignItems: "flex-start",
-		shadowColor: "#BFD0EA",
-		shadowOffset: {
-			width: 0,
-			height: 3.89,
-		},
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 4,
-	},
-	iconContainer: {
-		borderRadius: 6,
-	},
-	icon: {
-		padding: 4,
-	},
-	cardTitleContainer: {
-		display: "flex",
-		flexDirection: "row",
-		gap: 8,
-		alignItems: "center",
-	},
-	cardTitle: {
-		fontSize: 24,
-		fontWeight: "700",
-		color: "#333",
-	},
-	cardText: {
-		fontSize: 16,
-		fontWeight: "500",
-		color: "#333"
-	},
-	reminderSection: {
-		backgroundColor: "#BFD0EA99",
-		padding: 20,
-		borderRadius: 8,
-		display: "flex",
-		flexDirection: "column",
-		gap: 20,
-		alignItems: "center",
-	},
-	reminderContainer: {
-		display: "flex",
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 20,
-		justifyContent: "space-between",	
-	},
-	reminderIgnore: {
-		color: "#6A6A6A",
-		fontWeight: "700",
-		fontSize: 16,
-	},
-	reminderTitle: {
-		color: "#2F2F2F",
-		fontWeight: "700",
-		fontSize: 16,
-	},
-	reminderText: {
-		color: "#2F2F2F",
-		fontWeight: "400",
-		fontSize: 14,
-	},
-	reminderButtonContainer: {
-		backgroundColor: "#7059D7",
-		paddingHorizontal: 12,
-		paddingVertical: 16,
-		borderRadius: 8,
-	},
-	reminderButtonText: {
-		color: "#FFFFFF",
-		fontWeight: "700",
-		fontSize: 16,
-	},
-	childCardContainer: {
-		display: "flex",
-		flexDirection: "row",
-		justifyContent: "space-between",
-		alignItems: "center",
-		gap: 12
-	},
-	childList: {
-		display: "flex",
-		flexDirection: "row",
-		gap: 16,
-		paddingBottom: 3,
-	},
-	childCardIconContainer:{
-		backgroundColor: "#EBF2FB",
-		display: "flex",
-		flexDirection: "column",
-		alignItems: "center",
-		padding: 8,
-		borderRadius: 4,
-		gap: 4
-	},
-	childCardIconText: {
-		fontWeight: "400",
-		fontSize: 12,
-		color: "#6A6A6A"
-	},
-	childCardContainerCol: {
-		display: "flex",
-		flexDirection: "column",
-		alignItems: "flex-start",
-		gap: 4
-	},
-	childCardImg: {
-		width: 50,
-		height: 50,
-		borderRadius: 8,
-	},
-	childCardTitle: {
-		fontWeight: "700",
-		color: "#333",
-	},
-	childCard: {
-		backgroundColor: "#fff",
-		borderRadius: 8,
-		padding: 16,
-		shadowColor: "#BFD0EA",
-		shadowOffset: {
-			width: 0,
-			height: 3.89,
-		},
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 4,
-		display: "flex",
-		flexDirection: "column",
-		gap: 16,
-	},
-	getCourseContainer: {
-		backgroundColor: "#fff",
-		display: "flex",
-		flexDirection: "column",
-		gap: 16,
-		alignItems: "flex-start",
-		padding: 16,
-		borderRadius: 8
-	},
-	getCourseImage: {
-		width: "100%",
-		height: 188,
-		borderRadius: 8,
-	},
-	getCourseTitle: {
-		fontSize: 16,
-		fontWeight: "700",
-		color: "#2F2F2F",
-	},
-	getCourseButton: {
-		width: "100%",
-		shadowColor: "#4E31CF",
-		shadowOffset: {
-			width: 0,
-			height: 4,
-		},
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 4,
-		display: "flex",
-		alignItems: "center",
-	},
-	progressContainer: {
-		flex: 1,
-		flexDirection: "row",
-		alignItems: "center",
-		marginLeft: 16,
-		gap: 8,
-	},
-	progressBar: {
-		flex: 1,
-		height: 6,
-		backgroundColor: "#e0e0e0",
-		borderRadius: 3,
-		overflow: "hidden",
-	},
-	progressFill: {
-		height: "100%",
-		backgroundColor: "#846DED",
-		borderRadius: 3,
-	},
-	progressText: {
-		fontSize: 12,
-		color: "#666",
-		minWidth: 30,
-	},
-	createButton: {
-		backgroundColor: "#6C5CE7",
-		paddingHorizontal: 24,
-		paddingVertical: 12,
-		borderRadius: 8,
-	},
-	bottomPadding: {
-		height: 20,
-	},
+    container: {
+        flex: 1,
+        backgroundColor: colors.screenBackground,
+    },
+    content: {
+        flex: 1,
+        backgroundColor: colors.white,
+        paddingTop: 58,
+    },
+    center: {
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    loadingText: {
+        marginTop: spacing.md,
+        ...typography.md,
+        color: colors.carbon[60],
+    },
+    // Header
+    header: {
+        backgroundColor: colors.white,
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.xl,
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "center",
+        borderBottomWidth: 1,
+        borderBottomColor: colors.shadow,
+    },
+    nameText: {
+        ...typography.title,
+        flex: 1,
+    },
+    notifsIcon: {
+        width: 36,
+        height: 36,
+        borderRadius: 4,
+        borderWidth: 1,
+        borderColor: colors.shadow,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    // Infos
+    infosContainer: {
+        paddingTop: spacing.base,
+        paddingHorizontal: spacing.xl,
+        backgroundColor: colors.screenBackground,
+    },
+    infosTitle: {
+        ...typography.xl,
+        ...typography.bold,
+        color: colors.carbon[100],
+    },
+    infoCardsContainer: {
+        marginTop: spacing.base,
+        display: "flex",
+        flexDirection: "row",
+        gap: spacing.base,
+    },
+    infosCard: {
+        backgroundColor: colors.white,
+        flex: 1,
+        padding: spacing.md,
+        borderRadius: 4,
+        flexDirection: "column",
+        gap: spacing.md,
+        ...shadows.md,
+    },
+    infoCardHeader: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: spacing.sm,
+    },
+    infoCardHeaderIcon: {
+        width: 32,
+        height: 32,
+        borderRadius: 4,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    preValidateTasksCardIcon: {
+        backgroundColor: "#E1FFF6",
+    },
+    moneyCardIcon: {
+        backgroundColor: colors.primary[20],
+    },
+    completedTasksCardIcon: {
+        backgroundColor: "#97C9FF66",
+    },
+    infoCardHeaderTitle: {
+        ...typography.bold,
+        ...typography["2xl"],
+        color: colors.carbon[100],
+    },
+    infoCardSubtitle: {
+        ...typography.sm,
+        ...typography.semiBold,
+        color: colors.carbon[100],
+    },
+    preValidateTasksCardButton: {
+        backgroundColor: colors.screenBackground,
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.base,
+        borderRadius: 4,
+        alignItems: "center",
+        justifyContent: "center",
+        ...typography.body,
+        color: colors.carbon[80],
+    },
+    // message
+    messageContainer: {
+        marginVertical: spacing["3xl"],
+        marginHorizontal: spacing.xl,
+        padding: spacing.md,
+        backgroundColor: "#BFD0EA99",
+        borderRadius: 8,
+        flexDirection: "column",
+    },
+    messageImage: {
+        flexShrink: 0,
+    },
+    messageText: {
+        ...typography.bold,
+        ...typography.md,
+        flexShrink: 1,
+    },
+    messageSubtext: {
+        ...typography.sm,
+        color: colors.carbon[80],
+        flexShrink: 1,
+    },
+    // Children Cards
+    childrenCardsContainer: {
+        paddingBottom: spacing["3xl"],
+    },
+    // Cours
+    coursesContainer: {
+        paddingBottom: spacing["3xl"],
+        paddingHorizontal: spacing.xl,
+    },
+    courseCardWrapper: {
+        marginTop: spacing.base,
+    },
 });

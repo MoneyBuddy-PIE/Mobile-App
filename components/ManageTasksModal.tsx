@@ -12,48 +12,39 @@ import TaskCard from "./TaskCard";
 type IProps = {
     visible: boolean;
     onClose: () => void;
-}
+};
 
-const ManageTasksModal = ({visible, onClose}: IProps) => {
-	const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
+const ManageTasksModal = ({ visible, onClose }: IProps) => {
+    const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
-	const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(true);
 
     const loadData = useCallback(async () => {
-		try {
-			const accountData = await UserStorage.getSubAccount();
-			setSubAccount(accountData);
+        try {
+            const accountData = await UserStorage.getSubAccount();
+            setSubAccount(accountData);
 
-			if (accountData) {
-				const childTasks = await tasksService.getAllTasks({});
-                console.log({childTasks})
-				setTasks(childTasks);
-			}
-		} catch (error) {
-			console.error("Error loading tasks:", error);
-		} finally {
-			setLoading(false);
-		}
-	}, []);
+            if (accountData) {
+                const childTasks = await tasksService.getAllTasks({});
+                console.log({ childTasks });
+                setTasks(childTasks);
+            }
+        } catch (error) {
+            console.error("Error loading tasks:", error);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
-	useEffect(() => {
-		loadData();
-	}, [loadData]);
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
     return (
-        <Modal transparent visible={visible} animationType="slide" >
+        <Modal transparent visible={visible} animationType="slide">
             <GestureHandlerRootView style={{ flex: 1 }}>
-                <TouchableOpacity
-                    style={styles.overlay}
-                    activeOpacity={1}
-                    onPress={onClose}
-                >
-                    <TouchableOpacity
-                        style={styles.contentSetup}
-                        activeOpacity={1}
-                        onPress={(e) => e.stopPropagation()}
-                    >
-                        
+                <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
+                    <TouchableOpacity style={styles.contentSetup} activeOpacity={1} onPress={(e) => e.stopPropagation()}>
                         {/* Header */}
                         <View style={styles.header}>
                             <TouchableOpacity style={styles.backButton} onPress={onClose}>
@@ -63,22 +54,20 @@ const ManageTasksModal = ({visible, onClose}: IProps) => {
 
                         {/* Content */}
                         <Text style={styles.title}>À vous de jouer : validez ses tâches complétées !</Text>
-                            <FlatList
-                                data={tasks}
-                                style={styles.taskList}
-                                showsVerticalScrollIndicator={false}
-                                keyExtractor={(item) => item.id}
-                                scrollEnabled={true}
-                                renderItem={({ item: task }) => (
-                                        <TaskCard key={task.id} task={task} />
-                                )}
-                            />
+                        <FlatList
+                            data={tasks}
+                            style={styles.taskList}
+                            showsVerticalScrollIndicator={false}
+                            keyExtractor={(item) => item.id}
+                            scrollEnabled={true}
+                            renderItem={({ item: task }) => <TaskCard key={task.id} task={task} />}
+                        />
                     </TouchableOpacity>
                 </TouchableOpacity>
             </GestureHandlerRootView>
         </Modal>
-    )
-}
+    );
+};
 
 const styles = StyleSheet.create({
     overlay: {
