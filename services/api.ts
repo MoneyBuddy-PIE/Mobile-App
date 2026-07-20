@@ -238,6 +238,26 @@ class ApiService {
         }
     }
 
+    async postFormData<T>(url: string, formData: FormData, timeout = 30000): Promise<T> {
+        try {
+            const response = await this.api.post(url, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+                timeout,
+            });
+            return response.data;
+        } catch (error: any) {
+            logger.error('POST form-data request error:', {
+                name: error?.name,
+                message: error?.message,
+                code: error?.code,
+                status: error?.response?.status,
+                responseData: error?.response?.data,
+            });
+            this.handleApiError(error);
+            throw error;
+        }
+    }
+
     async put<T>(url: string, data?: any): Promise<T> {
         try {
             const response = await this.api.put(url, data);

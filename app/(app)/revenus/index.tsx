@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, RefreshControl, 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import AddExpenseSheet from "@/components/AddExpenseSheet";
+import ScanReceiptSheet from "@/components/ScanReceiptSheet";
 import { SubAccount } from "@/types/Account";
 import { userService } from "@/services/userService";
 import { transactionService } from "@/services/transactionService";
@@ -28,6 +29,7 @@ export default function Revenus() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [showAddExpense, setShowAddExpense] = useState(false);
+    const [showScanReceipt, setShowScanReceipt] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -120,7 +122,7 @@ export default function Revenus() {
                         </View>
                         <Text style={styles.actionLabel}>Économiser</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.actionItem}>
+                    <TouchableOpacity style={styles.actionItem} onPress={() => setShowScanReceipt(true)}>
                         <View style={[styles.actionButton, { backgroundColor: "#16AA75", shadowColor: "#005C49" }]}>
                             <ScanIcon width={32} height={32} color="white" />
                         </View>
@@ -226,6 +228,7 @@ export default function Revenus() {
             </ScrollView>
 
             <AddExpenseSheet visible={showAddExpense} onClose={() => setShowAddExpense(false)} onSuccess={() => loadData()} />
+            <ScanReceiptSheet visible={showScanReceipt} onClose={() => setShowScanReceipt(false)} onSuccess={() => loadData()} />
         </SafeAreaView>
     );
 }

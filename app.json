@@ -22,7 +22,9 @@
                 "ITSAppUsesNonExemptEncryption": false,
                 "NSAppTransportSecurity": {
                     "NSAllowsArbitraryLoads": true
-                }
+                },
+                "NSCameraUsageDescription": "MoneyBuddy a besoin d'accéder à ta caméra pour scanner tes reçus.",
+                "NSPhotoLibraryUsageDescription": "MoneyBuddy a besoin d'accéder à tes photos pour scanner un reçu."
             }
         },
         "android": {
