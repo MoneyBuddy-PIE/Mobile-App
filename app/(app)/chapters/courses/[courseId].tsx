@@ -12,6 +12,7 @@ import { colors } from "@/styles/colors";
 import { chapterService } from "@/services/chapterService";
 import { logger } from "@/utils/logger";
 import { getImageUrl } from "@/utils/image";
+import { formatMoney } from "@/utils/money";
 import { MascotIcon } from "@/components/Icons/MascotIcon";
 import { LightningIcon } from "@/components/Icons/LightningIcon";
 import { MoneyBillIcon } from "@/components/Icons/MoneyBillIcon";
@@ -191,8 +192,8 @@ export default function CourseReader() {
 
         let correct: boolean;
         if (currentQuiz.quizType === "CALCULATE") {
-            const total = (currentQuiz.moneyValues ?? []).reduce((sum, val, i) => sum + parseFloat(val) * (quantities[i] || 0), 0);
-            const target = parseFloat(currentQuiz.options[currentQuiz.correctAnswerIndex]);
+            const total = (currentQuiz.moneyValues ?? []).reduce((sum, val, i) => sum + (parseFloat(val) / 100) * (quantities[i] || 0), 0);
+            const target = parseFloat(currentQuiz.options[currentQuiz.correctAnswerIndex]) / 100;
             correct = Math.abs(total - target) < 0.01;
         } else {
             if (selectedAnswer === null) return;
@@ -269,7 +270,7 @@ export default function CourseReader() {
                     <View style={styles.moneyValuesContainer}>
                         {(quiz.moneyValues ?? []).map((val, i) => (
                             <View key={i} style={styles.moneyValueChip}>
-                                <Text style={styles.moneyValueText}>{val} €</Text>
+                                <Text style={styles.moneyValueText}>{formatMoney(parseFloat(val) / 100)} €</Text>
                             </View>
                         ))}
                     </View>
@@ -294,7 +295,7 @@ export default function CourseReader() {
                                         showResult && isCorrect && index === quiz.correctAnswerIndex && styles.optionTextCorrect,
                                     ]}
                                 >
-                                    {option} €
+                                    {formatMoney(parseFloat(option) / 100)} €
                                 </Text>
                             </TouchableOpacity>
                         ))}
@@ -504,10 +505,11 @@ export default function CourseReader() {
                     {currentStep.type === "quiz" && quiz && quiz.quizType === "CALCULATE" && (
                         <View style={childStyles.calcContainer}>
                             {(quiz.moneyValues ?? []).map((val, i) => {
-                                const isBill = parseFloat(val) >= 5;
+                                const euros = parseFloat(val) / 100;
+                                const isBill = euros >= 5;
                                 return (
                                     <View key={i} style={childStyles.calcRow}>
-                                        {isBill ? <MoneyBillIcon amount={val} /> : <MoneyCoinIcon amount={val} />}
+                                        {isBill ? <MoneyBillIcon amount={formatMoney(euros)} /> : <MoneyCoinIcon amount={formatMoney(euros)} />}
                                         <View style={childStyles.calcControls}>
                                             <TouchableOpacity
                                                 style={childStyles.calcBtn}
